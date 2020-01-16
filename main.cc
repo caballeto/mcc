@@ -7,9 +7,15 @@
 #include "src/Parser.h"
 #include "src/ast.h"
 #include "src/CodeGenX86.h"
+#include "src/Visitor.h"
 
 #define AST_DUMP_FILE "ast_dump.txt"
 #define ASSEMBY_FILE "out.s"
+
+void Dump(std::ostream& os, const std::vector<std::shared_ptr<mcc::Stmt>>& stmts) {
+  for (const auto& stmt : stmts)
+    stmt->Dump(os, 0);
+}
 
 void Usage() {
   std::cout << "Usage: " << std::endl;
@@ -30,11 +36,11 @@ int main(int argc, char* argv[]) {
 
   std::ofstream ast_dump(AST_DUMP_FILE, std::ios::out);
 
-  std::shared_ptr<mcc::Expr> expr = parser.Expression(0);
+  std::vector<std::shared_ptr<mcc::Stmt>> stmts = parser.Parse();
 
-  expr->Dump(ast_dump, 0);
+  Dump(ast_dump, stmts);
 
-  code_gen.Generate(expr);
+  code_gen.Generate(stmts);
 
   return 0;
 }

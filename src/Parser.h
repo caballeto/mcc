@@ -16,6 +16,8 @@ class Parser {
     : scanner_(scanner)
   { Next(); }
 
+  std::vector<std::shared_ptr<Stmt>> Parse();
+
   std::shared_ptr<Expr> Expression(int precedence);
   std::shared_ptr<Expr> Primary();
 
@@ -23,6 +25,7 @@ class Parser {
   std::shared_ptr<Token> Next();
   std::shared_ptr<Token> Peek();
   bool Match(TokenType type);
+  void Consume(TokenType type, const std::string& message);
 
   std::shared_ptr<Token> token_;
   Scanner& scanner_;

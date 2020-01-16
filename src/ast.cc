@@ -3,6 +3,7 @@
 //
 
 #include "ast.h"
+#include "Visitor.h"
 
 namespace mcc {
 
@@ -26,6 +27,16 @@ void Literal::Dump(std::ostream& os, int spaces) {
 
 int Literal::Accept(Visitor& visitor) {
   return visitor.Visit(std::static_pointer_cast<Literal>(shared_from_this()));
+}
+
+void Print::Dump(std::ostream &os, int spaces) {
+  os << std::string(spaces, ' ') << "<stmt type='print'>\n";
+  expr_->Dump(os, spaces + 2);
+  os << std::string(spaces, ' ') << "</stmt>\n";
+}
+
+int Print::Accept(Visitor &visitor) {
+  return visitor.Visit(std::static_pointer_cast<Print>(shared_from_this()));
 }
 
 } // namespace mcc

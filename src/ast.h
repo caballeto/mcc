@@ -11,6 +11,26 @@
 namespace mcc {
 
 class Visitor;
+class Expr;
+
+class Stmt : public std::enable_shared_from_this<Stmt> {
+ public:
+  virtual void Dump(std::ostream& os, int spaces) = 0;
+  virtual int Accept(Visitor& visitor) = 0;
+};
+
+class Print : public Stmt {
+ public:
+  explicit Print(std::shared_ptr<Expr> expr)
+    : expr_(std::move(expr))
+  { }
+
+  void Dump(std::ostream& os, int spaces) override;
+
+  int Accept(Visitor& visitor) override;
+
+  std::shared_ptr<Expr> expr_;
+};
 
 class Expr : public std::enable_shared_from_this<Expr> {
  public:
@@ -44,13 +64,6 @@ class Literal : public Expr {
   int Accept(Visitor& visitor) override;
 
   std::shared_ptr<Token> literal_;
-};
-
-// #FIXME: circular import with visitor, solve it (Visitor in other file?)
-class Visitor {
- public:
-  virtual int Visit(std::shared_ptr<Binary> binary) = 0;
-  virtual int Visit(std::shared_ptr<Literal> binary) = 0;
 };
 
 } // namespace mcc

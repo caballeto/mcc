@@ -1,0 +1,30 @@
+<stmt type='print'>
+  <binary op='T_PLUS'>
+    <binary op='T_STAR'>
+      <literal val='1'></literal>
+      <literal val='2'></literal>
+    </binary>
+    <binary op='T_STAR'>
+      <literal val='20'></literal>
+      <literal val='34'></literal>
+    </binary>
+  </binary>
+</stmt>
+<stmt type='print'>
+  <binary op='T_MINUS'>
+    <binary op='T_MINUS'>
+      <literal val='17'></literal>
+      <literal val='7'></literal>
+    </binary>
+    <literal val='9'></literal>
+  </binary>
+</stmt>
+<stmt type='print'>
+  <binary op='T_STAR'>
+    <literal val='18'></literal>
+    <literal val='10'></literal>
+  </binary>
+</stmt>
+<stmt type='print'>
+  <literal val='15'></literal>
+</stmt>

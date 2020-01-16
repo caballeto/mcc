@@ -7,8 +7,10 @@
 
 #include "common.h"
 #include "ast.h"
+#include "Visitor.h"
 
 #define REGISTER_NUM 8
+#define NO_RETURN -1
 
 namespace mcc {
 
@@ -18,13 +20,16 @@ class CodeGenX86 : public Visitor {
     out_.open(output_file, std::ios::out);
   }
 
-  void Generate(std::shared_ptr<Expr> expr);
+  void Generate(const std::vector<std::shared_ptr<Stmt>>& stmts);
 
  private:
+  int Visit(const std::shared_ptr<Binary>& binary) override;
+  int Visit(const std::shared_ptr<Literal>& literal) override;
+  int Visit(const std::shared_ptr<Print>& print) override;
+
   void Preamble();
   void Postamble();
-  int Visit(std::shared_ptr<Binary> binary) override;
-  int Visit(std::shared_ptr<Literal> literal) override;
+
   int NewRegister();
   void FreeRegister(int reg);
   void PrintInt(int reg);

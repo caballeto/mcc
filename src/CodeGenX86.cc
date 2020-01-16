@@ -6,7 +6,7 @@
 
 namespace mcc {
 
-int CodeGenX86::Visit(std::shared_ptr<Binary> binary) {
+int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   int r1 = binary->left_->Accept(*this);
   int r2 = binary->right_->Accept(*this);
 
@@ -36,7 +36,7 @@ int CodeGenX86::Visit(std::shared_ptr<Binary> binary) {
   }
 }
 
-int CodeGenX86::Visit(std::shared_ptr<Literal> literal) {
+int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   int reg = NewRegister();
   out_ << "\tmovq\t$" << literal->literal_->GetIntValue()
     << "," << rregisters[reg] << "\n";
@@ -75,10 +75,10 @@ void CodeGenX86::Postamble() {
           "\tret\n";
 }
 
-void CodeGenX86::Generate(std::shared_ptr<Expr> expr) {
+void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
   Preamble();
-  int r = expr->Accept(*this);
-  PrintInt(r);
+  for (const auto& stmt : stmts)
+    stmt->Accept(*this);
   Postamble();
 }
 
@@ -100,6 +100,13 @@ int CodeGenX86::NewRegister() {
 
 void CodeGenX86::FreeRegister(int reg) {
   regs_status[reg] = true;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Print>& print) {
+  int r = print->expr_->Accept(*this);
+  PrintInt(r);
+  FreeRegister(r);
+  return NO_RETURN;
 }
 
 } // namespace mcc

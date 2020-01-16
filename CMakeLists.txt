@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.15)
+project(mcc)
+
+set(CMAKE_CXX_STANDARD 14)
+
+add_executable(mcc main.cc src/ast.cc src/CodeGenX86.cc src/Parser.cc src/Scanner.cc src/TokenType.cc)

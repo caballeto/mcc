@@ -8,13 +8,22 @@
 namespace mcc {
 
 enum class TokenType {
+  // special
+  T_EOF,
+
+  // operators
   T_PLUS,
   T_MINUS,
   T_STAR,
   T_SLASH,
-  T_EOF,
+  T_SEMICOLON,
 
-  T_INT_LITERAL
+  // literals
+  T_INT_LITERAL,
+  T_IDENTIFIER,
+
+  // keywords
+  T_PRINT
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType type);
