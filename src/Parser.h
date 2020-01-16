@@ -7,13 +7,14 @@
 
 #include "Scanner.h"
 #include "ast.h"
+#include "SymbolTable.h"
 
 namespace mcc {
 
 class Parser {
  public:
-  explicit Parser(Scanner& scanner)
-    : scanner_(scanner)
+  explicit Parser(Scanner& scanner, SymbolTable& symbol_table)
+    : scanner_(scanner), symbol_table_(symbol_table)
   { Next(); }
 
   std::vector<std::shared_ptr<Stmt>> Parse();
@@ -24,11 +25,12 @@ class Parser {
  private:
   std::shared_ptr<Token> Next();
   std::shared_ptr<Token> Peek();
+  std::shared_ptr<Token> Consume(TokenType type, const std::string& message);
   bool Match(TokenType type);
-  void Consume(TokenType type, const std::string& message);
 
   std::shared_ptr<Token> token_;
   Scanner& scanner_;
+  SymbolTable& symbol_table_;
 };
 
 } // namespace mcc

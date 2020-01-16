@@ -1,30 +1,48 @@
+<var-decl name='x' />
+<var-decl name='y' />
+<expr-stmt>
+  <assign>
+    <literal val='x'></literal>
+    <literal val='5'></literal>
+  </assign>
+</expr-stmt>
+<expr-stmt>
+  <assign>
+    <literal val='y'></literal>
+    <literal val='6'></literal>
+  </assign>
+</expr-stmt>
 <stmt type='print'>
   <binary op='T_PLUS'>
+    <literal val='x'></literal>
+    <literal val='y'></literal>
+  </binary>
+</stmt>
+<stmt type='print'>
+  <literal val='x'></literal>
+</stmt>
+<stmt type='print'>
+  <literal val='y'></literal>
+</stmt>
+<expr-stmt>
+  <assign>
+    <literal val='x'></literal>
+    <literal val='y'></literal>
+  </assign>
+</expr-stmt>
+<stmt type='print'>
+  <literal val='x'></literal>
+</stmt>
+<stmt type='print'>
+  <literal val='y'></literal>
+</stmt>
+<stmt type='print'>
+  <binary op='T_PLUS'>
+    <literal val='1'></literal>
     <binary op='T_STAR'>
-      <literal val='1'></literal>
       <literal val='2'></literal>
-    </binary>
-    <binary op='T_STAR'>
-      <literal val='20'></literal>
-      <literal val='34'></literal>
+      <literal val='5'></literal>
     </binary>
   </binary>
 </stmt>
-<stmt type='print'>
-  <binary op='T_MINUS'>
-    <binary op='T_MINUS'>
-      <literal val='17'></literal>
-      <literal val='7'></literal>
-    </binary>
-    <literal val='9'></literal>
-  </binary>
-</stmt>
-<stmt type='print'>
-  <binary op='T_STAR'>
-    <literal val='18'></literal>
-    <literal val='10'></literal>
-  </binary>
-</stmt>
-<stmt type='print'>
-  <literal val='15'></literal>
-</stmt>
+

@@ -36,11 +36,50 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   }
 }
 
+// #FIXME: Create separate AST node for identifier?
 int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   int reg = NewRegister();
-  out_ << "\tmovq\t$" << literal->literal_->GetIntValue()
-    << "," << rregisters[reg] << "\n";
+  switch (literal->literal_->GetType()) {
+    case TokenType::T_INT_LITERAL:
+      out_ << "\tmovq\t$" << literal->literal_->GetIntValue()
+        << "," << rregisters[reg] << "\n";
+      break;
+    case TokenType::T_IDENTIFIER:
+      out_ << "\tmovq\t" << literal->literal_->GetStringValue()
+        << "(%rip), " << rregisters[reg] << "\n";
+      break;
+    default:
+      std::cerr << "Invalid literal type '" << literal->literal_->GetType()
+        << "'." << std::endl;
+      exit(1);
+  }
+
   return reg;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Print>& print) {
+  int r = print->expr_->Accept(*this);
+  PrintInt(r);
+  FreeRegister(r);
+  return NO_RETURN_REGISTER;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Assign>& assign) {
+  int r = assign->right_->Accept(*this);
+  out_ << "\tmovq\t" << rregisters[r] << ", " << assign->left_->literal_->GetStringValue()
+    << "(%rip)\n";
+  return r;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
+  out_ << "\t.comm\t" << var_decl->name_ << ",8,8\n";
+  return NO_RETURN_REGISTER;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
+  int r = expr_stmt->expr_->Accept(*this);
+  FreeRegister(r);
+  return NO_RETURN_REGISTER;
 }
 
 void CodeGenX86::Preamble() {
@@ -100,13 +139,6 @@ int CodeGenX86::NewRegister() {
 
 void CodeGenX86::FreeRegister(int reg) {
   regs_status[reg] = true;
-}
-
-int CodeGenX86::Visit(const std::shared_ptr<Print>& print) {
-  int r = print->expr_->Accept(*this);
-  PrintInt(r);
-  FreeRegister(r);
-  return NO_RETURN;
 }
 
 } // namespace mcc

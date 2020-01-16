@@ -17,13 +17,15 @@ enum class TokenType {
   T_STAR,
   T_SLASH,
   T_SEMICOLON,
+  T_EQUAL,
 
   // literals
   T_INT_LITERAL,
   T_IDENTIFIER,
 
   // keywords
-  T_PRINT
+  T_PRINT,
+  T_INT
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType type);

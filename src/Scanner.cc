@@ -13,6 +13,7 @@ Scanner::Scanner(const std::string& input_file) {
   putback_ = '\0';
 
   keywords_["print"] = TokenType::T_PRINT;
+  keywords_["int"] = TokenType::T_INT;
 }
 
 Scanner::~Scanner() {
@@ -38,6 +39,9 @@ std::shared_ptr<Token> Scanner::GetToken() {
       break;
     case ';':
       token->SetType(TokenType::T_SEMICOLON);
+      break;
+    case '=':
+      token->SetType(TokenType::T_EQUAL);
       break;
     case EOF:
       token->SetType(TokenType::T_EOF);
