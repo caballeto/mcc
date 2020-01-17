@@ -40,14 +40,16 @@ class CodeGenX86 : public Visitor {
   void FreeRegister(int reg);
   void PrintInt(int reg);
 
+  static std::string GetSetInstr(TokenType type);
+
   std::ofstream out_;
 
-  std::vector<std::string> rregisters = {"%r8", "%r9", "%r10", "%r11",
-                                          "%r12", "%r13", "%r14", "%r15"};
-  std::vector<std::string> dregisters = {"%r8d", "%r9d", "%r10d", "%r11d",
-                                          "%r12d", "%r13d", "%r14d", "%r15d"};
-  std::vector<std::string> bregisters = {"%r8b", "%r9b", "%r10b", "%r11b",
-                                          "%r12b", "%r13b", "%r14b", "%r15b"};
+  const std::vector<std::string> kRegisters = {"%r8", "%r9", "%r10", "%r11",
+                                               "%r12", "%r13", "%r14", "%r15"};
+  const std::vector<std::string> kDregisters = {"%r8d", "%r9d", "%r10d", "%r11d",
+                                                "%r12d", "%r13d", "%r14d", "%r15d"};
+  const std::vector<std::string> kBregisters = {"%r8b", "%r9b", "%r10b", "%r11b",
+                                                "%r12b", "%r13b", "%r14b", "%r15b"};
 
   bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true, true, true};
 

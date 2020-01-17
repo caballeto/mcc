@@ -65,18 +65,20 @@ class Expr : public std::enable_shared_from_this<Expr> {
  public:
   virtual void Dump(std::ostream& os, int spaces) = 0;
   virtual int Accept(Visitor& visitor) = 0;
+  virtual bool IsVariable() = 0;
 };
 
 class Assign : public Expr {
  public:
-  Assign(std::shared_ptr<Literal> left, std::shared_ptr<Expr> right)
+  Assign(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)
     : left_(std::move(left)), right_(std::move(right))
   { }
 
   int Accept(Visitor& visitor) override;
   void Dump(std::ostream& os, int spaces) override;
+  bool IsVariable() override;
 
-  std::shared_ptr<Literal> left_;
+  std::shared_ptr<Expr> left_;
   std::shared_ptr<Expr> right_;
 };
 
@@ -88,6 +90,7 @@ class Binary : public Expr {
 
   void Dump(std::ostream& os, int spaces) override;
   int Accept(Visitor& visitor) override;
+  bool IsVariable() override;
 
   std::shared_ptr<Token> op_;
   std::shared_ptr<Expr> left_;
@@ -102,6 +105,7 @@ class Literal : public Expr {
 
   void Dump(std::ostream& os, int spaces) override;
   int Accept(Visitor& visitor) override;
+  bool IsVariable() override;
 
   std::shared_ptr<Token> literal_;
 };

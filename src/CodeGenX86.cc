@@ -12,24 +12,35 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
 
   switch (binary->op_->GetType()) {
     case TokenType::T_PLUS:
-      out_ << "\taddq\t" << rregisters[r1] << ", " << rregisters[r2] << "\n";
+      out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
       FreeRegister(r1);
       return r2;
     case TokenType::T_MINUS:
-      out_ << "\tsubq\t" << rregisters[r2] << ", " << rregisters[r1] << "\n";
+      out_ << "\tsubq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
       FreeRegister(r2);
       return r1;
     case TokenType::T_STAR:
-      out_ << "\timulq\t" << rregisters[r1] << ", " << rregisters[r2] << "\n";
+      out_ << "\timulq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
       FreeRegister(r1);
       return r2;
     case TokenType::T_SLASH:
-      out_ << "\tmovq\t" << rregisters[r1] << ", %rax\n"
-        << "\tcqo\n"
-        << "\tidivq\t" << rregisters[r2] << "\n"
-        << "\tmovq\t%rax, " << rregisters[r1] << "\n";
+      out_ << "\tmovq\t" << kRegisters[r1] << ", %rax\n"
+           << "\tcqo\n"
+           << "\tidivq\t" << kRegisters[r2] << "\n"
+           << "\tmovq\t%rax, " << kRegisters[r1] << "\n";
       FreeRegister(2);
       return r1;
+    case TokenType::T_EQUALS:
+    case TokenType::T_NOT_EQUALS:
+    case TokenType::T_GREATER:
+    case TokenType::T_LESS:
+    case TokenType::T_GREATER_EQUAL:
+    case TokenType::T_LESS_EQUAL:
+      out_ << "\tcmpq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+      out_ << "\t" << GetSetInstr(binary->op_->GetType()) << "\t" << kBregisters[r2] << "\n";
+      out_ << "\tandq\t$255, " << kRegisters[r2] << "\n";
+      FreeRegister(r1);
+      return r2;
     default:
       std::cerr << "Invalid operator in binary expression: " << binary->op_ << std::endl;
       exit(1);
@@ -42,11 +53,11 @@ int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   switch (literal->literal_->GetType()) {
     case TokenType::T_INT_LITERAL:
       out_ << "\tmovq\t$" << literal->literal_->GetIntValue()
-        << "," << rregisters[reg] << "\n";
+           << "," << kRegisters[reg] << "\n";
       break;
     case TokenType::T_IDENTIFIER:
       out_ << "\tmovq\t" << literal->literal_->GetStringValue()
-        << "(%rip), " << rregisters[reg] << "\n";
+           << "(%rip), " << kRegisters[reg] << "\n";
       break;
     default:
       std::cerr << "Invalid literal type '" << literal->literal_->GetType()
@@ -64,10 +75,17 @@ int CodeGenX86::Visit(const std::shared_ptr<Print>& print) {
   return NO_RETURN_REGISTER;
 }
 
+// #FIXME: pass <Literal> as type, or cast <Expr> to here?
 int CodeGenX86::Visit(const std::shared_ptr<Assign>& assign) {
   int r = assign->right_->Accept(*this);
-  out_ << "\tmovq\t" << rregisters[r] << ", " << assign->left_->literal_->GetStringValue()
-    << "(%rip)\n";
+  if (assign->left_->IsVariable()) {
+    out_ << "\tmovq\t" << kRegisters[r] << ", "
+         << std::static_pointer_cast<Literal>(assign->left_)->literal_->GetStringValue()
+         << "(%rip)\n";
+  } else {
+    std::cerr << "Assign to non variable in assign expression." << std::endl;
+    exit(1);
+  }
   return r;
 }
 
@@ -80,6 +98,20 @@ int CodeGenX86::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
   int r = expr_stmt->expr_->Accept(*this);
   FreeRegister(r);
   return NO_RETURN_REGISTER;
+}
+
+std::string CodeGenX86::GetSetInstr(TokenType type) {
+  switch (type) {
+    case TokenType::T_EQUALS: return "sete";
+    case TokenType::T_NOT_EQUALS: return "setne";
+    case TokenType::T_GREATER: return "setg";
+    case TokenType::T_LESS: return "setl";
+    case TokenType::T_GREATER_EQUAL: return "setge";
+    case TokenType::T_LESS_EQUAL: return "setle";
+    default:
+      std::cerr << "Invalid input for recovery of set instruction " << type << std::endl;
+      exit(1);
+  }
 }
 
 void CodeGenX86::Preamble() {
@@ -122,7 +154,7 @@ void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
 }
 
 void CodeGenX86::PrintInt(int r) {
-  out_ << "\tmovq\t" << rregisters[r] << ", %rdi\n"
+  out_ << "\tmovq\t" << kRegisters[r] << ", %rdi\n"
     << "\tcall\tprintint\n";
 }
 

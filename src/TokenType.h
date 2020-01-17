@@ -17,7 +17,13 @@ enum class TokenType {
   T_STAR,
   T_SLASH,
   T_SEMICOLON,
-  T_EQUAL,
+  T_EQUALS,
+  T_NOT_EQUALS,
+  T_LESS,
+  T_GREATER,
+  T_LESS_EQUAL,
+  T_GREATER_EQUAL,
+  T_ASSIGN,
 
   // literals
   T_INT_LITERAL,

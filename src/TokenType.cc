@@ -15,13 +15,30 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
     case TokenType::T_SLASH: return os << "T_SLASH";
     case TokenType::T_INT_LITERAL: return os << "T_INT_LITERAL";
     case TokenType::T_EOF: return os << "T_EOF";
+    case TokenType::T_SEMICOLON: return os << ";";;
+    case TokenType::T_ASSIGN: return os << "=";
+    case TokenType::T_IDENTIFIER: return os << "T_IDENTIFIER";
+    case TokenType::T_PRINT: return os << "T_PRINT";
+    case TokenType::T_INT: return os << "T_INT";
   }
 
   return os << static_cast<std::uint16_t>(type);
 }
 
+// #FIXME: the precedence values are relative and will change when new operators added
+// #FIXME: see https://en.cppreference.com/w/c/language/operator_precedence
 int GetPrecedence(TokenType type) {
   switch (type) {
+    case TokenType::T_ASSIGN:
+      return 8;
+    case TokenType::T_EQUALS:
+    case TokenType::T_NOT_EQUALS:
+      return 9;
+    case TokenType::T_GREATER:
+    case TokenType::T_LESS:
+    case TokenType::T_GREATER_EQUAL:
+    case TokenType::T_LESS_EQUAL:
+      return 10;
     case TokenType::T_PLUS:
     case TokenType::T_MINUS:
       return 11;

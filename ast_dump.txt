@@ -13,36 +13,39 @@
   </assign>
 </expr-stmt>
 <stmt type='print'>
-  <binary op='T_PLUS'>
+  <binary op='6'>
     <literal val='x'></literal>
     <literal val='y'></literal>
   </binary>
 </stmt>
 <stmt type='print'>
-  <literal val='x'></literal>
-</stmt>
-<stmt type='print'>
-  <literal val='y'></literal>
-</stmt>
-<expr-stmt>
-  <assign>
+  <binary op='7'>
     <literal val='x'></literal>
     <literal val='y'></literal>
-  </assign>
-</expr-stmt>
-<stmt type='print'>
-  <literal val='x'></literal>
+  </binary>
 </stmt>
 <stmt type='print'>
-  <literal val='y'></literal>
+  <binary op='8'>
+    <literal val='x'></literal>
+    <literal val='y'></literal>
+  </binary>
 </stmt>
 <stmt type='print'>
-  <binary op='T_PLUS'>
-    <literal val='1'></literal>
-    <binary op='T_STAR'>
-      <literal val='2'></literal>
-      <literal val='5'></literal>
-    </binary>
+  <binary op='9'>
+    <literal val='x'></literal>
+    <literal val='y'></literal>
+  </binary>
+</stmt>
+<stmt type='print'>
+  <binary op='10'>
+    <literal val='x'></literal>
+    <literal val='y'></literal>
+  </binary>
+</stmt>
+<stmt type='print'>
+  <binary op='11'>
+    <literal val='x'></literal>
+    <literal val='y'></literal>
   </binary>
 </stmt>
 

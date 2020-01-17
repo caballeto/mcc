@@ -31,6 +31,9 @@ class Parser {
   std::shared_ptr<Token> token_;
   Scanner& scanner_;
   SymbolTable& symbol_table_;
+  std::shared_ptr<Stmt> Statement();
+  std::shared_ptr<Stmt> ExpressionStatement();
+  std::shared_ptr<Expr> AssignExpression();
 };
 
 } // namespace mcc

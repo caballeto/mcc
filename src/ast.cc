@@ -20,6 +20,10 @@ int Binary::Accept(Visitor& visitor) {
   return visitor.Visit(std::static_pointer_cast<Binary>(shared_from_this()));
 }
 
+bool Binary::IsVariable() {
+  return false;
+}
+
 void Literal::Dump(std::ostream& os, int spaces) {
   os << std::string(spaces, ' ')
     << "<literal val='";
@@ -32,6 +36,12 @@ void Literal::Dump(std::ostream& os, int spaces) {
 
 int Literal::Accept(Visitor& visitor) {
   return visitor.Visit(std::static_pointer_cast<Literal>(shared_from_this()));
+}
+
+bool Literal::IsVariable() {
+  std::cout << "Var name: " << literal_->GetStringValue() << std::endl;
+  std::cout << "IsVariable: " << (!literal_->GetStringValue().empty()) << std::endl;
+  return !literal_->GetStringValue().empty();
 }
 
 void Print::Dump(std::ostream &os, int spaces) {
@@ -53,6 +63,10 @@ void Assign::Dump(std::ostream &os, int spaces) {
   left_->Dump(os, spaces + 2);
   right_->Dump(os, spaces + 2);
   os << std::string(spaces, ' ') << "</assign>\n";
+}
+
+bool Assign::IsVariable() {
+  return false;
 }
 
 int VarDecl::Accept(Visitor &visitor) {

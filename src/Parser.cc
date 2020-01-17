@@ -10,46 +10,58 @@ std::vector<std::shared_ptr<Stmt>> Parser::Parse() {
   std::vector<std::shared_ptr<Stmt>> stmts;
 
   while (Peek()->GetType() != TokenType::T_EOF) {
-    switch (Peek()->GetType()) {
-      case TokenType::T_PRINT: {
-        Match(TokenType::T_PRINT);
-        std::shared_ptr<Expr> expr = Expression(0);
-        Consume(TokenType::T_SEMICOLON, "Expected ';' after 'print' statement.");
-        stmts.push_back(std::make_shared<Print>(expr));
-        break;
-      }
-      case TokenType::T_INT: {
-        Match(TokenType::T_INT);
-        std::shared_ptr<Token> token = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration.");
-        symbol_table_.Put(token->GetStringValue());
-        Consume(TokenType::T_SEMICOLON, "Expected ';' after 'int' declaration.");
-        stmts.push_back(std::make_shared<VarDecl>(token->GetStringValue()));
-        break;
-      }
-      case TokenType::T_IDENTIFIER: {
-        std::shared_ptr<Literal> left = std::make_shared<Literal>(Peek());
-
-        if (!symbol_table_.Contains(left->literal_->GetStringValue())) {
-          std::cerr << "Variable '" << left->literal_->GetStringValue() << "' has not been declared." << std::endl;
-          exit(1); // #TODO: Add parser synchronization; check type compatibility here
-        }
-
-        Next();
-        Consume(TokenType::T_EQUAL, "Expected '=' in assign expression.");
-        std::shared_ptr<Expr> right = Expression(0);
-        Consume(TokenType::T_SEMICOLON, "Expected ';' after expression statement.");
-        std::shared_ptr<Assign> assign = std::make_shared<Assign>(left, right);
-        stmts.push_back(std::make_shared<ExpressionStmt>(assign));
-        break;
-      }
-      default:
-        std::cerr << "Invalid statement-level token" << std::endl;
-        exit(1);
-    }
+    stmts.push_back(Statement());
   }
 
   return std::move(stmts);
 }
+
+std::shared_ptr<Stmt> Parser::Statement() {
+  switch (Peek()->GetType()) {
+    case TokenType::T_PRINT: {
+      Match(TokenType::T_PRINT);
+      std::shared_ptr<Expr> expr = Expression(0);
+      Consume(TokenType::T_SEMICOLON, "Expected ';' after 'print' Statement.");
+      return std::make_shared<Print>(expr);
+    }
+    case TokenType::T_INT: {
+      Match(TokenType::T_INT);
+      std::shared_ptr<Token> token = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration.");
+      symbol_table_.Put(token->GetStringValue());
+      Consume(TokenType::T_SEMICOLON, "Expected ';' after 'int' declaration.");
+      return std::make_shared<VarDecl>(token->GetStringValue());
+    }
+    default:
+      return ExpressionStatement();
+  }
+}
+
+std::shared_ptr<Stmt> Parser::ExpressionStatement() {
+  switch (Peek()->GetType()) {
+    case TokenType::T_IDENTIFIER: {
+      std::shared_ptr<Expr> expr = Expression(0);
+      Consume(TokenType::T_SEMICOLON, "Expected ';' after expression Statement.");
+      return std::make_shared<ExpressionStmt>(expr);
+    }
+    default:
+      std::cerr << "Only assign expressions are supported in top-level expression statements." << std::endl;
+      exit(1);
+  }
+}
+/*
+std::shared_ptr<Expr> Parser::AssignExpression() {
+  std::shared_ptr<Literal> left = std::make_shared<Literal>(Peek());
+
+  if (!symbol_table_.Contains(left->literal_->GetStringValue())) {
+    std::cerr << "Variable '" << left->literal_->GetStringValue() << "' has not been declared." << std::endl;
+    exit(1); // #TODO: Add parser synchronization; check type compatibility here
+  }
+
+  Next();
+  Consume(TokenType::T_ASSIGN, "Expected '=' in assign expression.");
+  std::shared_ptr<Expr> right = Expression(0);
+  return std::make_shared<Assign>(left, right);
+}*/
 
 // Read about named local return value optimization and copy-elision
 std::shared_ptr<Expr> Parser::Expression(int precedence) {
@@ -60,9 +72,25 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
     return left;
 
   while (precedence < GetPrecedence(curr_op->GetType())) {
-    Next();
-    right = Expression(GetPrecedence(curr_op->GetType()));
-    left = std::make_shared<Binary>(curr_op, left, right); // Do I need to pass whole Token?
+    switch (curr_op->GetType()) {
+      case TokenType::T_ASSIGN: {
+        if (!left->IsVariable()) {
+          std::cerr << "Only varibles are allowed on left side of assign expression." << std::endl;
+          exit(1);
+        }
+
+        Next();
+        right = Expression(GetPrecedence(curr_op->GetType()) - 1);
+        left = std::make_shared<Assign>(left, right);
+        break;
+      }
+      default: {
+        Next();
+        right = Expression(GetPrecedence(curr_op->GetType()));
+        left = std::make_shared<Binary>(curr_op, left, right);
+      }
+    }
+
     curr_op = Peek();
     if (curr_op->GetType() == TokenType::T_SEMICOLON) {
       return left;
@@ -79,7 +107,7 @@ std::shared_ptr<Expr> Parser::Primary() {
 
       if (!symbol_table_.Contains(literal->literal_->GetStringValue())) {
         std::cerr << "Variable '" << literal->literal_->GetStringValue() << "' has not been declared." << std::endl;
-        exit(1); // #TODO: Add parser synchronization; check type compatibility here
+        exit(1);
       }
 
       Next();

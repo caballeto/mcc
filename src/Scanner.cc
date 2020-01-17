@@ -40,8 +40,38 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case ';':
       token->SetType(TokenType::T_SEMICOLON);
       break;
+    case '>':
+      if ((c = Next()) == '=') {
+        token->SetType(TokenType::T_GREATER_EQUAL);
+      } else {
+        token->SetType(TokenType::T_GREATER);
+        Putback(c);
+      }
+      break;
+    case '<':
+      if ((c = Next()) == '=') {
+        token->SetType(TokenType::T_LESS_EQUAL);
+      } else {
+        token->SetType(TokenType::T_LESS);
+        Putback(c);
+      }
+      break;
+    case '!':
+      if ((c = Next()) == '=') {
+        token->SetType(TokenType::T_NOT_EQUALS);
+      } else {
+        Putback(c); // #TODO: Add T_NOT bool operator
+        std::cerr << "Only '!=' operator supported now." << std::endl;
+        exit(1);
+      }
+      break;
     case '=':
-      token->SetType(TokenType::T_EQUAL);
+      if ((c = Next()) == '=') {
+        token->SetType(TokenType::T_EQUALS);
+      } else {
+        token->SetType(TokenType::T_ASSIGN);
+        Putback(c);
+      }
       break;
     case EOF:
       token->SetType(TokenType::T_EOF);
