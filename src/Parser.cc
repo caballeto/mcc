@@ -31,6 +31,21 @@ std::shared_ptr<Stmt> Parser::Statement() {
       Consume(TokenType::T_SEMICOLON, "Expected ';' after 'int' declaration.");
       return std::make_shared<VarDecl>(token->GetStringValue());
     }
+    case TokenType::T_IF: {
+      Match(TokenType::T_IF);
+      Consume(TokenType::T_LPAREN, "Expected '(' after 'if'.");
+      std::shared_ptr<Expr> condition = Expression(0);
+      Consume(TokenType::T_RPAREN, "Expected ')' after if condition.");
+      std::shared_ptr<Block> then_block_ = BlockStatement(), else_block_;
+
+      if (Match(TokenType::T_ELSE))
+        else_block_ = BlockStatement();
+
+      return std::make_shared<Conditional>(condition, then_block_, else_block_);
+    }
+    case TokenType::T_LBRACE: {
+      return BlockStatement();
+    }
     default:
       return ExpressionStatement();
   }
@@ -68,7 +83,7 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
   std::shared_ptr<Expr> left = Primary(), right;
   std::shared_ptr<Token> curr_op = Peek();
 
-  if (curr_op->GetType() == TokenType::T_SEMICOLON)
+  if (curr_op->GetType() == TokenType::T_SEMICOLON || curr_op->GetType() == TokenType::T_RPAREN)
     return left;
 
   while (precedence < GetPrecedence(curr_op->GetType())) {
@@ -92,7 +107,7 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
     }
 
     curr_op = Peek();
-    if (curr_op->GetType() == TokenType::T_SEMICOLON) {
+    if (curr_op->GetType() == TokenType::T_SEMICOLON || curr_op->GetType() == TokenType::T_RPAREN) {
       return left;
     }
   }
@@ -152,6 +167,19 @@ std::shared_ptr<Token> Parser::Consume(TokenType type, const std::string& messag
     std::cerr << message << std::endl;
     exit(1);
   }
+}
+
+std::shared_ptr<Block> Parser::BlockStatement() {
+  Consume(TokenType::T_LBRACE, "Expected '{' at start of block.");
+  std::vector<std::shared_ptr<Stmt>> stmts;
+
+  while (Peek()->GetType() != TokenType::T_RBRACE) {
+    stmts.push_back(Statement());
+  }
+
+  Match(TokenType::T_RBRACE);
+
+  return std::make_shared<Block>(std::move(stmts));
 }
 
 } // namespace mcc

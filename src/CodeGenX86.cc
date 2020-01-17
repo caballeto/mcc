@@ -6,6 +6,28 @@
 
 namespace mcc {
 
+// #TODO: optimize for no 'else' case (don't generate end label)
+int CodeGenX86::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
+  int r = cond_stmt->condition_->Accept(*this);
+  int l_start = GetLabel(), l_end = GetLabel();
+  FreeRegister(r);
+  out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
+  out_ << "\tje\t" << "L" << l_start << "\n";
+  cond_stmt->then_block_->Accept(*this);
+  out_ << "\tjmp\t" << "L" << l_end << "\n";
+  out_ << "L" << l_start << ":\n";
+  cond_stmt->else_block_->Accept(*this);
+  out_ << "L" << l_end << ":\n";
+  return 0;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Block>& block_stmt) {
+  for (const auto& stmt : block_stmt->stmts_) {
+    stmt->Accept(*this);
+  }
+  return NO_RETURN_REGISTER;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   int r1 = binary->left_->Accept(*this);
   int r2 = binary->right_->Accept(*this);
@@ -171,6 +193,10 @@ int CodeGenX86::NewRegister() {
 
 void CodeGenX86::FreeRegister(int reg) {
   regs_status[reg] = true;
+}
+
+int CodeGenX86::GetLabel() {
+  return label_++;
 }
 
 } // namespace mcc

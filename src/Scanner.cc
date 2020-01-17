@@ -14,6 +14,8 @@ Scanner::Scanner(const std::string& input_file) {
 
   keywords_["print"] = TokenType::T_PRINT;
   keywords_["int"] = TokenType::T_INT;
+  keywords_["if"] = TokenType::T_IF;
+  keywords_["else"] = TokenType::T_ELSE;
 }
 
 Scanner::~Scanner() {
@@ -39,6 +41,18 @@ std::shared_ptr<Token> Scanner::GetToken() {
       break;
     case ';':
       token->SetType(TokenType::T_SEMICOLON);
+      break;
+    case '(':
+      token->SetType(TokenType::T_LPAREN);
+      break;
+    case ')':
+      token->SetType(TokenType::T_RPAREN);
+      break;
+    case '{':
+      token->SetType(TokenType::T_LBRACE);
+      break;
+    case '}':
+      token->SetType(TokenType::T_RBRACE);
       break;
     case '>':
       if ((c = Next()) == '=') {

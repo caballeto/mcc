@@ -3,49 +3,34 @@
 <expr-stmt>
   <assign>
     <literal val='x'></literal>
-    <literal val='5'></literal>
+    <literal val='6'></literal>
   </assign>
 </expr-stmt>
 <expr-stmt>
   <assign>
     <literal val='y'></literal>
-    <literal val='6'></literal>
+    <literal val='1000'></literal>
   </assign>
 </expr-stmt>
-<stmt type='print'>
-  <binary op='6'>
-    <literal val='x'></literal>
-    <literal val='y'></literal>
-  </binary>
-</stmt>
-<stmt type='print'>
-  <binary op='7'>
-    <literal val='x'></literal>
-    <literal val='y'></literal>
-  </binary>
-</stmt>
-<stmt type='print'>
-  <binary op='8'>
-    <literal val='x'></literal>
-    <literal val='y'></literal>
-  </binary>
-</stmt>
-<stmt type='print'>
-  <binary op='9'>
-    <literal val='x'></literal>
-    <literal val='y'></literal>
-  </binary>
-</stmt>
-<stmt type='print'>
-  <binary op='10'>
-    <literal val='x'></literal>
-    <literal val='y'></literal>
-  </binary>
-</stmt>
-<stmt type='print'>
-  <binary op='11'>
-    <literal val='x'></literal>
-    <literal val='y'></literal>
-  </binary>
-</stmt>
+<if-stmt>
+  <condition>
+    <binary op='T_EQUALS'>
+      <literal val='x'></literal>
+      <binary op='T_MINUS'>
+        <literal val='y'></literal>
+        <literal val='1'></literal>
+      </binary>
+    </binary>
+  </condition>
+  <if>
+    <stmt type='print'>
+      <literal val='x'></literal>
+    </stmt>
+  </if>
+  <else>
+    <stmt type='print'>
+      <literal val='y'></literal>
+    </stmt>
+  </else>
+</if-stmt>
 

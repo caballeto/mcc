@@ -20,6 +20,7 @@ class CodeGenX86 : public Visitor {
   explicit CodeGenX86(const std::string& output_file, SymbolTable& symbol_table)
     : symbol_table_(symbol_table) {
     out_.open(output_file, std::ios::out);
+    label_ = 0;
   }
 
   void Generate(const std::vector<std::shared_ptr<Stmt>>& stmts);
@@ -30,8 +31,12 @@ class CodeGenX86 : public Visitor {
   int Visit(const std::shared_ptr<VarDecl>& var_decl) override;
   int Visit(const std::shared_ptr<Print>& print) override;
   int Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) override;
+  int Visit(const std::shared_ptr<Conditional> &cond_stmt) override;
+  int Visit(const std::shared_ptr<Block> &block_stmt) override;
 
  private:
+
+  int GetLabel();
 
   void Preamble();
   void Postamble();
@@ -41,6 +46,8 @@ class CodeGenX86 : public Visitor {
   void PrintInt(int reg);
 
   static std::string GetSetInstr(TokenType type);
+
+  int label_;
 
   std::ofstream out_;
 

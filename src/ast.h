@@ -13,6 +13,7 @@
 namespace mcc {
 
 class Visitor;
+class Block;
 class Expr;
 class Literal;
 
@@ -20,6 +21,20 @@ class Stmt : public std::enable_shared_from_this<Stmt> {
  public:
   virtual void Dump(std::ostream& os, int spaces) = 0;
   virtual int Accept(Visitor& visitor) = 0;
+
+  static void Dump(std::ostream& os, int spaces, const std::vector<std::shared_ptr<Stmt>>& stmts);
+};
+
+class Block : public Stmt {
+ public:
+  explicit Block(std::vector<std::shared_ptr<Stmt>> stmts)
+    : stmts_(std::move(stmts))
+  { }
+
+  void Dump(std::ostream& os, int spaces) override;
+  int Accept(Visitor& visitor) override;
+
+  std::vector<std::shared_ptr<Stmt>> stmts_;
 };
 
 class Print : public Stmt {
@@ -48,6 +63,23 @@ class VarDecl : public Stmt {
   std::string name_;
 };
 
+class Conditional : public Stmt {
+ public:
+  Conditional(std::shared_ptr<Expr> condition,
+              std::shared_ptr<Block> then_block,
+              std::shared_ptr<Block> else_block)
+      : condition_(std::move(condition)),
+        then_block_(std::move(then_block)),
+        else_block_(std::move(else_block))
+  { }
+
+  void Dump(std::ostream& os, int spaces) override;
+  int Accept(Visitor& visitor) override;
+
+  std::shared_ptr<Expr> condition_;
+  std::shared_ptr<Block> then_block_;
+  std::shared_ptr<Block> else_block_;
+};
 
 class ExpressionStmt : public Stmt {
  public:
@@ -65,7 +97,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
  public:
   virtual void Dump(std::ostream& os, int spaces) = 0;
   virtual int Accept(Visitor& visitor) = 0;
-  virtual bool IsVariable() = 0;
+  virtual bool IsVariable();
 };
 
 class Assign : public Expr {
@@ -76,7 +108,6 @@ class Assign : public Expr {
 
   int Accept(Visitor& visitor) override;
   void Dump(std::ostream& os, int spaces) override;
-  bool IsVariable() override;
 
   std::shared_ptr<Expr> left_;
   std::shared_ptr<Expr> right_;
@@ -90,7 +121,6 @@ class Binary : public Expr {
 
   void Dump(std::ostream& os, int spaces) override;
   int Accept(Visitor& visitor) override;
-  bool IsVariable() override;
 
   std::shared_ptr<Token> op_;
   std::shared_ptr<Expr> left_;

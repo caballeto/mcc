@@ -19,21 +19,22 @@ class Parser {
 
   std::vector<std::shared_ptr<Stmt>> Parse();
 
+ private:
   std::shared_ptr<Expr> Expression(int precedence);
   std::shared_ptr<Expr> Primary();
 
- private:
+  std::shared_ptr<Stmt> Statement();
+  std::shared_ptr<Stmt> ExpressionStatement();
+  std::shared_ptr<Block> BlockStatement();
+
   std::shared_ptr<Token> Next();
   std::shared_ptr<Token> Peek();
   std::shared_ptr<Token> Consume(TokenType type, const std::string& message);
-  bool Match(TokenType type);
 
+  bool Match(TokenType type);
   std::shared_ptr<Token> token_;
   Scanner& scanner_;
   SymbolTable& symbol_table_;
-  std::shared_ptr<Stmt> Statement();
-  std::shared_ptr<Stmt> ExpressionStatement();
-  std::shared_ptr<Expr> AssignExpression();
 };
 
 } // namespace mcc

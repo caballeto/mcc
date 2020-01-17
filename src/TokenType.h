@@ -10,6 +10,10 @@ namespace mcc {
 enum class TokenType {
   // special
   T_EOF,
+  T_LPAREN,
+  T_RPAREN,
+  T_LBRACE,
+  T_RBRACE,
 
   // operators
   T_PLUS,
@@ -31,7 +35,9 @@ enum class TokenType {
 
   // keywords
   T_PRINT,
-  T_INT
+  T_INT,
+  T_IF,
+  T_ELSE
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType type);

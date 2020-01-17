@@ -53,3 +53,34 @@ for basic C language constructs, namely:
 - loops (for, while, do-while) 
 
 Also, added several todos and things to think about in future.
+
+## Day 3
+
+I implemented three new features today:
+
+- represent `Assign` as an expression, such things as `x = y = 1 + 120 * 4` are
+supported
+- comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`)
+- block statement - starts with '{' then set of statements, then '}'
+- if statement - support for if and else clause
+```c
+if (expr) {
+  stmts
+} else {
+  stmts
+}
+```
+- added evaluation of condition `expr`. If it is zero, then
+jump to false label, else don't jump and execute true branch statements. 
+
+Besides, I have added several support functions dumping AST.
+The compiler at the moment is a bit more looks like real C code,
+as there is support for simple statements and blocks, but still
+a lot more is ahead.
+
+## **Next**
+Further I think I would work on adding loops and types,
+namely I would want to at least provide support for `short`, `int`, `char`
+and `long`. Float and doubles will be left for the future.
+Afterwards, other types like pointers and arrays (global).
+And then, finally functions and function calls.
