@@ -7,7 +7,7 @@
 
 namespace mcc {
 
-std::ostream& operator<<(std::ostream& os, TokenType type) {
+std::ostream& operator<<(std::ostream& os, TokenType& type) {
   switch (type) {
     case TokenType::T_PLUS: return os << "T_PLUS";
     case TokenType::T_MINUS: return os << "T_MINUS";
@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
 
 // #FIXME: the precedence values are relative and will change when new operators added
 // #FIXME: see https://en.cppreference.com/w/c/language/operator_precedence
-int GetPrecedence(TokenType type) {
+int GetPrecedence(TokenType& type) {
   switch (type) {
     case TokenType::T_ASSIGN:
       return 8;

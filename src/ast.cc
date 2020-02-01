@@ -8,11 +8,11 @@
 namespace mcc {
 
 int Binary::Accept(Visitor& visitor) {
-  return visitor.Visit(std::static_pointer_cast<Binary>(shared_from_this()));
+  return visitor.Visit(shared_from_base<Binary>());
 }
 
 int Literal::Accept(Visitor& visitor) {
-  return visitor.Visit(std::static_pointer_cast<Literal>(shared_from_this()));
+  return visitor.Visit(shared_from_base<Literal>());
 }
 
 bool Expr::IsVariable() {
@@ -26,27 +26,27 @@ bool Literal::IsVariable() {
 }
 
 int Print::Accept(Visitor &visitor) {
-  return visitor.Visit(std::static_pointer_cast<Print>(shared_from_this()));
+  return visitor.Visit(shared_from_base<Print>());
 }
 
 int Assign::Accept(Visitor &visitor) {
-  return visitor.Visit(std::static_pointer_cast<Assign>(shared_from_this()));
+  return visitor.Visit(shared_from_base<Assign>());
 }
 
 int VarDecl::Accept(Visitor &visitor) {
-  return visitor.Visit(std::static_pointer_cast<VarDecl>(shared_from_this()));
+  return visitor.Visit(shared_from_base<VarDecl>());
 }
 
 int ExpressionStmt::Accept(Visitor &visitor) {
-  return visitor.Visit(std::static_pointer_cast<ExpressionStmt>(shared_from_this()));
+  return visitor.Visit(shared_from_base<ExpressionStmt>());
 }
 
 int Conditional::Accept(Visitor& visitor) {
-  return visitor.Visit(std::static_pointer_cast<Conditional>(shared_from_this()));
+  return visitor.Visit(shared_from_base<Conditional>());
 }
 
 int Block::Accept(Visitor &visitor) {
-  return visitor.Visit(std::static_pointer_cast<Block>(shared_from_this()));
+  return visitor.Visit(shared_from_base<Block>());
 }
 
 } // namespace mcc

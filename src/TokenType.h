@@ -40,8 +40,8 @@ enum class TokenType {
   T_ELSE
 };
 
-std::ostream& operator<<(std::ostream& os, TokenType type);
-int GetPrecedence(TokenType type);
+std::ostream& operator<<(std::ostream& os, TokenType& type);
+int GetPrecedence(TokenType& type);
 
 } // namespace mcc
 

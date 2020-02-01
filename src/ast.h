@@ -5,8 +5,6 @@
 #ifndef MCC_SRC_AST_H_
 #define MCC_SRC_AST_H_
 
-#include <utility>
-
 #include "common.h"
 #include "Token.h"
 
@@ -20,6 +18,11 @@ class Literal;
 class Stmt : public std::enable_shared_from_this<Stmt> {
  public:
   virtual int Accept(Visitor& visitor) = 0;
+
+  template <typename T>
+  std::shared_ptr<T> shared_from_base() {
+    return std::static_pointer_cast<T>(shared_from_this());
+  }
 };
 
 class Block : public Stmt {
@@ -87,6 +90,11 @@ class Expr : public std::enable_shared_from_this<Expr> {
  public:
   virtual int Accept(Visitor& visitor) = 0;
   virtual bool IsVariable();
+
+  template <typename T>
+  std::shared_ptr<T> shared_from_base() {
+    return std::static_pointer_cast<T>(shared_from_this());
+  }
 };
 
 class Assign : public Expr {

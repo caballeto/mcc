@@ -45,7 +45,7 @@ class CodeGenX86 : public Visitor {
   void FreeRegister(int reg);
   void PrintInt(int reg);
 
-  static std::string GetSetInstr(TokenType type);
+  static std::string GetSetInstr(TokenType& type);
 
   int label_;
 

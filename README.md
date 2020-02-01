@@ -83,4 +83,22 @@ Further I think I would work on adding loops and types,
 namely I would want to at least provide support for `short`, `int`, `char`
 and `long`. Float and doubles will be left for the future.
 Afterwards, other types like pointers and arrays (global).
-And then, finally functions and function calls.
+And then, finally functions, function calls, scopes and local variables.
+
+## Day 4
+
+Today, after a several weeks break, I returned to the project. I did some few
+minor changes, which I have been leaving for the future previously. Small amount
+of code here, as I mainly try to recall the stuff I worked on, that might take some time.
+
+Changes:
+
+- implemented `AstDumper` class, which implements `Visitor` interface and dumps
+    Ast tree into a file (maybe will change to dump into `std::ostream` instead)
+- deleted previous `Dump` methods implementations in `ast.cc`
+- fixed messed code `std::static_pointer_cast<T>(shared_from_this())` by creating
+  template method `std::shared_from_base<T>`, which will create shared pointers of needed type
+- fixed small bugs in ast dump methods
+
+Tomorrow will start where I have previously left, namely loops, types, var inits, 
+var declaration list. It will definitely take some time to get to functions.

@@ -122,7 +122,7 @@ int CodeGenX86::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
   return NO_RETURN_REGISTER;
 }
 
-std::string CodeGenX86::GetSetInstr(TokenType type) {
+std::string CodeGenX86::GetSetInstr(TokenType& type) {
   switch (type) {
     case TokenType::T_EQUALS: return "sete";
     case TokenType::T_NOT_EQUALS: return "setne";
