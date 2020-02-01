@@ -5,8 +5,6 @@
 #ifndef MCC_SRC_TOKEN_H_
 #define MCC_SRC_TOKEN_H_
 
-#include <utility>
-
 #include "common.h"
 #include "TokenType.h"
 
@@ -39,11 +37,11 @@ class Token {
     return int_value_;
   }
 
-  inline void SetType(TokenType token_type) {
+  inline void SetType(const TokenType& token_type) {
     token_type_ = token_type;
   }
 
-  inline TokenType GetType() { // pass by value?
+  inline TokenType& GetType() {
     return token_type_;
   }
 

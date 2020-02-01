@@ -93,7 +93,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
     default:
       if (std::isdigit(c)) {
         int value = ScanInt(c - '0');
-        std::cout << "Parsed Int: " << value << std::endl;
+        //std::cout << "Parsed Int: " << value << std::endl;
         token->SetIntValue(value);
         token->SetType(TokenType::T_INT_LITERAL);
       } else if (std::isalpha(c) || c == '_') {

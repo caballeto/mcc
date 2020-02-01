@@ -9,20 +9,17 @@
 #include "src/CodeGenX86.h"
 #include "src/Visitor.h"
 #include "src/SymbolTable.h"
+#include "src/AstDumper.h"
 
 #define AST_DUMP_FILE "ast_dump.txt"
 #define ASSEMBY_FILE "out.s"
-
-void Dump(std::ostream& os, const std::vector<std::shared_ptr<mcc::Stmt>>& stmts) {
-  for (const auto& stmt : stmts)
-    stmt->Dump(os, 0);
-}
 
 void Usage() {
   std::cout << "Usage: " << std::endl;
   std::cout << "mcc file.c" << std::endl;
 }
 
+//#TODO: add DEBUG macro for debug messages
 int main(int argc, char* argv[]) {
   if (argc != 2) {
     Usage();
@@ -35,20 +32,20 @@ int main(int argc, char* argv[]) {
   mcc::Scanner scanner(input_file);
   mcc::Parser parser(scanner, symbol_table);
   mcc::CodeGenX86 code_gen(ASSEMBY_FILE, symbol_table);
-
-  std::ofstream ast_dump(AST_DUMP_FILE, std::ios::out);
+  mcc::AstDumper dumper(AST_DUMP_FILE);
 
   std::vector<std::shared_ptr<mcc::Stmt>> stmts = parser.Parse();
 
-  std::cout << "Generated tree. " << std::endl;
+  std::cout << "-- generated tree" << std::endl;
 
-  Dump(ast_dump, stmts);
+  dumper.Dump(stmts);
+  dumper.Flush();
 
-  ast_dump << std::endl;
-
-  std::cout << "Dumped tree." << std::endl;
+  std::cout << "-- dumped tree into '" << AST_DUMP_FILE << "'" << std::endl;
 
   code_gen.Generate(stmts);
+
+  std::cout << "-- generated assembly into '" << ASSEMBY_FILE << "'" << std::endl;
 
   return 0;
 }

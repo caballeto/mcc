@@ -19,10 +19,7 @@ class Literal;
 
 class Stmt : public std::enable_shared_from_this<Stmt> {
  public:
-  virtual void Dump(std::ostream& os, int spaces) = 0;
   virtual int Accept(Visitor& visitor) = 0;
-
-  static void Dump(std::ostream& os, int spaces, const std::vector<std::shared_ptr<Stmt>>& stmts);
 };
 
 class Block : public Stmt {
@@ -31,7 +28,6 @@ class Block : public Stmt {
     : stmts_(std::move(stmts))
   { }
 
-  void Dump(std::ostream& os, int spaces) override;
   int Accept(Visitor& visitor) override;
 
   std::vector<std::shared_ptr<Stmt>> stmts_;
@@ -43,8 +39,6 @@ class Print : public Stmt {
     : expr_(std::move(expr))
   { }
 
-  void Dump(std::ostream& os, int spaces) override;
-
   int Accept(Visitor& visitor) override;
 
   std::shared_ptr<Expr> expr_;
@@ -55,8 +49,6 @@ class VarDecl : public Stmt {
   explicit VarDecl(std::string name)
     : name_(std::move(name))
   { }
-
-  void Dump(std::ostream& os, int spaces) override;
 
   int Accept(Visitor& visitor) override;
 
@@ -73,7 +65,6 @@ class Conditional : public Stmt {
         else_block_(std::move(else_block))
   { }
 
-  void Dump(std::ostream& os, int spaces) override;
   int Accept(Visitor& visitor) override;
 
   std::shared_ptr<Expr> condition_;
@@ -87,7 +78,6 @@ class ExpressionStmt : public Stmt {
     : expr_(std::move(expr))
   { }
 
-  void Dump(std::ostream& os, int spaces) override;
   int Accept(Visitor& visitor) override;
 
   std::shared_ptr<Expr> expr_;
@@ -95,7 +85,6 @@ class ExpressionStmt : public Stmt {
 
 class Expr : public std::enable_shared_from_this<Expr> {
  public:
-  virtual void Dump(std::ostream& os, int spaces) = 0;
   virtual int Accept(Visitor& visitor) = 0;
   virtual bool IsVariable();
 };
@@ -107,7 +96,6 @@ class Assign : public Expr {
   { }
 
   int Accept(Visitor& visitor) override;
-  void Dump(std::ostream& os, int spaces) override;
 
   std::shared_ptr<Expr> left_;
   std::shared_ptr<Expr> right_;
@@ -119,7 +107,6 @@ class Binary : public Expr {
     : op_(std::move(op)), left_(std::move(left)), right_(std::move(right))
   { }
 
-  void Dump(std::ostream& os, int spaces) override;
   int Accept(Visitor& visitor) override;
 
   std::shared_ptr<Token> op_;
@@ -133,7 +120,6 @@ class Literal : public Expr {
     : literal_(std::move(literal))
   { }
 
-  void Dump(std::ostream& os, int spaces) override;
   int Accept(Visitor& visitor) override;
   bool IsVariable() override;
 
