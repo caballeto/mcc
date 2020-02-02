@@ -14,13 +14,14 @@ enum class TokenType {
   T_RPAREN,
   T_LBRACE,
   T_RBRACE,
+  T_COMMA,
+  T_SEMICOLON,
 
   // operators
   T_PLUS,
   T_MINUS,
   T_STAR,
   T_SLASH,
-  T_SEMICOLON,
   T_EQUALS,
   T_NOT_EQUALS,
   T_LESS,
@@ -37,7 +38,10 @@ enum class TokenType {
   T_PRINT,
   T_INT,
   T_IF,
-  T_ELSE
+  T_ELSE,
+  T_WHILE,
+  T_DO,
+  T_FOR
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType& type);

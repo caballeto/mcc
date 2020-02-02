@@ -1,35 +1,56 @@
-<var-decl name='x' />
-<var-decl name='y' />
-<expr-stmt>
-  <assign>
-    <literal val='x'></literal>
-    <literal val='6'></literal>
-  </assign>
-</expr-stmt>
-<expr-stmt>
-  <assign>
-    <literal val='y'></literal>
-    <literal val='1000'></literal>
-  </assign>
-</expr-stmt>
-<if-stmt>
+<for-stmt>
+  <init>
+    <decl-list>
+      <var-decl>
+        <name>i</name>
+        <init>
+          <literal val='0'></literal>
+        </init>
+      </var-decl>
+      <var-decl>
+        <name>j</name>
+        <init>
+          <literal val='0'></literal>
+        </init>
+      </var-decl>
+    </decl-list>
+  </init>
   <condition>
-    <binary op='T_EQUALS'>
-      <literal val='x'></literal>
-      <binary op='T_MINUS'>
-        <literal val='y'></literal>
-        <literal val='1'></literal>
-      </binary>
+    <binary op='T_LESS'>
+      <literal val='i'></literal>
+      <literal val='10'></literal>
     </binary>
   </condition>
-  <if>
+  <loop>
     <stmt type='print'>
-      <literal val='x'></literal>
+      <literal val='i'></literal>
     </stmt>
-  </if>
-  <else>
     <stmt type='print'>
-      <literal val='y'></literal>
+      <literal val='j'></literal>
     </stmt>
-  </else>
-</if-stmt>
+    <stmt type='print'>
+      <binary op='T_STAR'>
+        <literal val='i'></literal>
+        <literal val='j'></literal>
+      </binary>
+    </stmt>
+  </loop>
+  <update>
+    <expr-list>
+      <assign>
+        <literal val='i'></literal>
+        <binary op='T_PLUS'>
+          <literal val='i'></literal>
+          <literal val='1'></literal>
+        </binary>
+      </assign>
+      <assign>
+        <literal val='j'></literal>
+        <binary op='T_PLUS'>
+          <literal val='j'></literal>
+          <literal val='1'></literal>
+        </binary>
+      </assign>
+    </expr-list>
+  </update>
+</for-stmt>

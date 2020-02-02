@@ -1,0 +1,43 @@
+int i;
+
+i = 0;
+
+while (i < 10) {
+  print i;
+  i = i + 1;
+}
+
+do {
+  print i;
+  i = i - 1;
+} while (i >= 0);
+
+for (i = 0; i < 25; i = i + 2) {
+  print i;
+}
+
+for (;;) {
+
+}
+
+int x = 5, y = 6, variable = x + y;
+
+while (expr)
+  block
+
+while (expr)
+  stmt
+
+do
+  stmt
+while (expr);
+
+do
+  block
+while (expr);
+
+for (decl-list; opt-expr; opt-expr-list)
+  stmt
+
+for (decl-list; opt-expr; opt-expr-list)
+  block

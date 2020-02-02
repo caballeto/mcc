@@ -19,6 +19,10 @@ class Visitor {
   virtual int Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) = 0;
   virtual int Visit(const std::shared_ptr<Conditional>& cond_stmt) = 0;
   virtual int Visit(const std::shared_ptr<Block>& block_stmt) = 0;
+  virtual int Visit(const std::shared_ptr<While>& while_stmt) = 0;
+  virtual int Visit(const std::shared_ptr<For>& for_stmt) = 0;
+  virtual int Visit(const std::shared_ptr<DeclList>& decl_list) = 0;
+  virtual int Visit(const std::shared_ptr<ExprList>& expr_list) = 0;
 };
 
 } // namespace mcc

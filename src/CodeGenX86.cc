@@ -4,21 +4,63 @@
 
 #include "CodeGenX86.h"
 
+// #TODO: future optimization - don't generate code for sub-trees that have no effects
+
 namespace mcc {
 
 // #TODO: optimize for no 'else' case (don't generate end label)
 int CodeGenX86::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
   int r = cond_stmt->condition_->Accept(*this);
   int l_start = GetLabel(), l_end = GetLabel();
-  FreeRegister(r);
   out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
+  FreeRegister(r);
   out_ << "\tje\t" << "L" << l_start << "\n";
   cond_stmt->then_block_->Accept(*this);
   out_ << "\tjmp\t" << "L" << l_end << "\n";
   out_ << "L" << l_start << ":\n";
   cond_stmt->else_block_->Accept(*this);
   out_ << "L" << l_end << ":\n";
-  return 0;
+  return NO_RETURN_REGISTER;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<While>& while_stmt) {
+  int l_body = GetLabel(), l_condition = GetLabel();
+
+  if (!while_stmt->do_while_)
+    out_ << "\tjmp\t" << "L" << l_condition << "\n";
+
+  out_ << "L" << l_body << ":\n";
+  while_stmt->loop_block_->Accept(*this);
+
+  if (!while_stmt->do_while_)
+    out_ << "L" << l_condition << ":\n";
+
+  int r = while_stmt->condition_->Accept(*this);
+  out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
+  FreeRegister(r);
+  out_ << "\tjne\t" << "L" << l_body << "\n";
+  return NO_RETURN_REGISTER;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<For>& for_stmt) {
+  int r = for_stmt->init_->Accept(*this);
+  FreeRegister(r);
+
+  int l_body = GetLabel(), l_condition = GetLabel();
+  out_ << "\tjmp\t" << "L" << l_condition << "\n";
+  out_ << "L" << l_body << ":\n";
+  for_stmt->loop_block_->Accept(*this);
+
+  r = for_stmt->update_->Accept(*this);
+  FreeRegister(r);
+
+  out_ << "L" << l_condition << ":\n";
+  r = for_stmt->condition_->Accept(*this);
+  out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
+  FreeRegister(r);
+
+  out_ << "\tjne\t" << "L" << l_body << "\n";
+  return NO_RETURN_REGISTER;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Block>& block_stmt) {
@@ -111,8 +153,27 @@ int CodeGenX86::Visit(const std::shared_ptr<Assign>& assign) {
   return r;
 }
 
+int CodeGenX86::Visit(const std::shared_ptr<DeclList>& decl_list) {
+  for (const auto& var_decl : decl_list->var_decl_list_)
+    var_decl->Accept(*this);
+  return NO_RETURN_REGISTER;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<ExprList>& expr_list) {
+  for (const auto& expr : expr_list->expr_list_)
+    expr->Accept(*this);
+  return NO_RETURN_REGISTER;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   out_ << "\t.comm\t" << var_decl->name_ << ",8,8\n";
+
+  if (var_decl->init_ != nullptr) {
+    int r = var_decl->init_->Accept(*this);
+    out_ << "\tmovq\t" << kRegisters[r] << ", " << var_decl->name_ << "(%rip)\n";
+    FreeRegister(r);
+  }
+
   return NO_RETURN_REGISTER;
 }
 
@@ -174,12 +235,10 @@ void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
     stmt->Accept(*this);
   Postamble();
 }
-
 void CodeGenX86::PrintInt(int r) {
   out_ << "\tmovq\t" << kRegisters[r] << ", %rdi\n"
     << "\tcall\tprintint\n";
 }
-
 int CodeGenX86::NewRegister() {
   for (int i = 0; i < REGISTER_NUM; i++) {
     if (regs_status[i]) {
@@ -190,11 +249,9 @@ int CodeGenX86::NewRegister() {
   std::cerr << "Run out of registers." << std::endl; // #TODO: Register spilling
   exit(1);
 }
-
 void CodeGenX86::FreeRegister(int reg) {
   regs_status[reg] = true;
 }
-
 int CodeGenX86::GetLabel() {
   return label_++;
 }

@@ -14,6 +14,7 @@ class Visitor;
 class Block;
 class Expr;
 class Literal;
+class VarDecl;
 
 class Stmt : public std::enable_shared_from_this<Stmt> {
  public:
@@ -47,17 +48,6 @@ class Print : public Stmt {
   std::shared_ptr<Expr> expr_;
 };
 
-class VarDecl : public Stmt {
- public:
-  explicit VarDecl(std::string name)
-    : name_(std::move(name))
-  { }
-
-  int Accept(Visitor& visitor) override;
-
-  std::string name_;
-};
-
 class Conditional : public Stmt {
  public:
   Conditional(std::shared_ptr<Expr> condition,
@@ -73,6 +63,71 @@ class Conditional : public Stmt {
   std::shared_ptr<Expr> condition_;
   std::shared_ptr<Block> then_block_;
   std::shared_ptr<Block> else_block_;
+};
+
+class While : public Stmt {
+ public:
+  While(std::shared_ptr<Expr> condition, std::shared_ptr<Block> loop_block, bool do_while)
+    : condition_(std::move(condition)), loop_block_(std::move(loop_block)), do_while_(do_while)
+  { }
+
+  int Accept(Visitor& visitor) override;
+
+  bool do_while_;
+  std::shared_ptr<Expr> condition_;
+  std::shared_ptr<Block> loop_block_;
+};
+
+class DeclList : public Stmt {
+ public:
+  explicit DeclList(std::vector<std::shared_ptr<VarDecl>> var_decl_list)
+    : var_decl_list_(std::move(var_decl_list))
+  { }
+
+  int Accept(Visitor& visitor) override;
+
+  std::vector<std::shared_ptr<VarDecl>> var_decl_list_;
+};
+
+// #FIXME: expr-list is Stmt?
+class ExprList : public Stmt {
+ public:
+  explicit ExprList(std::vector<std::shared_ptr<Expr>> expr_list)
+    : expr_list_(std::move(expr_list))
+  { }
+
+  int Accept(Visitor& visitor) override;
+
+  std::vector<std::shared_ptr<Expr>> expr_list_;
+};
+
+// #TODO: add type in future
+class VarDecl : public Stmt {
+ public:
+  explicit VarDecl(std::string name, std::shared_ptr<Expr> init)
+      : name_(std::move(name)), init_(std::move(init))
+  { }
+
+  int Accept(Visitor& visitor) override;
+
+  std::string name_;
+  std::shared_ptr<Expr> init_;
+};
+
+class For : public Stmt {
+ public:
+  For(std::shared_ptr<Stmt> init, std::shared_ptr<Expr> condition,
+      std::shared_ptr<Stmt> update, std::shared_ptr<Block> loop_block)
+    : init_(std::move(init)), condition_(std::move(condition)),
+      update_(std::move(update)), loop_block_(std::move(loop_block))
+  { }
+
+  int Accept(Visitor& visitor) override;
+
+  std::shared_ptr<Stmt> init_;
+  std::shared_ptr<Expr> condition_;
+  std::shared_ptr<Stmt> update_;
+  std::shared_ptr<Block> loop_block_;
 };
 
 class ExpressionStmt : public Stmt {

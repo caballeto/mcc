@@ -20,6 +20,10 @@ class Parser {
   std::vector<std::shared_ptr<Stmt>> Parse();
 
  private:
+  std::shared_ptr<DeclList> DeclarationList();
+  std::shared_ptr<ExprList> ExpressionList();
+
+  std::shared_ptr<Expr> OptionalExpression(int precedence);
   std::shared_ptr<Expr> Expression(int precedence);
   std::shared_ptr<Expr> Primary();
 
@@ -31,7 +35,9 @@ class Parser {
   std::shared_ptr<Token> Peek();
   std::shared_ptr<Token> Consume(TokenType type, const std::string& message);
 
+  bool Check(TokenType type);
   bool Match(TokenType type);
+
   std::shared_ptr<Token> token_;
   Scanner& scanner_;
   SymbolTable& symbol_table_;

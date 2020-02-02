@@ -26,6 +26,10 @@ class AstDumper : public Visitor {
   int Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) override;
   int Visit(const std::shared_ptr<Conditional>& cond_stmt) override;
   int Visit(const std::shared_ptr<Block>& block_stmt) override;
+  int Visit(const std::shared_ptr<While>& while_stmt) override;
+  int Visit(const std::shared_ptr<For>& for_stmt) override;
+  int Visit(const std::shared_ptr<DeclList>& decl_list) override;
+  int Visit(const std::shared_ptr<ExprList>& expr_list) override;
 
   void Flush();
 

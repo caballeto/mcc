@@ -6,6 +6,8 @@
 
 namespace mcc {
 
+// #TODO: rewrite 'spaces += TAB_SIZE' thing
+
 int AstDumper::Visit(const std::shared_ptr<Binary>& binary) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<binary op='" << binary->op_->GetType() << "'>" << "\n";
@@ -50,7 +52,18 @@ int AstDumper::Visit(const std::shared_ptr<Assign>& assign) {
 
 int AstDumper::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<var-decl name='" << var_decl->name_ << "' />\n";
+  out_ << std::string(spaces_, ' ') << "<var-decl>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl->name_ << "</name>\n";
+
+  if (var_decl->init_ != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<init>\n";
+    spaces_ += TAB_SIZE;
+    var_decl->init_->Accept(*this);
+    spaces_ -= TAB_SIZE;
+    out_ << std::string(spaces_ + 2, ' ') << "</init>\n";
+  }
+
+  out_ << std::string(spaces_, ' ') << "</var-decl>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
@@ -110,6 +123,87 @@ void AstDumper::Dump(const std::vector<std::shared_ptr<Stmt>>& stmts) {
 
 void AstDumper::Flush() {
   out_ << std::flush;
+}
+
+int AstDumper::Visit(const std::shared_ptr<While>& while_stmt) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<while-stmt type='";
+  out_ << (while_stmt->do_while_ ? "do-while" : "while") << "'>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
+  spaces_ += TAB_SIZE;
+  while_stmt->condition_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<loop>\n";
+  spaces_ += TAB_SIZE;
+  Dump(while_stmt->loop_block_->stmts_);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</loop>\n";
+
+  out_ << std::string(spaces_, ' ') << "</while-stmt>" << std::endl;
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<For>& for_stmt) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<for-stmt>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<init>\n";
+  spaces_ += TAB_SIZE;
+  for_stmt->init_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</init>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
+  spaces_ += TAB_SIZE;
+  for_stmt->condition_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<loop>\n";
+  spaces_ += TAB_SIZE;
+  Dump(for_stmt->loop_block_->stmts_);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</loop>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<update>\n";
+  spaces_ += TAB_SIZE;
+  for_stmt->update_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</update>\n";
+
+  out_ << std::string(spaces_, ' ') << "</for-stmt>" << std::endl;
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<DeclList>& decl_list) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<decl-list>\n";
+
+  for (const auto& decl : decl_list->var_decl_list_) {
+    decl->Accept(*this);
+  }
+
+  out_ << std::string(spaces_, ' ') << "</decl-list>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<ExprList>& expr_list) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<expr-list>\n";
+
+  for (const auto& expr : expr_list->expr_list_) {
+    expr->Accept(*this);
+  }
+
+  out_ << std::string(spaces_, ' ') << "</expr-list>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
 }
 
 } // namespace mcc

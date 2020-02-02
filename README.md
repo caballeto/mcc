@@ -102,3 +102,33 @@ Changes:
 
 Tomorrow will start where I have previously left, namely loops, types, var inits, 
 var declaration list. It will definitely take some time to get to functions.
+
+## Day 5
+
+I have implemented following features today:
+
+- `while (...) { ... }`, `do { ... } while (...);` loops
+- variable declaration list with optional initializers (non-constant)
+  `int x = 1 + 2, y = 25, d = x - y;`
+- `for` loops, with support for init lists
+
+```
+for (int i = 0, j = 0; i < 10; i = i + 1, j = j + 1) {
+  print i;
+  print k;
+  print i + j;
+}
+```
+
+All variables are global for now, that will be changed once functions will
+be implemented.
+- expression lists, will be useful for parsing argument lists
+  `expr1, expr2, expr3, ..., exprn`
+  
+I think I will also add today support for loops with one statements without
+brackets `while (expr) stmt;`, `do stmt while (expr);`, `for (;;) stmt`. Also,
+I will make expressions in for loops optional, so things like `for (;;)` will be 
+valid.
+
+## **Next**
+Same as previous.
