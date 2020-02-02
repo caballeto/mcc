@@ -38,9 +38,19 @@ class Parser {
   bool Check(TokenType type);
   bool Match(TokenType type);
 
+  std::shared_ptr<While> WhileStatement();
+  std::shared_ptr<For> ForStatement();
+  std::shared_ptr<While> DoWhileStatement();
+  std::shared_ptr<Conditional> IfStatement();
+  std::shared_ptr<Print> PrintStatement();
+
+  static void DisallowDecl(const std::shared_ptr<Stmt> &stmt);
+
+
   std::shared_ptr<Token> token_;
   Scanner& scanner_;
   SymbolTable& symbol_table_;
+  std::shared_ptr<ExprList> OptionalExpressionList();
 };
 
 } // namespace mcc

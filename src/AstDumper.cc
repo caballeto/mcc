@@ -138,7 +138,7 @@ int AstDumper::Visit(const std::shared_ptr<While>& while_stmt) {
 
   out_ << std::string(spaces_ + 2, ' ') << "<loop>\n";
   spaces_ += TAB_SIZE;
-  Dump(while_stmt->loop_block_->stmts_);
+  while_stmt->loop_block_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</loop>\n";
 
@@ -165,7 +165,7 @@ int AstDumper::Visit(const std::shared_ptr<For>& for_stmt) {
 
   out_ << std::string(spaces_ + 2, ' ') << "<loop>\n";
   spaces_ += TAB_SIZE;
-  Dump(for_stmt->loop_block_->stmts_);
+  for_stmt->loop_block_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</loop>\n";
 

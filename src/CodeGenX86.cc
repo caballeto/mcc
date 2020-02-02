@@ -43,19 +43,16 @@ int CodeGenX86::Visit(const std::shared_ptr<While>& while_stmt) {
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<For>& for_stmt) {
-  int r = for_stmt->init_->Accept(*this);
-  FreeRegister(r);
-
+  for_stmt->init_->Accept(*this);
   int l_body = GetLabel(), l_condition = GetLabel();
+
   out_ << "\tjmp\t" << "L" << l_condition << "\n";
   out_ << "L" << l_body << ":\n";
   for_stmt->loop_block_->Accept(*this);
-
-  r = for_stmt->update_->Accept(*this);
-  FreeRegister(r);
-
+  for_stmt->update_->Accept(*this);
   out_ << "L" << l_condition << ":\n";
-  r = for_stmt->condition_->Accept(*this);
+
+  int r = for_stmt->condition_->Accept(*this);
   out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
   FreeRegister(r);
 
@@ -161,7 +158,7 @@ int CodeGenX86::Visit(const std::shared_ptr<DeclList>& decl_list) {
 
 int CodeGenX86::Visit(const std::shared_ptr<ExprList>& expr_list) {
   for (const auto& expr : expr_list->expr_list_)
-    expr->Accept(*this);
+    FreeRegister(expr->Accept(*this));
   return NO_RETURN_REGISTER;
 }
 
@@ -249,9 +246,13 @@ int CodeGenX86::NewRegister() {
   std::cerr << "Run out of registers." << std::endl; // #TODO: Register spilling
   exit(1);
 }
+
 void CodeGenX86::FreeRegister(int reg) {
+  if (reg == NO_RETURN_REGISTER)
+    return;
   regs_status[reg] = true;
 }
+
 int CodeGenX86::GetLabel() {
   return label_++;
 }

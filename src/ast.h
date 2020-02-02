@@ -19,6 +19,7 @@ class VarDecl;
 class Stmt : public std::enable_shared_from_this<Stmt> {
  public:
   virtual int Accept(Visitor& visitor) = 0;
+  virtual bool IsDeclaration() const { return false; }
 
   template <typename T>
   std::shared_ptr<T> shared_from_base() {
@@ -67,7 +68,7 @@ class Conditional : public Stmt {
 
 class While : public Stmt {
  public:
-  While(std::shared_ptr<Expr> condition, std::shared_ptr<Block> loop_block, bool do_while)
+  While(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> loop_block, bool do_while)
     : condition_(std::move(condition)), loop_block_(std::move(loop_block)), do_while_(do_while)
   { }
 
@@ -75,7 +76,7 @@ class While : public Stmt {
 
   bool do_while_;
   std::shared_ptr<Expr> condition_;
-  std::shared_ptr<Block> loop_block_;
+  std::shared_ptr<Stmt> loop_block_;
 };
 
 class DeclList : public Stmt {
@@ -84,6 +85,7 @@ class DeclList : public Stmt {
     : var_decl_list_(std::move(var_decl_list))
   { }
 
+  bool IsDeclaration() const override;
   int Accept(Visitor& visitor) override;
 
   std::vector<std::shared_ptr<VarDecl>> var_decl_list_;
@@ -109,6 +111,7 @@ class VarDecl : public Stmt {
   { }
 
   int Accept(Visitor& visitor) override;
+  bool IsDeclaration() const override;
 
   std::string name_;
   std::shared_ptr<Expr> init_;
@@ -117,7 +120,7 @@ class VarDecl : public Stmt {
 class For : public Stmt {
  public:
   For(std::shared_ptr<Stmt> init, std::shared_ptr<Expr> condition,
-      std::shared_ptr<Stmt> update, std::shared_ptr<Block> loop_block)
+      std::shared_ptr<Stmt> update, std::shared_ptr<Stmt> loop_block)
     : init_(std::move(init)), condition_(std::move(condition)),
       update_(std::move(update)), loop_block_(std::move(loop_block))
   { }
@@ -127,7 +130,7 @@ class For : public Stmt {
   std::shared_ptr<Stmt> init_;
   std::shared_ptr<Expr> condition_;
   std::shared_ptr<Stmt> update_;
-  std::shared_ptr<Block> loop_block_;
+  std::shared_ptr<Stmt> loop_block_;
 };
 
 class ExpressionStmt : public Stmt {

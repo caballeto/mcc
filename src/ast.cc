@@ -37,6 +37,10 @@ int VarDecl::Accept(Visitor& visitor) {
   return visitor.Visit(shared_from_base<VarDecl>());
 }
 
+bool VarDecl::IsDeclaration() const {
+  return true;
+}
+
 int ExpressionStmt::Accept(Visitor& visitor) {
   return visitor.Visit(shared_from_base<ExpressionStmt>());
 }
@@ -59,6 +63,10 @@ int For::Accept(Visitor& visitor) {
 
 int DeclList::Accept(Visitor& visitor) {
   return visitor.Visit(shared_from_base<DeclList>());
+}
+
+bool DeclList::IsDeclaration() const {
+  return true;
 }
 
 int ExprList::Accept(Visitor& visitor) {

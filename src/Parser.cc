@@ -21,71 +21,96 @@ std::vector<std::shared_ptr<Stmt>> Parser::Parse() {
 // #TODO: decompose into separate functions for readability
 std::shared_ptr<Stmt> Parser::Statement() {
   switch (Peek()->GetType()) {
-    case TokenType::T_PRINT: {
-      Match(TokenType::T_PRINT);
-      std::shared_ptr<Expr> expr = Expression(0);
-      Consume(TokenType::T_SEMICOLON, "Expected ';' after 'print' Statement.");
-      return std::make_shared<Print>(expr);
-    }
-    case TokenType::T_INT: {
+    case TokenType::T_PRINT:
+      return PrintStatement();
+    case TokenType::T_INT:
       return DeclarationList();
-    }
-    case TokenType::T_IF: {
-      Match(TokenType::T_IF);
-      Consume(TokenType::T_LPAREN, "Expected '(' after 'if'.");
-      std::shared_ptr<Expr> condition = Expression(0);
-      Consume(TokenType::T_RPAREN, "Expected ')' after 'if' condition.");
-      std::shared_ptr<Block> then_block_ = BlockStatement(), else_block_;
-
-      if (Match(TokenType::T_ELSE))
-        else_block_ = BlockStatement();
-
-      return std::make_shared<Conditional>(condition, then_block_, else_block_);
-    }
-    case TokenType::T_WHILE: {
-      Match(TokenType::T_WHILE);
-      Consume(TokenType::T_LPAREN, "Expected '(' after 'while'.");
-      std::shared_ptr<Expr> condition = Expression(0);
-      Consume(TokenType::T_RPAREN, "Expected ')' after 'while' condition.");
-      std::shared_ptr<Block> loop_block = BlockStatement();
-      return std::make_shared<While>(condition, loop_block, false);
-    }
-    case TokenType::T_DO: {
-      Match(TokenType::T_DO);
-      std::shared_ptr<Block> loop_block = BlockStatement();
-      Consume(TokenType::T_WHILE, "Expected 'while' after 'do'.");
-      Consume(TokenType::T_LPAREN, "Expected '(' after 'while'.");
-      std::shared_ptr<Expr> condition = Expression(0);
-      Consume(TokenType::T_RPAREN, "Expected ')' after 'while' condition.");
-      Consume(TokenType::T_SEMICOLON, "Expected closing ';' after do-while statement.");
-      return std::make_shared<While>(condition, loop_block, true);
-    }
-    case TokenType::T_FOR: {
-      Match(TokenType::T_FOR);
-      Consume(TokenType::T_LPAREN, "Expected '(' after 'for'.");
-
-      std::shared_ptr<Stmt> init_list;
-      if (Check(TokenType::T_INT)) {
-        init_list = DeclarationList();
-      } else {
-        init_list = ExpressionList();
-      }
-
-      std::shared_ptr<Expr> condition = Expression(0);
-      Consume(TokenType::T_SEMICOLON, "Expected ';' after condition in for statement.");
-
-      std::shared_ptr<Stmt> update_list = ExpressionList();
-      Consume(TokenType::T_RPAREN, "Expected closing ')' after 'for' statement.");
-
-      std::shared_ptr<Block> loop_block = BlockStatement();
-      return std::make_shared<For>(init_list, condition, update_list, loop_block);
-    }
-    case TokenType::T_LBRACE: {
+    case TokenType::T_IF:
+      return IfStatement();
+    case TokenType::T_WHILE:
+      return WhileStatement();
+    case TokenType::T_DO:
+      return DoWhileStatement();
+    case TokenType::T_FOR:
+      return ForStatement();
+    case TokenType::T_LBRACE:
       return BlockStatement();
-    }
     default:
       return ExpressionStatement();
   }
+}
+
+std::shared_ptr<Print> Parser::PrintStatement() {
+  Match(TokenType::T_PRINT);
+  std::shared_ptr<Expr> expr = Expression(0);
+  Consume(TokenType::T_SEMICOLON, "Expected ';' after 'print' Statement.");
+  return std::make_shared<Print>(expr);
+}
+
+std::shared_ptr<Conditional> Parser::IfStatement() {
+  Match(TokenType::T_IF);
+  Consume(TokenType::T_LPAREN, "Expected '(' after 'if'.");
+  std::shared_ptr<Expr> condition = Expression(0);
+  Consume(TokenType::T_RPAREN, "Expected ')' after 'if' condition.");
+  std::shared_ptr<Block> then_block_ = BlockStatement(), else_block_;
+
+  if (Match(TokenType::T_ELSE))
+    else_block_ = BlockStatement();
+
+  return std::make_shared<Conditional>(condition, then_block_, else_block_);
+}
+
+std::shared_ptr<While> Parser::DoWhileStatement() {
+  Match(TokenType::T_DO);
+  std::shared_ptr<Stmt> loop_block = Statement();
+  DisallowDecl(loop_block);
+  Consume(TokenType::T_WHILE, "Expected 'while' after 'do'.");
+  Consume(TokenType::T_LPAREN, "Expected '(' after 'while'.");
+  std::shared_ptr<Expr> condition = Expression(0);
+  Consume(TokenType::T_RPAREN, "Expected ')' after 'while' condition.");
+  Consume(TokenType::T_SEMICOLON, "Expected closing ';' after do-while statement.");
+  return std::make_shared<While>(condition, loop_block, true);
+}
+
+// #FIXME: make condition expression optional by adding break/continue
+std::shared_ptr<For> Parser::ForStatement() {
+  Match(TokenType::T_FOR);
+  Consume(TokenType::T_LPAREN, "Expected '(' after 'for'.");
+
+  std::shared_ptr<Stmt> init_list;
+  if (Check(TokenType::T_INT)) {
+    init_list = DeclarationList();
+  } else {
+    init_list = ExpressionList();
+    Consume(TokenType::T_SEMICOLON, "Expected ';' after init in for statement.");
+  }
+
+  std::shared_ptr<Expr> condition = Expression(0);
+  Consume(TokenType::T_SEMICOLON, "Expected ';' after condition in for statement.");
+
+  std::shared_ptr<Stmt> update_list = ExpressionList();
+  Consume(TokenType::T_RPAREN, "Expected closing ')' after 'for' statement.");
+
+  std::shared_ptr<Stmt> loop_block = Statement();
+  DisallowDecl(loop_block);
+  return std::make_shared<For>(init_list, condition, update_list, loop_block);
+}
+
+void Parser::DisallowDecl(const std::shared_ptr<Stmt>& stmt) {
+  if (stmt->IsDeclaration()) {
+    std::cerr << "Declaration are not allowed in single-statement loops." << std::endl;
+    exit(1);
+  }
+}
+
+std::shared_ptr<While> Parser::WhileStatement() {
+  Match(TokenType::T_WHILE);
+  Consume(TokenType::T_LPAREN, "Expected '(' after 'while'.");
+  std::shared_ptr<Expr> condition = Expression(0);
+  Consume(TokenType::T_RPAREN, "Expected ')' after 'while' condition.");
+  std::shared_ptr<Stmt> loop_block = Statement();
+  DisallowDecl(loop_block);
+  return std::make_shared<While>(condition, loop_block, false);
 }
 
 std::shared_ptr<DeclList> Parser::DeclarationList() {
@@ -106,9 +131,11 @@ std::shared_ptr<DeclList> Parser::DeclarationList() {
 std::shared_ptr<ExprList> Parser::ExpressionList() {
   std::vector<std::shared_ptr<Expr>> expr_list;
 
-  do {
-    expr_list.push_back(Expression(0));
-  } while (Match(TokenType::T_COMMA));
+  if (!Check(TokenType::T_SEMICOLON) && !Check(TokenType::T_RPAREN)) {
+    do {
+      expr_list.push_back(Expression(0));
+    } while (Match(TokenType::T_COMMA));
+  }
 
   return std::make_shared<ExprList>(expr_list);
 }

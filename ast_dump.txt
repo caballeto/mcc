@@ -1,56 +1,82 @@
-<for-stmt>
-  <init>
-    <decl-list>
-      <var-decl>
-        <name>i</name>
-        <init>
-          <literal val='0'></literal>
-        </init>
-      </var-decl>
-      <var-decl>
-        <name>j</name>
-        <init>
-          <literal val='0'></literal>
-        </init>
-      </var-decl>
-    </decl-list>
-  </init>
+<decl-list>
+  <var-decl>
+    <name>x</name>
+    <init>
+      <literal val='0'></literal>
+    </init>
+  </var-decl>
+</decl-list>
+<while-stmt type='while'>
   <condition>
     <binary op='T_LESS'>
-      <literal val='i'></literal>
+      <literal val='x'></literal>
       <literal val='10'></literal>
     </binary>
   </condition>
   <loop>
-    <stmt type='print'>
-      <literal val='i'></literal>
-    </stmt>
-    <stmt type='print'>
-      <literal val='j'></literal>
-    </stmt>
-    <stmt type='print'>
-      <binary op='T_STAR'>
-        <literal val='i'></literal>
-        <literal val='j'></literal>
-      </binary>
-    </stmt>
+    <expr-stmt>
+      <assign>
+        <literal val='x'></literal>
+        <binary op='T_PLUS'>
+          <literal val='x'></literal>
+          <literal val='1'></literal>
+        </binary>
+      </assign>
+    </expr-stmt>
+  </loop>
+</while-stmt>
+<stmt type='print'>
+  <literal val='x'></literal>
+</stmt>
+<while-stmt type='do-while'>
+  <condition>
+    <binary op='T_LESS'>
+      <literal val='x'></literal>
+      <literal val='25'></literal>
+    </binary>
+  </condition>
+  <loop>
+    <expr-stmt>
+      <assign>
+        <literal val='x'></literal>
+        <binary op='T_PLUS'>
+          <literal val='x'></literal>
+          <literal val='1'></literal>
+        </binary>
+      </assign>
+    </expr-stmt>
+  </loop>
+</while-stmt>
+<stmt type='print'>
+  <literal val='x'></literal>
+</stmt>
+<for-stmt>
+  <init>
+    <expr-list>
+    </expr-list>
+  </init>
+  <condition>
+    <binary op='T_LESS'>
+      <literal val='x'></literal>
+      <literal val='40'></literal>
+    </binary>
+  </condition>
+  <loop>
+    <expr-stmt>
+      <assign>
+        <literal val='x'></literal>
+        <binary op='T_PLUS'>
+          <literal val='x'></literal>
+          <literal val='1'></literal>
+        </binary>
+      </assign>
+    </expr-stmt>
   </loop>
   <update>
     <expr-list>
-      <assign>
-        <literal val='i'></literal>
-        <binary op='T_PLUS'>
-          <literal val='i'></literal>
-          <literal val='1'></literal>
-        </binary>
-      </assign>
-      <assign>
-        <literal val='j'></literal>
-        <binary op='T_PLUS'>
-          <literal val='j'></literal>
-          <literal val='1'></literal>
-        </binary>
-      </assign>
     </expr-list>
   </update>
 </for-stmt>
+<stmt type='print'>
+  <literal val='x'></literal>
+</stmt>
