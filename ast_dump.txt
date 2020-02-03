@@ -2,81 +2,31 @@
   <var-decl>
     <name>x</name>
     <init>
-      <literal val='0'></literal>
+      <literal val='10'></literal>
+    </init>
+  </var-decl>
+  <var-decl>
+    <name>y</name>
+    <init>
+      <literal val='20'></literal>
     </init>
   </var-decl>
 </decl-list>
-<while-stmt type='while'>
+<if-stmt>
   <condition>
-    <binary op='T_LESS'>
+    <binary op='T_EQUALS'>
       <literal val='x'></literal>
       <literal val='10'></literal>
     </binary>
   </condition>
-  <loop>
-    <expr-stmt>
-      <assign>
-        <literal val='x'></literal>
-        <binary op='T_PLUS'>
-          <literal val='x'></literal>
-          <literal val='1'></literal>
-        </binary>
-      </assign>
-    </expr-stmt>
-  </loop>
-</while-stmt>
-<stmt type='print'>
-  <literal val='x'></literal>
-</stmt>
-<while-stmt type='do-while'>
-  <condition>
-    <binary op='T_LESS'>
+  <if>
+    <stmt type='print'>
       <literal val='x'></literal>
-      <literal val='25'></literal>
-    </binary>
-  </condition>
-  <loop>
-    <expr-stmt>
-      <assign>
-        <literal val='x'></literal>
-        <binary op='T_PLUS'>
-          <literal val='x'></literal>
-          <literal val='1'></literal>
-        </binary>
-      </assign>
-    </expr-stmt>
-  </loop>
-</while-stmt>
-<stmt type='print'>
-  <literal val='x'></literal>
-</stmt>
-<for-stmt>
-  <init>
-    <expr-list>
-    </expr-list>
-  </init>
-  <condition>
-    <binary op='T_LESS'>
-      <literal val='x'></literal>
-      <literal val='40'></literal>
-    </binary>
-  </condition>
-  <loop>
-    <expr-stmt>
-      <assign>
-        <literal val='x'></literal>
-        <binary op='T_PLUS'>
-          <literal val='x'></literal>
-          <literal val='1'></literal>
-        </binary>
-      </assign>
-    </expr-stmt>
-  </loop>
-  <update>
-    <expr-list>
-    </expr-list>
-  </update>
-</for-stmt>
-<stmt type='print'>
-  <literal val='x'></literal>
-</stmt>
+    </stmt>
+  </if>
+  <else>
+    <stmt type='print'>
+      <literal val='y'></literal>
+    </stmt>
+  </else>
+</if-stmt>

@@ -144,13 +144,26 @@ Implemented:
 
 Next tasks for today: 
 
-- add `TypeChecker` visitor to make type checks.
+- [X] add `TypeChecker` visitor to make type checks. [no checks]
 - [X] add `ErrorReporter` to report errors correctly
 - add `int`, `short`, `long`, `char` types and add cg for them
 - (?) add `Compiler` class for export into `main.cc`
 
+Example:
 
-class Type -> {
- type as token
- indirection level (> 0 for pointers)
+```c
+for (int i = 0, j = 0; i < 10; i = i + 1, j = j + 1) {
+  if (i == 2) {
+    continue;
+  } else {
+    print i * j;
+  }
 }
+
+int x = 0;
+while (x < 10) {
+  if (x == 6) break;
+  x = x + 1;
+  print x;
+}
+```
