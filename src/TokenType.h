@@ -41,7 +41,9 @@ enum class TokenType {
   T_ELSE,
   T_WHILE,
   T_DO,
-  T_FOR
+  T_FOR,
+  T_BREAK,
+  T_CONTINUE
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType& type);

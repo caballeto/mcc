@@ -89,14 +89,14 @@ int AstDumper::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
 
   out_ << std::string(spaces_ + 2, ' ') << "<if>\n";
   spaces_ += TAB_SIZE;
-  Dump(cond_stmt->then_block_->stmts_);
+  cond_stmt->then_block_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</if>\n";
 
-  if (!cond_stmt->then_block_->stmts_.empty()) {
+  if (cond_stmt->else_block_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<else>\n";
     spaces_ += TAB_SIZE;
-    Dump(cond_stmt->else_block_->stmts_);
+    cond_stmt->else_block_->Accept(*this);
     spaces_ -= TAB_SIZE;
     out_ << std::string(spaces_ + 2, ' ') << "</else>\n";
   }
@@ -157,11 +157,13 @@ int AstDumper::Visit(const std::shared_ptr<For>& for_stmt) {
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</init>\n";
 
-  out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
-  spaces_ += TAB_SIZE;
-  for_stmt->condition_->Accept(*this);
-  spaces_ -= TAB_SIZE;
-  out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
+  if (for_stmt->condition_ != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
+    spaces_ += TAB_SIZE;
+    for_stmt->condition_->Accept(*this);
+    spaces_ -= TAB_SIZE;
+    out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
+  }
 
   out_ << std::string(spaces_ + 2, ' ') << "<loop>\n";
   spaces_ += TAB_SIZE;
@@ -202,6 +204,17 @@ int AstDumper::Visit(const std::shared_ptr<ExprList>& expr_list) {
   }
 
   out_ << std::string(spaces_, ' ') << "</expr-list>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
+  spaces_ += TAB_SIZE;
+  if (flow_stmt->is_break_) {
+    out_ << std::string(spaces_, ' ') << "<break/>\n";
+  } else {
+    out_ << std::string(spaces_, ' ') << "<continue/>\n";
+  }
   spaces_ -= TAB_SIZE;
   return 0;
 }

@@ -52,8 +52,8 @@ class Print : public Stmt {
 class Conditional : public Stmt {
  public:
   Conditional(std::shared_ptr<Expr> condition,
-              std::shared_ptr<Block> then_block,
-              std::shared_ptr<Block> else_block)
+              std::shared_ptr<Stmt> then_block,
+              std::shared_ptr<Stmt> else_block)
       : condition_(std::move(condition)),
         then_block_(std::move(then_block)),
         else_block_(std::move(else_block))
@@ -62,8 +62,8 @@ class Conditional : public Stmt {
   int Accept(Visitor& visitor) override;
 
   std::shared_ptr<Expr> condition_;
-  std::shared_ptr<Block> then_block_;
-  std::shared_ptr<Block> else_block_;
+  std::shared_ptr<Stmt> then_block_;
+  std::shared_ptr<Stmt> else_block_;
 };
 
 class While : public Stmt {
@@ -101,6 +101,18 @@ class ExprList : public Stmt {
   int Accept(Visitor& visitor) override;
 
   std::vector<std::shared_ptr<Expr>> expr_list_;
+};
+
+// break/continue
+class ControlFlow : public Stmt {
+ public:
+  explicit ControlFlow(bool is_break)
+    : is_break_(is_break)
+  { }
+
+  int Accept(Visitor& visitor) override;
+
+  bool is_break_;
 };
 
 // #TODO: add type in future

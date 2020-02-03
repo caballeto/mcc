@@ -35,9 +35,25 @@ std::shared_ptr<Stmt> Parser::Statement() {
       return ForStatement();
     case TokenType::T_LBRACE:
       return BlockStatement();
+    case TokenType::T_BREAK:
+      return BreakStatement();
+    case TokenType::T_CONTINUE:
+      return ContinueStatement();
     default:
       return ExpressionStatement();
   }
+}
+
+std::shared_ptr<ControlFlow> Parser::BreakStatement() {
+  Match(TokenType::T_BREAK);
+  Consume(TokenType::T_SEMICOLON, "Expected ';' after 'break' Statement.");
+  return std::make_shared<ControlFlow>(true);
+}
+
+std::shared_ptr<ControlFlow> Parser::ContinueStatement() {
+  Match(TokenType::T_CONTINUE);
+  Consume(TokenType::T_SEMICOLON, "Expected ';' after 'continue' Statement.");
+  return std::make_shared<ControlFlow>(false);
 }
 
 std::shared_ptr<Print> Parser::PrintStatement() {
@@ -47,15 +63,19 @@ std::shared_ptr<Print> Parser::PrintStatement() {
   return std::make_shared<Print>(expr);
 }
 
+// #FIXME: move semantic cheks to semantic analyzer
 std::shared_ptr<Conditional> Parser::IfStatement() {
   Match(TokenType::T_IF);
   Consume(TokenType::T_LPAREN, "Expected '(' after 'if'.");
   std::shared_ptr<Expr> condition = Expression(0);
   Consume(TokenType::T_RPAREN, "Expected ')' after 'if' condition.");
-  std::shared_ptr<Block> then_block_ = BlockStatement(), else_block_;
+  std::shared_ptr<Stmt> then_block_ = Statement(), else_block_;
+  DisallowDecl(then_block_);
 
-  if (Match(TokenType::T_ELSE))
-    else_block_ = BlockStatement();
+  if (Match(TokenType::T_ELSE)) {
+    else_block_ = Statement();
+    DisallowDecl(else_block_);
+  }
 
   return std::make_shared<Conditional>(condition, then_block_, else_block_);
 }
@@ -85,7 +105,7 @@ std::shared_ptr<For> Parser::ForStatement() {
     Consume(TokenType::T_SEMICOLON, "Expected ';' after init in for statement.");
   }
 
-  std::shared_ptr<Expr> condition = Expression(0);
+  std::shared_ptr<Expr> condition = OptionalExpression(0);
   Consume(TokenType::T_SEMICOLON, "Expected ';' after condition in for statement.");
 
   std::shared_ptr<Stmt> update_list = ExpressionList();

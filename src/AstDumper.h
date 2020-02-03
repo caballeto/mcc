@@ -30,6 +30,7 @@ class AstDumper : public Visitor {
   int Visit(const std::shared_ptr<For>& for_stmt) override;
   int Visit(const std::shared_ptr<DeclList>& decl_list) override;
   int Visit(const std::shared_ptr<ExprList>& expr_list) override;
+  int Visit(const std::shared_ptr<ControlFlow> &flow_stmt) override;
 
   void Flush();
 

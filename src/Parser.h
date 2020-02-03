@@ -51,6 +51,8 @@ class Parser {
   Scanner& scanner_;
   SymbolTable& symbol_table_;
   std::shared_ptr<ExprList> OptionalExpressionList();
+  std::shared_ptr<ControlFlow> BreakStatement();
+  std::shared_ptr<ControlFlow> ContinueStatement();
 };
 
 } // namespace mcc

@@ -73,4 +73,8 @@ int ExprList::Accept(Visitor& visitor) {
   return visitor.Visit(shared_from_base<ExprList>());
 }
 
+int ControlFlow::Accept(Visitor& visitor) {
+  return visitor.Visit(shared_from_base<ControlFlow>());
+}
+
 } // namespace mcc

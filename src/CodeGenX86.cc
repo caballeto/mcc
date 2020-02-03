@@ -18,13 +18,24 @@ int CodeGenX86::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
   cond_stmt->then_block_->Accept(*this);
   out_ << "\tjmp\t" << "L" << l_end << "\n";
   out_ << "L" << l_start << ":\n";
-  cond_stmt->else_block_->Accept(*this);
+
+  if (cond_stmt->else_block_ != nullptr)
+    cond_stmt->else_block_->Accept(*this);
+
   out_ << "L" << l_end << ":\n";
   return NO_RETURN_REGISTER;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<While>& while_stmt) {
-  int l_body = GetLabel(), l_condition = GetLabel();
+  // check if we have break/continue statements
+  bool has_control_flow_stmts = while_stmt->loop_block_->Accept(flow_checker_);
+  int l_body = GetLabel(), l_condition = GetLabel(), l_end;
+
+  // generate additional labels to allow break/continue
+  if (has_control_flow_stmts) {
+    l_end = GetLabel();
+    loop_stack_.push({"L" + std::to_string(l_end), "L" + std::to_string(l_condition)});
+  }
 
   if (!while_stmt->do_while_)
     out_ << "\tjmp\t" << "L" << l_condition << "\n";
@@ -32,31 +43,61 @@ int CodeGenX86::Visit(const std::shared_ptr<While>& while_stmt) {
   out_ << "L" << l_body << ":\n";
   while_stmt->loop_block_->Accept(*this);
 
-  if (!while_stmt->do_while_)
+  // generate condition label if there is break/continue or it is a while stmt
+  if (has_control_flow_stmts || !while_stmt->do_while_)
     out_ << "L" << l_condition << ":\n";
 
   int r = while_stmt->condition_->Accept(*this);
   out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
   FreeRegister(r);
   out_ << "\tjne\t" << "L" << l_body << "\n";
+
+  // generate end label and pop break/continue labels from stack
+  if (has_control_flow_stmts) {
+    out_ << "L" << l_end << ":\n";
+    loop_stack_.pop();
+  }
+
   return NO_RETURN_REGISTER;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<For>& for_stmt) {
+  bool has_control_flow_stmts = for_stmt->loop_block_->Accept(flow_checker_);
+
   for_stmt->init_->Accept(*this);
-  int l_body = GetLabel(), l_condition = GetLabel();
+  int l_body = GetLabel(), l_condition = GetLabel(), l_update, l_end;
+
+  if (has_control_flow_stmts) {
+    l_update = GetLabel();
+    l_end = GetLabel();
+    loop_stack_.push({"L" + std::to_string(l_end), "L" + std::to_string(l_update)});
+  }
 
   out_ << "\tjmp\t" << "L" << l_condition << "\n";
   out_ << "L" << l_body << ":\n";
   for_stmt->loop_block_->Accept(*this);
+
+  if (has_control_flow_stmts)
+    out_ << "L" << l_update << ":\n";
+
   for_stmt->update_->Accept(*this);
   out_ << "L" << l_condition << ":\n";
 
-  int r = for_stmt->condition_->Accept(*this);
-  out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
-  FreeRegister(r);
+  if (for_stmt->condition_ != nullptr) {
+    int r = for_stmt->condition_->Accept(*this);
+    out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
+    FreeRegister(r);
+    out_ << "\tjne\t" << "L" << l_body << "\n";
+  } else {
+    out_ << "\tjmp\t" << "L" << l_body << "\n";
+  }
 
-  out_ << "\tjne\t" << "L" << l_body << "\n";
+  // generate end label and pop break/continue labels from stack
+  if (has_control_flow_stmts) {
+    out_ << "L" << l_end << ":\n";
+    loop_stack_.pop();
+  }
+
   return NO_RETURN_REGISTER;
 }
 
@@ -180,7 +221,18 @@ int CodeGenX86::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
   return NO_RETURN_REGISTER;
 }
 
-std::string CodeGenX86::GetSetInstr(TokenType& type) {
+int CodeGenX86::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
+  if (loop_stack_.empty()) {
+    std::cerr << ((flow_stmt->is_break_) ? "break" : "continue") << " does not have enclosing loop." << std::endl;
+    exit(1);
+  }
+
+  const auto& labels = loop_stack_.top();
+  out_ << "\tjmp\t" << (flow_stmt->is_break_ ? labels.first : labels.second) << "\n";
+  return NO_RETURN_REGISTER;
+}
+
+std::string CodeGenX86::GetSetInstr(TokenType type) {
   switch (type) {
     case TokenType::T_EQUALS: return "sete";
     case TokenType::T_NOT_EQUALS: return "setne";
@@ -225,7 +277,6 @@ void CodeGenX86::Postamble() {
           "\tpopq	%rbp\n"
           "\tret\n";
 }
-
 void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
   Preamble();
   for (const auto& stmt : stmts)
@@ -236,6 +287,7 @@ void CodeGenX86::PrintInt(int r) {
   out_ << "\tmovq\t" << kRegisters[r] << ", %rdi\n"
     << "\tcall\tprintint\n";
 }
+
 int CodeGenX86::NewRegister() {
   for (int i = 0; i < REGISTER_NUM; i++) {
     if (regs_status[i]) {
@@ -252,7 +304,6 @@ void CodeGenX86::FreeRegister(int reg) {
     return;
   regs_status[reg] = true;
 }
-
 int CodeGenX86::GetLabel() {
   return label_++;
 }

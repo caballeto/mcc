@@ -19,6 +19,8 @@ Scanner::Scanner(const std::string& input_file) {
   keywords_["while"] = TokenType::T_WHILE;
   keywords_["for"] = TokenType::T_FOR;
   keywords_["do"] = TokenType::T_DO;
+  keywords_["break"] = TokenType::T_BREAK;
+  keywords_["continue"] = TokenType::T_CONTINUE;
 }
 
 Scanner::~Scanner() {
