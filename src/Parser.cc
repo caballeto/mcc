@@ -23,7 +23,13 @@ std::shared_ptr<Stmt> Parser::Statement() {
   switch (Peek()->GetType()) {
     case TokenType::T_PRINT:
       return PrintStatement();
+    case TokenType::T_VOID: {
+      reporter_.Report("'void' is not allowed as type", Peek());
+      exit(1);
+    }
     case TokenType::T_INT:
+    case TokenType::T_SHORT:
+    case TokenType::T_LONG:
       return DeclarationList();
     case TokenType::T_IF:
       return IfStatement();
@@ -65,25 +71,26 @@ std::shared_ptr<Print> Parser::PrintStatement() {
 
 // #FIXME: move semantic cheks to semantic analyzer
 std::shared_ptr<Conditional> Parser::IfStatement() {
-  Match(TokenType::T_IF);
+  std::shared_ptr<Token> if_token = Consume(TokenType::T_IF);
   Consume(TokenType::T_LPAREN, "Expected '(' after 'if'.");
   std::shared_ptr<Expr> condition = Expression(0);
   Consume(TokenType::T_RPAREN, "Expected ')' after 'if' condition.");
   std::shared_ptr<Stmt> then_block_ = Statement(), else_block_;
-  DisallowDecl(then_block_);
+  DisallowDecl(then_block_, if_token);
 
-  if (Match(TokenType::T_ELSE)) {
+  if (Check(TokenType::T_ELSE)) {
+    std::shared_ptr<Token> else_token = Consume(TokenType::T_ELSE);
     else_block_ = Statement();
-    DisallowDecl(else_block_);
+    DisallowDecl(else_block_, else_token);
   }
 
   return std::make_shared<Conditional>(condition, then_block_, else_block_);
 }
 
 std::shared_ptr<While> Parser::DoWhileStatement() {
-  Match(TokenType::T_DO);
+  std::shared_ptr<Token> do_token = Consume(TokenType::T_DO);
   std::shared_ptr<Stmt> loop_block = Statement();
-  DisallowDecl(loop_block);
+  DisallowDecl(loop_block, do_token);
   Consume(TokenType::T_WHILE, "Expected 'while' after 'do'.");
   Consume(TokenType::T_LPAREN, "Expected '(' after 'while'.");
   std::shared_ptr<Expr> condition = Expression(0);
@@ -94,7 +101,7 @@ std::shared_ptr<While> Parser::DoWhileStatement() {
 
 // #FIXME: make condition expression optional by adding break/continue
 std::shared_ptr<For> Parser::ForStatement() {
-  Match(TokenType::T_FOR);
+  std::shared_ptr<Token> for_token = Consume(TokenType::T_FOR);
   Consume(TokenType::T_LPAREN, "Expected '(' after 'for'.");
 
   std::shared_ptr<Stmt> init_list;
@@ -112,36 +119,37 @@ std::shared_ptr<For> Parser::ForStatement() {
   Consume(TokenType::T_RPAREN, "Expected closing ')' after 'for' statement.");
 
   std::shared_ptr<Stmt> loop_block = Statement();
-  DisallowDecl(loop_block);
+  DisallowDecl(loop_block, for_token);
   return std::make_shared<For>(init_list, condition, update_list, loop_block);
 }
 
-void Parser::DisallowDecl(const std::shared_ptr<Stmt>& stmt) {
+void Parser::DisallowDecl(const std::shared_ptr<Stmt>& stmt, const std::shared_ptr<Token>& token) {
   if (stmt->IsDeclaration()) {
-    std::cerr << "Declaration are not allowed in single-statement loops." << std::endl;
+    reporter_.Report("Declaration are not allowed in single-statement loops", token);
     exit(1);
   }
 }
 
 std::shared_ptr<While> Parser::WhileStatement() {
-  Match(TokenType::T_WHILE);
+  std::shared_ptr<Token> while_token = Consume(TokenType::T_WHILE);
   Consume(TokenType::T_LPAREN, "Expected '(' after 'while'.");
   std::shared_ptr<Expr> condition = Expression(0);
   Consume(TokenType::T_RPAREN, "Expected ')' after 'while' condition.");
   std::shared_ptr<Stmt> loop_block = Statement();
-  DisallowDecl(loop_block);
+  DisallowDecl(loop_block, while_token);
   return std::make_shared<While>(condition, loop_block, false);
 }
 
 std::shared_ptr<DeclList> Parser::DeclarationList() {
-  Match(TokenType::T_INT);
+  std::shared_ptr<Token> type_token = Peek();
+  MatchType();
   std::vector<std::shared_ptr<VarDecl>> var_decl_list;
 
   do {
-    std::shared_ptr<Token> token = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration.");
-    symbol_table_.Put(token->GetStringValue());
+    std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration.");
+    int id = symbol_table_.Put(name->GetStringValue(), type_token->GetType(), 0);
     std::shared_ptr<Expr> init = OptionalExpression(0);
-    var_decl_list.push_back(std::make_shared<VarDecl>(token->GetStringValue(), init));
+    var_decl_list.push_back(std::make_shared<VarDecl>(name->GetStringValue(), init, id));
   } while (Match(TokenType::T_COMMA));
 
   Consume(TokenType::T_SEMICOLON, "Expected ';' after variable declaration.");
@@ -256,6 +264,10 @@ bool Parser::Check(TokenType type) {
   return Peek()->GetType() == type;
 }
 
+bool Parser::MatchType() {
+  return Match(TokenType::T_INT) || Match(TokenType::T_SHORT) || Match(TokenType::T_LONG);
+}
+
 bool Parser::Match(TokenType type) {
   if (token_->GetType() == type) {
     Next();
@@ -269,14 +281,24 @@ std::shared_ptr<Token> Parser::Peek() {
   return token_;
 }
 
-std::shared_ptr<Token> Parser::Consume(TokenType type, const std::string& message) {
-  if (Peek()->GetType() == type) {
+std::shared_ptr<Token> Parser::Consume(TokenType type) {
+  if (Check(type)) {
     std::shared_ptr<Token> token = Peek();
     Next();
-    return token;
+    return std::move(token);
   } else {
-    std::cerr << message << std::endl;
-    exit(1);
+    exit(1); // #TODO: add sync mechanism
+  }
+}
+
+std::shared_ptr<Token> Parser::Consume(TokenType type, const std::string& message) {
+  if (Check(type)) {
+    std::shared_ptr<Token> token = Peek();
+    Next();
+    return std::move(token);
+  } else {
+    reporter_.Report(message, Peek());
+    exit(1); // #TODO: add sync mechanism
   }
 }
 

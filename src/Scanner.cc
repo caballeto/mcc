@@ -6,14 +6,14 @@
 
 namespace mcc {
 
-Scanner::Scanner(const std::string& input_file) {
+Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
+  : reporter_(reporter) {
   source_stream_.open(input_file, std::ios::in);
   source_stream_ >> std::noskipws;
   line_ = 1;
   putback_ = '\0';
 
   keywords_["print"] = TokenType::T_PRINT;
-  keywords_["int"] = TokenType::T_INT;
   keywords_["if"] = TokenType::T_IF;
   keywords_["else"] = TokenType::T_ELSE;
   keywords_["while"] = TokenType::T_WHILE;
@@ -21,6 +21,12 @@ Scanner::Scanner(const std::string& input_file) {
   keywords_["do"] = TokenType::T_DO;
   keywords_["break"] = TokenType::T_BREAK;
   keywords_["continue"] = TokenType::T_CONTINUE;
+
+  // types
+  keywords_["int"] = TokenType::T_INT;
+  keywords_["void"] = TokenType::T_VOID;
+  keywords_["short"] = TokenType::T_SHORT;
+  keywords_["long"] = TokenType::T_LONG;
 }
 
 Scanner::~Scanner() {
@@ -83,8 +89,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
         token->SetType(TokenType::T_NOT_EQUALS);
       } else {
         Putback(c); // #TODO: Add T_NOT bool operator
-        std::cerr << "Only '!=' operator supported now." << std::endl;
-        exit(1);
+        reporter_.Report("Only '!=' operator supported now", c, line_);
       }
       break;
     case '=':
@@ -101,7 +106,6 @@ std::shared_ptr<Token> Scanner::GetToken() {
     default:
       if (std::isdigit(c)) {
         int value = ScanInt(c - '0');
-        //std::cout << "Parsed Int: " << value << std::endl;
         token->SetIntValue(value);
         token->SetType(TokenType::T_INT_LITERAL);
       } else if (std::isalpha(c) || c == '_') {
@@ -113,9 +117,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
           token->SetStringValue(identifier);
         }
       } else {
-        std::cerr << "Char: '" << c << "'" << std::endl;
-        std::cerr << "Can't recognize token." << std::endl;
-        exit(1);
+        reporter_.Report("Can't recognize token", c, line_);
       }
   }
 

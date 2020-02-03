@@ -7,12 +7,13 @@
 
 #include "common.h"
 #include "Token.h"
+#include "ErrorReporter.h"
 
 namespace mcc {
 
 class Scanner {
  public:
-  explicit Scanner(const std::string& input_file);
+  explicit Scanner(const std::string& input_file, ErrorReporter& reporter);
   ~Scanner();
 
   std::shared_ptr<Token> GetToken();
@@ -26,6 +27,7 @@ class Scanner {
   bool IsKeyword(const std::string& identifier);
   TokenType GetKeywordToken(const std::string& keyword);
 
+  ErrorReporter& reporter_;
   std::map<std::string, TokenType> keywords_;
   std::ifstream source_stream_;
   int line_;

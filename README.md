@@ -112,7 +112,7 @@ I have implemented following features today:
   `int x = 1 + 2, y = 25, d = x - y;`
 - `for` loops, with support for init lists
 
-```
+```c
 for (int i = 0, j = 0; i < 10; i = i + 1, j = j + 1) {
   print i;
   print k;
@@ -132,3 +132,25 @@ valid.
 
 ## **Next**
 Same as previous.
+
+## Day 6
+
+Implemented:
+
+- break/continue control flow statements
+- added `ControlFlowChecker` to find control flow statements
+- allowed `if` with single statements
+- allowed no condition in `for` loops
+
+Next tasks for today: 
+
+- add `TypeChecker` visitor to make type checks.
+- [X] add `ErrorReporter` to report errors correctly
+- add `int`, `short`, `long`, `char` types and add cg for them
+- (?) add `Compiler` class for export into `main.cc`
+
+
+class Type -> {
+ type as token
+ indirection level (> 0 for pointers)
+}

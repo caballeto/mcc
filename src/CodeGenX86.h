@@ -10,6 +10,7 @@
 #include "Visitor.h"
 #include "SymbolTable.h"
 #include "ControlFlowChecker.h"
+#include "ErrorReporter.h"
 
 #define REGISTER_NUM 8
 #define NO_RETURN_REGISTER -1
@@ -18,8 +19,8 @@ namespace mcc {
 
 class CodeGenX86: public Visitor {
  public:
-  explicit CodeGenX86(const std::string& output_file, SymbolTable& symbol_table)
-    : symbol_table_(symbol_table) {
+  explicit CodeGenX86(const std::string& output_file, SymbolTable& symbol_table, ErrorReporter& reporter)
+    : symbol_table_(symbol_table), reporter_(reporter) {
     out_.open(output_file, std::ios::out);
     label_ = 0;
   }
@@ -52,6 +53,7 @@ class CodeGenX86: public Visitor {
 
   static std::string GetSetInstr(TokenType type);
 
+  ErrorReporter& reporter_;
   std::stack<std::pair<std::string, std::string>> loop_stack_;
   int label_;
   std::ofstream out_;

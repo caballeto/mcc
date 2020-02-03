@@ -6,6 +6,10 @@
 
 namespace mcc {
 
+Entry& SymbolTable::Get(int id) {
+  return entries_[id];
+}
+
 int SymbolTable::Get(const std::string &name) {
   for (int i = 0; i <= entry_count_; i++) {
     if (entries_[i].name == name) {
@@ -15,8 +19,8 @@ int SymbolTable::Get(const std::string &name) {
   return -1;
 }
 
-int SymbolTable::Put(const std::string& name) {
-  entries_[++entry_count_] = {name};
+int SymbolTable::Put(const std::string& name, TokenType type, int indirection) {
+  entries_[++entry_count_] = {name, type, indirection};
   return entry_count_;
 }
 

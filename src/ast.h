@@ -118,8 +118,8 @@ class ControlFlow : public Stmt {
 // #TODO: add type in future
 class VarDecl : public Stmt {
  public:
-  explicit VarDecl(std::string name, std::shared_ptr<Expr> init)
-      : name_(std::move(name)), init_(std::move(init))
+  explicit VarDecl(std::string name, std::shared_ptr<Expr> init, int type_id)
+      : name_(std::move(name)), init_(std::move(init)), type_id_(type_id)
   { }
 
   int Accept(Visitor& visitor) override;
@@ -127,6 +127,7 @@ class VarDecl : public Stmt {
 
   std::string name_;
   std::shared_ptr<Expr> init_;
+  int type_id_;
 };
 
 class For : public Stmt {
@@ -156,6 +157,7 @@ class ExpressionStmt : public Stmt {
   std::shared_ptr<Expr> expr_;
 };
 
+// #FIXME: pointer indirection
 class Expr : public std::enable_shared_from_this<Expr> {
  public:
   virtual int Accept(Visitor& visitor) = 0;
@@ -165,6 +167,8 @@ class Expr : public std::enable_shared_from_this<Expr> {
   std::shared_ptr<T> shared_from_base() {
     return std::static_pointer_cast<T>(shared_from_this());
   }
+
+  TokenType type_;
 };
 
 class Assign : public Expr {

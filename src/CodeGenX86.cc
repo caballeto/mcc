@@ -304,6 +304,7 @@ void CodeGenX86::FreeRegister(int reg) {
     return;
   regs_status[reg] = true;
 }
+
 int CodeGenX86::GetLabel() {
   return label_++;
 }

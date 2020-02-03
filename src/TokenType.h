@@ -36,14 +36,19 @@ enum class TokenType {
 
   // keywords
   T_PRINT,
-  T_INT,
   T_IF,
   T_ELSE,
   T_WHILE,
   T_DO,
   T_FOR,
   T_BREAK,
-  T_CONTINUE
+  T_CONTINUE,
+
+  // types
+  T_INT,
+  T_SHORT,
+  T_LONG,
+  T_VOID
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType& type);
