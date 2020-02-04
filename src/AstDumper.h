@@ -10,7 +10,7 @@
 
 namespace mcc {
 
-class AstDumper : public Visitor {
+class AstDumper : public Visitor<int> {
  public:
   explicit AstDumper(const std::string& file_name)
     : out_(std::ofstream(file_name, std::ios::out)), spaces_(-TAB_SIZE)

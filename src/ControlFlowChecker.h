@@ -9,7 +9,7 @@
 
 namespace mcc {
 
-class ControlFlowChecker: public Visitor {
+class ControlFlowChecker: public Visitor<int> {
  public:
   int Visit(const std::shared_ptr<Binary> &binary) override;
   int Visit(const std::shared_ptr<Literal> &literal) override;

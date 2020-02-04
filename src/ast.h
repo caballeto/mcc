@@ -7,10 +7,13 @@
 
 #include "common.h"
 #include "Token.h"
+#include "Type.h"
 
 namespace mcc {
 
+template <typename T>
 class Visitor;
+
 class Block;
 class Expr;
 class Literal;
@@ -18,7 +21,8 @@ class VarDecl;
 
 class Stmt : public std::enable_shared_from_this<Stmt> {
  public:
-  virtual int Accept(Visitor& visitor) = 0;
+  virtual int Accept(Visitor<int>& visitor) = 0;
+  virtual Type Accept(Visitor<Type>& visitor) = 0;
   virtual bool IsDeclaration() const { return false; }
 
   template <typename T>
@@ -33,7 +37,8 @@ class Block : public Stmt {
     : stmts_(std::move(stmts))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::vector<std::shared_ptr<Stmt>> stmts_;
 };
@@ -44,7 +49,8 @@ class Print : public Stmt {
     : expr_(std::move(expr))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::shared_ptr<Expr> expr_;
 };
@@ -59,7 +65,8 @@ class Conditional : public Stmt {
         else_block_(std::move(else_block))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::shared_ptr<Expr> condition_;
   std::shared_ptr<Stmt> then_block_;
@@ -72,7 +79,8 @@ class While : public Stmt {
     : condition_(std::move(condition)), loop_block_(std::move(loop_block)), do_while_(do_while)
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   bool do_while_;
   std::shared_ptr<Expr> condition_;
@@ -86,7 +94,8 @@ class DeclList : public Stmt {
   { }
 
   bool IsDeclaration() const override;
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::vector<std::shared_ptr<VarDecl>> var_decl_list_;
 };
@@ -98,7 +107,8 @@ class ExprList : public Stmt {
     : expr_list_(std::move(expr_list))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::vector<std::shared_ptr<Expr>> expr_list_;
 };
@@ -110,7 +120,8 @@ class ControlFlow : public Stmt {
     : is_break_(is_break)
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   bool is_break_;
 };
@@ -118,16 +129,19 @@ class ControlFlow : public Stmt {
 // #TODO: add type in future
 class VarDecl : public Stmt {
  public:
-  explicit VarDecl(std::string name, std::shared_ptr<Expr> init, int type_id)
-      : name_(std::move(name)), init_(std::move(init)), type_id_(type_id)
+  VarDecl(std::shared_ptr<Token> name, std::shared_ptr<Expr> init, Type var_type, int indirection)
+      : name_(std::move(name)), init_(std::move(init)), var_type_(var_type), indirection_(indirection)
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
   bool IsDeclaration() const override;
 
-  std::string name_;
+  std::shared_ptr<Token> name_;
   std::shared_ptr<Expr> init_;
-  int type_id_;
+  Type var_type_;
+  int indirection_;
 };
 
 class For : public Stmt {
@@ -138,7 +152,8 @@ class For : public Stmt {
       update_(std::move(update)), loop_block_(std::move(loop_block))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::shared_ptr<Stmt> init_;
   std::shared_ptr<Expr> condition_;
@@ -152,23 +167,27 @@ class ExpressionStmt : public Stmt {
     : expr_(std::move(expr))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::shared_ptr<Expr> expr_;
 };
 
-// #FIXME: pointer indirection
 class Expr : public std::enable_shared_from_this<Expr> {
  public:
-  virtual int Accept(Visitor& visitor) = 0;
+  virtual int Accept(Visitor<int>& visitor) = 0;
+  virtual Type Accept(Visitor<Type>& visitor) = 0;
   virtual bool IsVariable();
+  virtual bool IsLvalue();
 
   template <typename T>
   std::shared_ptr<T> shared_from_base() {
     return std::static_pointer_cast<T>(shared_from_this());
   }
 
-  TokenType type_;
+  Type type_ = Type::NONE;
+  int indirection = 0;
+  bool is_lvalue = false;
 };
 
 class Assign : public Expr {
@@ -177,7 +196,8 @@ class Assign : public Expr {
     : left_(std::move(left)), right_(std::move(right))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::shared_ptr<Expr> left_;
   std::shared_ptr<Expr> right_;
@@ -189,7 +209,8 @@ class Binary : public Expr {
     : op_(std::move(op)), left_(std::move(left)), right_(std::move(right))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
   std::shared_ptr<Token> op_;
   std::shared_ptr<Expr> left_;
@@ -202,7 +223,9 @@ class Literal : public Expr {
     : literal_(std::move(literal))
   { }
 
-  int Accept(Visitor& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
   bool IsVariable() override;
 
   std::shared_ptr<Token> literal_;

@@ -17,7 +17,7 @@
 
 namespace mcc {
 
-class CodeGenX86: public Visitor {
+class CodeGenX86: public Visitor<int> {
  public:
   explicit CodeGenX86(const std::string& output_file, SymbolTable& symbol_table, ErrorReporter& reporter)
     : symbol_table_(symbol_table), reporter_(reporter) {

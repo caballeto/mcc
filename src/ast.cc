@@ -7,11 +7,19 @@
 
 namespace mcc {
 
-int Binary::Accept(Visitor& visitor) {
+Type Binary::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Binary>());
 }
 
-int Literal::Accept(Visitor& visitor) {
+int Binary::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Binary>());
+}
+
+Type Literal::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<Literal>());
+}
+
+int Literal::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<Literal>());
 }
 
@@ -19,21 +27,35 @@ bool Expr::IsVariable() {
   return false;
 }
 
+bool Expr::IsLvalue() {
+  return is_lvalue;
+}
+
 bool Literal::IsVariable() {
-  //std::cout << "Var name: " << literal_->GetStringValue() << std::endl;
-  //std::cout << "IsVariable: " << (!literal_->GetStringValue().empty()) << std::endl;
   return !literal_->GetStringValue().empty();
 }
 
-int Print::Accept(Visitor& visitor) {
+Type Print::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Print>());
 }
 
-int Assign::Accept(Visitor& visitor) {
+int Print::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Print>());
+}
+
+Type Assign::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Assign>());
 }
 
-int VarDecl::Accept(Visitor& visitor) {
+int Assign::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Assign>());
+}
+
+Type VarDecl::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<VarDecl>());
+}
+
+int VarDecl::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<VarDecl>());
 }
 
@@ -41,27 +63,51 @@ bool VarDecl::IsDeclaration() const {
   return true;
 }
 
-int ExpressionStmt::Accept(Visitor& visitor) {
+Type ExpressionStmt::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<ExpressionStmt>());
 }
 
-int Conditional::Accept(Visitor& visitor) {
+int ExpressionStmt::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<ExpressionStmt>());
+}
+
+Type Conditional::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Conditional>());
 }
 
-int Block::Accept(Visitor& visitor) {
+int Conditional::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Conditional>());
+}
+
+Type Block::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Block>());
 }
 
-int While::Accept(Visitor& visitor) {
+int Block::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Block>());
+}
+
+Type While::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<While>());
 }
 
-int For::Accept(Visitor& visitor) {
+int While::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<While>());
+}
+
+Type For::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<For>());
 }
 
-int DeclList::Accept(Visitor& visitor) {
+int For::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<For>());
+}
+
+Type DeclList::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<DeclList>());
+}
+
+int DeclList::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<DeclList>());
 }
 
@@ -69,11 +115,19 @@ bool DeclList::IsDeclaration() const {
   return true;
 }
 
-int ExprList::Accept(Visitor& visitor) {
+Type ExprList::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<ExprList>());
 }
 
-int ControlFlow::Accept(Visitor& visitor) {
+int ExprList::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<ExprList>());
+}
+
+Type ControlFlow::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<ControlFlow>());
+}
+
+int ControlFlow::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<ControlFlow>());
 }
 

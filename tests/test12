@@ -1,0 +1,4 @@
+int x = 5 + 17, y = x * 2;
+
+print x;
+print y;

@@ -45,14 +45,14 @@ enum class TokenType {
   T_CONTINUE,
 
   // types
-  T_INT,
-  T_SHORT,
-  T_LONG,
-  T_VOID
+  T_VOID = 100,
+  T_SHORT = 101,
+  T_INT = 102,
+  T_LONG = 103
 };
 
-std::ostream& operator<<(std::ostream& os, TokenType& type);
-int GetPrecedence(TokenType& type);
+std::ostream& operator<<(std::ostream& os, TokenType type);
+int GetPrecedence(TokenType type);
 
 } // namespace mcc
 

@@ -6,7 +6,7 @@
 #define MCC_SRC_SYMBOLTABLE_H_
 
 #include "common.h"
-#include "TokenType.h"
+#include "Type.h"
 
 #define ENTRY_LIMIT 1024
 
@@ -14,7 +14,7 @@ namespace mcc {
 
 struct Entry {
   std::string name;
-  TokenType type_;
+  Type type_;
   int indirection;
 };
 
@@ -26,7 +26,7 @@ class SymbolTable {
 
   int Get(const std::string& name);
 
-  int Put(const std::string& name, TokenType type, int indirection);
+  int Put(const std::string& name, Type type, int indirection);
 
   bool Contains(const std::string& name);
 

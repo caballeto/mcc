@@ -204,11 +204,11 @@ int CodeGenX86::Visit(const std::shared_ptr<ExprList>& expr_list) {
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
-  out_ << "\t.comm\t" << var_decl->name_ << ",8,8\n";
+  out_ << "\t.comm\t" << var_decl->name_->GetStringValue() << ",8,8\n";
 
   if (var_decl->init_ != nullptr) {
     int r = var_decl->init_->Accept(*this);
-    out_ << "\tmovq\t" << kRegisters[r] << ", " << var_decl->name_ << "(%rip)\n";
+    out_ << "\tmovq\t" << kRegisters[r] << ", " << var_decl->name_->GetStringValue() << "(%rip)\n";
     FreeRegister(r);
   }
 

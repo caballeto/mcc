@@ -13,8 +13,8 @@ namespace mcc {
 
 class Parser {
  public:
-  explicit Parser(Scanner& scanner, SymbolTable& symbol_table, ErrorReporter& reporter)
-    : scanner_(scanner), symbol_table_(symbol_table), reporter_(reporter)
+  explicit Parser(Scanner& scanner, ErrorReporter& reporter)
+    : scanner_(scanner), reporter_(reporter)
   { Next(); }
 
   std::vector<std::shared_ptr<Stmt>> Parse();
@@ -44,16 +44,17 @@ class Parser {
   std::shared_ptr<Conditional> IfStatement();
   std::shared_ptr<Print> PrintStatement();
 
-  void DisallowDecl(const std::shared_ptr<Stmt>& stmt, const std::shared_ptr<Token>& token);
-
-  ErrorReporter& reporter_;
-  std::shared_ptr<Token> token_;
-  Scanner& scanner_;
-  SymbolTable& symbol_table_;
   std::shared_ptr<ControlFlow> BreakStatement();
   std::shared_ptr<ControlFlow> ContinueStatement();
   bool MatchType();
   std::shared_ptr<Token> Consume(TokenType type);
+
+  void DisallowDecl(const std::shared_ptr<Stmt>& stmt, const std::shared_ptr<Token>& token);
+
+
+  Scanner& scanner_;
+  ErrorReporter& reporter_;
+  std::shared_ptr<Token> token_;
 };
 
 } // namespace mcc

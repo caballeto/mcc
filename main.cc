@@ -33,9 +33,9 @@ int main(int argc, char* argv[]) {
   mcc::ErrorReporter reporter(std::cerr);
   mcc::SymbolTable symbol_table;
   mcc::Scanner scanner(input_file, reporter);
-  mcc::Parser parser(scanner, symbol_table, reporter);
+  mcc::Parser parser(scanner, reporter);
+  mcc::TypeChecker type_checker(reporter, symbol_table);
   mcc::CodeGenX86 code_gen(ASSEMBY_FILE, symbol_table, reporter);
-  mcc::TypeChecker type_checker(reporter);
   mcc::AstDumper dumper(AST_DUMP_FILE);
 
   std::vector<std::shared_ptr<mcc::Stmt>> stmts = parser.Parse();

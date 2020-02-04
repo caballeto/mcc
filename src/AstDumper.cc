@@ -53,7 +53,7 @@ int AstDumper::Visit(const std::shared_ptr<Assign>& assign) {
 int AstDumper::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<var-decl>\n";
-  out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl->name_ << "</name>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl->name_->GetStringValue() << "</name>\n";
 
   if (var_decl->init_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<init>\n";

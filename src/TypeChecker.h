@@ -7,32 +7,46 @@
 
 #include "Visitor.h"
 #include "ErrorReporter.h"
+#include "SymbolTable.h"
+#include "Type.h"
 
 namespace mcc {
 
-class TypeChecker : public Visitor {
+using ExprRef = std::shared_ptr<Expr>&;
+using TokenRef = std::shared_ptr<Token>&;
+
+class TypeChecker : public Visitor<Type> {
  public:
-  explicit TypeChecker(ErrorReporter& reporter)
-    : reporter_(reporter)
+  explicit TypeChecker(ErrorReporter& reporter, SymbolTable& symbol_table)
+    : reporter_(reporter), symbol_table_(symbol_table)
   { }
 
   void TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts);
 
-  int Visit(const std::shared_ptr<Binary>& binary) override;
-  int Visit(const std::shared_ptr<Literal>& literal) override;
-  int Visit(const std::shared_ptr<Assign>& assign) override;
-  int Visit(const std::shared_ptr<VarDecl>& var_decl) override;
-  int Visit(const std::shared_ptr<Print>& print) override;
-  int Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) override;
-  int Visit(const std::shared_ptr<Conditional>& cond_stmt) override;
-  int Visit(const std::shared_ptr<Block>& block_stmt) override;
-  int Visit(const std::shared_ptr<While>& while_stmt) override;
-  int Visit(const std::shared_ptr<For>& for_stmt) override;
-  int Visit(const std::shared_ptr<DeclList>& decl_list) override;
-  int Visit(const std::shared_ptr<ExprList>& expr_list) override;
-  int Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
+  Type Visit(const std::shared_ptr<Binary>& binary) override;
+  Type Visit(const std::shared_ptr<Literal>& literal) override;
+  Type Visit(const std::shared_ptr<Assign>& assign) override;
+  Type Visit(const std::shared_ptr<VarDecl>& decl) override;
+  Type Visit(const std::shared_ptr<Print>& print) override;
+  Type Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) override;
+  Type Visit(const std::shared_ptr<Conditional>& cond_stmt) override;
+  Type Visit(const std::shared_ptr<Block>& block_stmt) override;
+  Type Visit(const std::shared_ptr<While>& while_stmt) override;
+  Type Visit(const std::shared_ptr<For>& for_stmt) override;
+  Type Visit(const std::shared_ptr<DeclList>& decl_list) override;
+  Type Visit(const std::shared_ptr<ExprList>& expr_list) override;
+  Type Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
+
+  static bool IsIntegerType(ExprRef expr);
+  static bool IsPointer(ExprRef expr);
+
+  Type Promote(ExprRef e1, ExprRef e2);
+  Type PromoteToLeft(ExprRef e1, ExprRef e2);
+  Type MatchTypes(ExprRef e1, ExprRef e2, bool to_left);
+  bool MatchType(Type type, int indirection, std::shared_ptr<Expr> &expr);
 
   ErrorReporter& reporter_;
+  SymbolTable& symbol_table_;
 };
 
 } // namespace mcc

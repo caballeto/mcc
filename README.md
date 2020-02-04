@@ -167,3 +167,33 @@ while (x < 10) {
   print x;
 }
 ```
+
+## Day 7
+
+Today, I worked mainly on adding TypeChecker and adding simple types
+to the language. For now only `short`, `int` and `long` are supported.
+I have made visitor a template class, so there will be less code duplication.
+`TypeChecker` implements `Visitor<Type>`, where `Type` is an enum which will
+represent valid types (`VOID`, `INT`, `SHORT`, `LONG`; `STRUCT` in future).
+
+Summary below:
+
+- added type keywords to scanner
+- create `enum class Type` for type representation
+- edited `SymbolTable` to save variable type
+- edited `Parser` to parse different types and save them to symbol table
+- create `is_lvalue` field to check whether you can assign to expression
+- create `TypeChecker` class to make semantic checks
+- added routines for simple type cast hierarchy (short -> int -> long)
+- added new methods to ErrorReporter for error printing (still more work ahead)
+
+## **Next**
+
+For the next several days.
+
+- rewrite `ErrorReporter` to support standardized error formats (lex/parse/semantic)
+- decide how to correctly output errors, when to stop
+- add sync mechanism to `Parser`
+- make `CodeGen` class to use type annotations and generate code based on them
+- add pointers
+- refactor code and add testing 

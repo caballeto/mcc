@@ -41,7 +41,7 @@ class Token {
     token_type_ = token_type;
   }
 
-  inline TokenType& GetType() {
+  inline TokenType GetType() {
     return token_type_;
   }
 

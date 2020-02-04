@@ -19,7 +19,7 @@ int SymbolTable::Get(const std::string &name) {
   return -1;
 }
 
-int SymbolTable::Put(const std::string& name, TokenType type, int indirection) {
+int SymbolTable::Put(const std::string& name, Type type, int indirection) {
   entries_[++entry_count_] = {name, type, indirection};
   return entry_count_;
 }

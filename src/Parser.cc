@@ -3,6 +3,7 @@
 //
 
 #include "Parser.h"
+#include "Type.h"
 
 namespace mcc {
 
@@ -147,9 +148,8 @@ std::shared_ptr<DeclList> Parser::DeclarationList() {
 
   do {
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration.");
-    int id = symbol_table_.Put(name->GetStringValue(), type_token->GetType(), 0);
     std::shared_ptr<Expr> init = OptionalExpression(0);
-    var_decl_list.push_back(std::make_shared<VarDecl>(name->GetStringValue(), init, id));
+    var_decl_list.push_back(std::make_shared<VarDecl>(name, init, TokenToType(type_token->GetType()), 0));
   } while (Match(TokenType::T_COMMA));
 
   Consume(TokenType::T_SEMICOLON, "Expected ';' after variable declaration.");
@@ -194,11 +194,6 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
   while (precedence < GetPrecedence(curr_op->GetType())) {
     switch (curr_op->GetType()) {
       case TokenType::T_ASSIGN: {
-        if (!left->IsVariable()) {
-          std::cerr << "Only variables are allowed on left side of assign expression." << std::endl;
-          exit(1);
-        }
-
         Next();
         right = Expression(GetPrecedence(curr_op->GetType()) - 1);
         left = std::make_shared<Assign>(left, right);
@@ -230,16 +225,17 @@ std::shared_ptr<Expr> Parser::OptionalExpression(int precedence) {
   }
 }
 
+// int id = symbol_table_.Put(name->GetStringValue(), type_token->GetType(), 0);
+// if (!symbol_table_.Contains(literal->literal_->GetStringValue())) {
+//        std::cerr << "Variable '" << literal->literal_->GetStringValue() << "' has not been declared." << std::endl;
+//        exit(1);
+//      }
+
 std::shared_ptr<Expr> Parser::Primary() {
   switch (Peek()->GetType()) {
     case TokenType::T_IDENTIFIER: {
       std::shared_ptr<Literal> literal = std::make_shared<Literal>(Peek());
-
-      if (!symbol_table_.Contains(literal->literal_->GetStringValue())) {
-        std::cerr << "Variable '" << literal->literal_->GetStringValue() << "' has not been declared." << std::endl;
-        exit(1);
-      }
-
+      literal->is_lvalue = true;
       Next();
       return literal;
     }
