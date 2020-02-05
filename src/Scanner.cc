@@ -11,6 +11,7 @@ Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
   source_stream_.open(input_file, std::ios::in);
   source_stream_ >> std::noskipws;
   line_ = 1;
+  c_ = 0;
   putback_ = '\0';
 
   keywords_["print"] = TokenType::T_PRINT;
@@ -37,6 +38,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
   char c = NextCharSkipSpaces();
   std::shared_ptr<Token> token = std::make_shared<Token>();
   token->SetLine(line_);
+  token->SetCount(c_);
   switch (c) {
     case '+':
       token->SetType(TokenType::T_PLUS);
@@ -137,14 +139,19 @@ char Scanner::Next() {
   if (putback_ != '\0') {
     c = putback_;
     putback_ = '\0';
+    c_--;
   } else {
     if (!(source_stream_ >> c)) {
       return EOF;
     }
   }
 
-  if (c == '\n')
+  c_++;
+  if (c == '\n') {
     line_++;
+    c_ = 0;
+  }
+
   return c;
 }
 
@@ -175,6 +182,9 @@ std::string Scanner::ScanIdent(char c) {
 void Scanner::Putback(char c) {
   if (putback_ == '\0') {
     putback_ = c;
+    if (putback_ == '\n') {
+      line_--;
+    }
   } else {
     std::cerr << "Putback is already filled." << std::endl;
     exit(1);

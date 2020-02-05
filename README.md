@@ -196,4 +196,20 @@ For the next several days.
 - add sync mechanism to `Parser`
 - make `CodeGen` class to use type annotations and generate code based on them
 - add pointers
-- refactor code and add testing 
+- refactor code and add testing
+
+## Day 8
+
+So far, I have implemented the following:
+
+- rewrote `ErrorReporter` to print fine error messages, which are much better now
+- extended ast nodes to take token to preserve info about line and char count in case of error
+- edited all parts of compiler to use `ErrorReporter` 
+- added sync mechanism to `Parser`
+- added more tests for error cases
+
+More tasks for today:
+
+- implement pointers (parse + typecheck + dereference/assign ops)
+- think about where to catch `ParseException`, so as to avoid cascading errors
+- add labels/goto if will have time

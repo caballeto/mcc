@@ -4,34 +4,45 @@
 
 #include "common.h"
 #include "TokenType.h"
+#include "Token.h"
+#include "ParseException.h"
 
 namespace mcc {
 
 std::ostream& operator<<(std::ostream& os, TokenType type) {
   switch (type) {
-    case TokenType::T_PLUS: return os << "T_PLUS";
-    case TokenType::T_MINUS: return os << "T_MINUS";
-    case TokenType::T_STAR: return os << "T_STAR";
-    case TokenType::T_SLASH: return os << "T_SLASH";
-    case TokenType::T_INT_LITERAL: return os << "T_INT_LITERAL";
-    case TokenType::T_EOF: return os << "T_EOF";
-    case TokenType::T_SEMICOLON: return os << ";";;
-    case TokenType::T_ASSIGN: return os << "=";
-    case TokenType::T_IDENTIFIER: return os << "T_IDENTIFIER";
-    case TokenType::T_PRINT: return os << "T_PRINT";
-    case TokenType::T_INT: return os << "T_INT";
-    case TokenType::T_LPAREN: return os << "T_LPAREN";
-    case TokenType::T_RPAREN: return os << "T_RPAREN";
-    case TokenType::T_LBRACE: return os << "T_LBRACE";
-    case TokenType::T_RBRACE: return os << "T_RBRACE";
-    case TokenType::T_EQUALS: return os << "T_EQUALS";
-    case TokenType::T_NOT_EQUALS: return os << "T_NOT_EQUALS";
-    case TokenType::T_LESS: return os << "T_LESS";
-    case TokenType::T_GREATER: return os << "T_GREATER";
-    case TokenType::T_LESS_EQUAL: return os << "T_LESS_EQUAL";
-    case TokenType::T_GREATER_EQUAL: return os << "T_GREATER_EQUAL";
-    case TokenType::T_IF: return os << "T_IF";
-    case TokenType::T_ELSE: return os << "T_ELSE";
+    case TokenType::T_PLUS: return os << "'+'";
+    case TokenType::T_MINUS: return os << "'-'";
+    case TokenType::T_STAR: return os << "'*'";
+    case TokenType::T_SLASH: return os << "'/'";
+    case TokenType::T_INT_LITERAL: return os << "INT_LITERAL";
+    case TokenType::T_EOF: return os << "EOF";
+    case TokenType::T_SEMICOLON: return os << "';'";;
+    case TokenType::T_ASSIGN: return os << "'='";
+    case TokenType::T_IDENTIFIER: return os << "IDENTIFIER";
+    case TokenType::T_PRINT: return os << "'print'";
+    case TokenType::T_INT: return os << "'int'";
+    case TokenType::T_LPAREN: return os << "'('";
+    case TokenType::T_RPAREN: return os << "')'";
+    case TokenType::T_LBRACE: return os << "'{'";
+    case TokenType::T_RBRACE: return os << "'}'";
+    case TokenType::T_EQUALS: return os << "'=='";
+    case TokenType::T_NOT_EQUALS: return os << "'!='";
+    case TokenType::T_LESS: return os << "'<'";
+    case TokenType::T_GREATER: return os << "'>'";
+    case TokenType::T_LESS_EQUAL: return os << "'<='";
+    case TokenType::T_GREATER_EQUAL: return os << "'>='";
+    case TokenType::T_IF: return os << "'if'";
+    case TokenType::T_ELSE: return os << "'else'";
+    case TokenType::T_COMMA: return os << "','";
+    case TokenType::T_WHILE: return os << "'while'";
+    case TokenType::T_DO: return os << "'do'";
+    case TokenType::T_FOR: return os << "'for'";
+    case TokenType::T_BREAK: return os << "'break'";
+    case TokenType::T_CONTINUE: return os << "'continue'";
+    case TokenType::T_VOID: return os << "'void'";
+    case TokenType::T_SHORT: return os << "'short'";
+    case TokenType::T_LONG: return os << "'long'";
   }
 
   return os << static_cast<std::uint16_t>(type);
@@ -39,8 +50,8 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
 
 // #FIXME: the precedence values are relative and will change when new operators added
 // #FIXME: see https://en.cppreference.com/w/c/language/operator_precedence
-int GetPrecedence(TokenType type) {
-  switch (type) {
+int GetPrecedence(const std::shared_ptr<Token>& op) {
+  switch (op->GetType()) {
     case TokenType::T_ASSIGN:
       return 8;
     case TokenType::T_EQUALS:
@@ -58,8 +69,7 @@ int GetPrecedence(TokenType type) {
     case TokenType::T_SLASH:
       return 12;
     default:
-      std::cerr << "Not a correct operator: " << type << std::endl;
-      exit(1);
+      throw ParseException("Invalid operator", op);
   }
 }
 

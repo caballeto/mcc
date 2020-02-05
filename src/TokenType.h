@@ -7,6 +7,8 @@
 
 namespace mcc {
 
+class Token;
+
 enum class TokenType {
   // special
   T_EOF,
@@ -52,7 +54,7 @@ enum class TokenType {
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType type);
-int GetPrecedence(TokenType type);
+int GetPrecedence(const std::shared_ptr<Token>& op);
 
 } // namespace mcc
 

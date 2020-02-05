@@ -21,6 +21,14 @@ class Token {
     return identifier_;
   }
 
+  inline void SetCount(int c) {
+    c_ = c;
+  }
+
+  inline int GetCount() {
+    return c_;
+  }
+
   inline void SetLine(int line) {
     line_ = line;
   }
@@ -48,6 +56,7 @@ class Token {
  private:
   int line_;
   int int_value_;
+  int c_; // character count in line
   TokenType token_type_;
   std::string identifier_;
 };

@@ -32,7 +32,7 @@ bool Expr::IsLvalue() {
 }
 
 bool Literal::IsVariable() {
-  return !literal_->GetStringValue().empty();
+  return !op_->GetStringValue().empty();
 }
 
 Type Print::Accept(Visitor<Type>& visitor) {

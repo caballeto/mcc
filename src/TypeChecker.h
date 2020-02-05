@@ -12,12 +12,12 @@
 
 namespace mcc {
 
-using ExprRef = std::shared_ptr<Expr>&;
-using TokenRef = std::shared_ptr<Token>&;
+using ExprRef = const std::shared_ptr<Expr>&;
+using TokenRef = const std::shared_ptr<Token>&;
 
 class TypeChecker : public Visitor<Type> {
  public:
-  explicit TypeChecker(ErrorReporter& reporter, SymbolTable& symbol_table)
+  TypeChecker(ErrorReporter& reporter, SymbolTable& symbol_table)
     : reporter_(reporter), symbol_table_(symbol_table)
   { }
 
@@ -42,8 +42,8 @@ class TypeChecker : public Visitor<Type> {
 
   Type Promote(ExprRef e1, ExprRef e2);
   Type PromoteToLeft(ExprRef e1, ExprRef e2);
-  Type MatchTypes(ExprRef e1, ExprRef e2, bool to_left);
-  bool MatchType(Type type, int indirection, std::shared_ptr<Expr> &expr);
+  Type MatchTypes(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary);
+  bool MatchType(Type type, int indirection, ExprRef expr);
 
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;

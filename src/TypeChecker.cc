@@ -19,17 +19,19 @@ namespace mcc {
 // testing routines + tests with gtest
 
 bool TypeChecker::IsPointer(ExprRef expr) {
+  if (expr == nullptr) return false;
   return expr->indirection > 0;
 }
 
 bool TypeChecker::IsIntegerType(ExprRef expr) {
+  if (expr == nullptr) return false;
   return expr->type_ == Type::INT || expr->type_ == Type::SHORT || expr->type_ == Type::LONG;
 }
 
 // #FIXME: add support for pointers/structs/unions
 bool TypeChecker::MatchType(Type type, int indirection, ExprRef expr) {
   if (expr->type_ == Type::VOID) {
-    reporter_.Report("'void' type could not be assigned to any variable ");
+    reporter_.Report("'void' type could not be assigned to any variable ", expr->op_);
     return false;
   }
 
@@ -37,7 +39,7 @@ bool TypeChecker::MatchType(Type type, int indirection, ExprRef expr) {
   int t1 = (int) type, t2 = (int) expr->type_;
 
   if (t1 < t2) {
-    reporter_.ReportSemanticError("Could not cast right expression", type, expr->type_);
+    reporter_.ReportSemanticError("Could not cast right expression", type, expr->type_, expr->op_);
     return false;
   }
 
@@ -46,16 +48,16 @@ bool TypeChecker::MatchType(Type type, int indirection, ExprRef expr) {
 
 // #TODO: build type hierarchy as a separate structure and provide API for type casting
 // assuming types are not void
-Type TypeChecker::MatchTypes(ExprRef e1, ExprRef e2, bool to_left) {
+Type TypeChecker::MatchTypes(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary) {
   if (e1->type_ == Type::VOID || e2->type_ == Type::VOID) {
-    reporter_.ReportSemanticError("Invalid operand types in binary expressions", e1->type_, e2->type_);
+    reporter_.ReportSemanticError("Invalid operand types in binary expressions", e1->type_, e2->type_, binary->op_);
     return Type::NONE;
   }
 
   if (e1->type_ == e2->type_) return e1->type_;
 
   if (!IsIntegerType(e1) || !IsIntegerType(e2)) {
-    reporter_.ReportSemanticError("Invalid operand types in binary expressions", e1->type_, e2->type_);
+    reporter_.ReportSemanticError("Invalid operand types in binary expressions", e1->type_, e2->type_, binary->op_);
     return Type::NONE;
   }
 
@@ -66,7 +68,7 @@ Type TypeChecker::PromoteToLeft(ExprRef e1, ExprRef e2) {
   int t1 = (int) e1->type_, t2 = (int) e2->type_;
 
   if (t1 < t2) {
-    reporter_.ReportSemanticError("Could not cast right expression", e1->type_, e2->type_);
+    reporter_.ReportSemanticError("Could not cast right expression", e1->type_, e2->type_, e1->op_);
     return Type::NONE;
   }
 
@@ -81,19 +83,19 @@ Type TypeChecker::Promote(ExprRef e1, ExprRef e2) {
 Type TypeChecker::Visit(const std::shared_ptr<Binary>& binary) {
   binary->left_->Accept(*this);
   binary->right_->Accept(*this);
-  binary->type_ = MatchTypes(binary->left_, binary->right_, false);
+  binary->type_ = MatchTypes(binary->left_, binary->right_, false, binary);
   return binary->type_;
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Assign>& assign) {
   if (!assign->left_->IsLvalue()) {
-    reporter_.Report("Assign to rvalue is not allowed.");
+    reporter_.Report("Assign to rvalue is not allowed", assign->op_);
     return Type::NONE;
   }
 
   assign->left_->Accept(*this);
   assign->right_->Accept(*this);
-  assign->type_ = MatchTypes(assign->left_, assign->right_, true);
+  assign->type_ = MatchTypes(assign->left_, assign->right_, true, assign);
   return assign->type_;
 }
 
@@ -105,18 +107,18 @@ void TypeChecker::TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts) {
 
 Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
   if (literal->IsVariable()) {
-    int id = symbol_table_.Get(literal->literal_->GetStringValue());
+    int id = symbol_table_.Get(literal->op_->GetStringValue());
 
     if (id == -1) {
-      reporter_.Report("Variable has not been declared '"
-        + literal->literal_->GetStringValue() + "'.", literal->literal_);
+      reporter_.Report("Variable '"
+          + literal->op_->GetStringValue() + "' has not been declared", literal->op_);
       return Type::NONE;
     }
 
     literal->type_ = symbol_table_.Get(id).type_;
     return literal->type_;
   } else {
-    int val = literal->literal_->GetIntValue();
+    int val = literal->op_->GetIntValue();
     literal->type_ = (val <= 255 && val >= -256) ? Type::SHORT : Type::INT;
     return literal->type_;
   }
@@ -127,7 +129,7 @@ Type TypeChecker::Visit(const std::shared_ptr<Print>& print) {
   print->expr_->Accept(*this);
 
   if (!IsIntegerType(print->expr_)) {
-    reporter_.Report("'print' statement expect integer.");
+    reporter_.Report("'print' statement expects integer", print->token_);
   }
 
   return Type::NONE;
@@ -142,7 +144,7 @@ Type TypeChecker::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
   cond_stmt->condition_->Accept(*this);
 
   if (!IsIntegerType(cond_stmt->condition_) && !IsPointer(cond_stmt->condition_)) {
-    reporter_.Report("Used not-scalar where scalar is required");
+    reporter_.Report("Used not-scalar where scalar is required", cond_stmt->token_);
     return Type::NONE;
   }
 
@@ -165,7 +167,7 @@ Type TypeChecker::Visit(const std::shared_ptr<While>& while_stmt) {
   while_stmt->condition_->Accept(*this);
 
   if (!IsIntegerType(while_stmt->condition_) && !IsPointer(while_stmt->condition_)) {
-    reporter_.Report("Used not-scalar where scalar is required");
+    reporter_.Report("Used not-scalar where scalar is required", while_stmt->token_);
     return Type::NONE;
   }
 
@@ -175,10 +177,12 @@ Type TypeChecker::Visit(const std::shared_ptr<While>& while_stmt) {
 
 Type TypeChecker::Visit(const std::shared_ptr<For>& for_stmt) {
   for_stmt->init_->Accept(*this);
-  for_stmt->condition_->Accept(*this);
 
-  if (!IsIntegerType(for_stmt->condition_) && !IsPointer(for_stmt->condition_)) {
-    reporter_.Report("Used not-scalar where scalar is required");
+  if (for_stmt->condition_ != nullptr)
+    for_stmt->condition_->Accept(*this);
+
+  if (for_stmt->condition_ != nullptr && !IsIntegerType(for_stmt->condition_) && !IsPointer(for_stmt->condition_)) {
+    reporter_.Report("Used not-scalar where scalar is required", for_stmt->token_);
     return Type::NONE;
   }
 
@@ -207,14 +211,14 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
   int id = symbol_table_.Get(decl->name_->GetStringValue());
 
   if (decl->var_type_ == Type::VOID) {
-    reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has invalid type 'void'");
+    reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has unallowable type 'void'", decl->token_);
     return Type::NONE;
   }
 
   if (id == -1) {
     id = symbol_table_.Put(decl->name_->GetStringValue(), decl->var_type_, decl->indirection_);
   } else {
-    reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has already been declared");
+    reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has already been declared", decl->name_);
     return Type::NONE;
   }
 
@@ -222,7 +226,7 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     decl->init_->Accept(*this);
     if (!MatchType(decl->var_type_, decl->indirection_, decl->init_)) {
       reporter_.ReportSemanticError("The type of init expression does not match the declared type of the variable ",
-          decl->var_type_, decl->init_->type_);
+          decl->var_type_, decl->init_->type_, decl->token_);
     }
   }
 

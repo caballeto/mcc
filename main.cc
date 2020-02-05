@@ -31,6 +31,8 @@ int main(int argc, char* argv[]) {
   std::string input_file = std::string(argv[1]);
 
   mcc::ErrorReporter reporter(std::cerr);
+  reporter.SetFile(input_file);
+
   mcc::SymbolTable symbol_table;
   mcc::Scanner scanner(input_file, reporter);
   mcc::Parser parser(scanner, reporter);
@@ -54,12 +56,12 @@ int main(int argc, char* argv[]) {
 
   type_checker.TypeCheck(stmts);
 
-  std::cout << "-- type checked statements" << std::endl;
-
   if (reporter.HadErrors()) {
     std::cerr << "-- encountered " << reporter.errors_ << " semantic errors. Stopping compilation." << std::endl;
     exit(1);
   }
+
+  std::cout << "-- type checked statements" << std::endl;
 
   code_gen.Generate(stmts);
 

@@ -31,10 +31,10 @@ int AstDumper::Visit(const std::shared_ptr<Literal>& literal) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ')
      << "<literal val='";
-  if (!literal->literal_->GetStringValue().empty())
-    out_ << literal->literal_->GetStringValue();
+  if (literal->IsVariable())
+    out_ << literal->op_->GetStringValue();
   else
-    out_ << literal->literal_->GetIntValue();
+    out_ << literal->op_->GetIntValue();
   out_ << "'></literal>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;

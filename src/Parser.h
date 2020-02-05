@@ -47,14 +47,16 @@ class Parser {
   std::shared_ptr<ControlFlow> BreakStatement();
   std::shared_ptr<ControlFlow> ContinueStatement();
   bool MatchType();
-  std::shared_ptr<Token> Consume(TokenType type);
 
-  void DisallowDecl(const std::shared_ptr<Stmt>& stmt, const std::shared_ptr<Token>& token);
+  static void DisallowDecl(const std::shared_ptr<Stmt>& stmt, const std::shared_ptr<Token>& token);
+  void synchronize();
 
 
   Scanner& scanner_;
   ErrorReporter& reporter_;
   std::shared_ptr<Token> token_;
+  std::shared_ptr<Token> Consume(TokenType type);
+  bool IsStopToken(TokenType type);
 };
 
 } // namespace mcc

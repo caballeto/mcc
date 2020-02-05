@@ -19,7 +19,7 @@ namespace mcc {
 
 class CodeGenX86: public Visitor<int> {
  public:
-  explicit CodeGenX86(const std::string& output_file, SymbolTable& symbol_table, ErrorReporter& reporter)
+  CodeGenX86(const std::string& output_file, SymbolTable& symbol_table, ErrorReporter& reporter)
     : symbol_table_(symbol_table), reporter_(reporter) {
     out_.open(output_file, std::ios::out);
     label_ = 0;
@@ -53,6 +53,10 @@ class CodeGenX86: public Visitor<int> {
 
   static std::string GetSetInstr(TokenType type);
 
+  int GetTypeSize(Type type);
+  std::string GetPostfix(Type type);
+  std::string GetRegister(int r, Type type);
+
   ErrorReporter& reporter_;
   std::stack<std::pair<std::string, std::string>> loop_stack_;
   int label_;
@@ -64,7 +68,8 @@ class CodeGenX86: public Visitor<int> {
                                                "%r12", "%r13", "%r14", "%r15"};
   const std::vector<std::string> kDregisters = {"%r8d", "%r9d", "%r10d", "%r11d",
                                                 "%r12d", "%r13d", "%r14d", "%r15d"};
-
+  const std::vector<std::string> kWregisters = {"%r8w", "%r9w", "%r10w", "%r11w",
+                                                "%r12w", "%r13w", "%r14w", "%r15w"};
   const std::vector<std::string> kBregisters = {"%r8b", "%r9b", "%r10b", "%r11b",
                                                 "%r12b", "%r13b", "%r14b", "%r15b"};
 

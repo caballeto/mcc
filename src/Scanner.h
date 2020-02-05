@@ -13,7 +13,7 @@ namespace mcc {
 
 class Scanner {
  public:
-  explicit Scanner(const std::string& input_file, ErrorReporter& reporter);
+  Scanner(const std::string& input_file, ErrorReporter& reporter);
   ~Scanner();
 
   std::shared_ptr<Token> GetToken();
@@ -31,6 +31,7 @@ class Scanner {
   std::map<std::string, TokenType> keywords_;
   std::ifstream source_stream_;
   int line_;
+  int c_ = 0;
   char putback_ = '\0';
 };
 

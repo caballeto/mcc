@@ -111,7 +111,11 @@ int CodeGenX86::Visit(const std::shared_ptr<Block>& block_stmt) {
 int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   int r1 = binary->left_->Accept(*this);
   int r2 = binary->right_->Accept(*this);
-
+  // b ->
+  // add w -> 16
+  // l -> 32
+  // q -> 64
+  // GetPostfix(Type) -> {b, "", l, q}
   switch (binary->op_->GetType()) {
     case TokenType::T_PLUS:
       out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
@@ -152,17 +156,17 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
 // #FIXME: Create separate AST node for identifier?
 int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   int reg = NewRegister();
-  switch (literal->literal_->GetType()) {
+  switch (literal->op_->GetType()) {
     case TokenType::T_INT_LITERAL:
-      out_ << "\tmovq\t$" << literal->literal_->GetIntValue()
+      out_ << "\tmovq\t$" << literal->op_->GetIntValue()
            << "," << kRegisters[reg] << "\n";
       break;
     case TokenType::T_IDENTIFIER:
-      out_ << "\tmovq\t" << literal->literal_->GetStringValue()
+      out_ << "\tmovq\t" << literal->op_->GetStringValue()
            << "(%rip), " << kRegisters[reg] << "\n";
       break;
     default:
-      std::cerr << "Invalid literal type '" << literal->literal_->GetType()
+      std::cerr << "Invalid literal type '" << literal->op_->GetType()
         << "'." << std::endl;
       exit(1);
   }
@@ -182,7 +186,7 @@ int CodeGenX86::Visit(const std::shared_ptr<Assign>& assign) {
   int r = assign->right_->Accept(*this);
   if (assign->left_->IsVariable()) {
     out_ << "\tmovq\t" << kRegisters[r] << ", "
-         << std::static_pointer_cast<Literal>(assign->left_)->literal_->GetStringValue()
+         << std::static_pointer_cast<Literal>(assign->left_)->op_->GetStringValue()
          << "(%rip)\n";
   } else {
     std::cerr << "Assign to non variable in assign expression." << std::endl;
@@ -203,7 +207,44 @@ int CodeGenX86::Visit(const std::shared_ptr<ExprList>& expr_list) {
   return NO_RETURN_REGISTER;
 }
 
+int CodeGenX86::GetTypeSize(Type type) {
+  switch (type) {
+    case Type::SHORT: return 2;
+    case Type::INT: return 4;
+    case Type::LONG: return 8;
+    default: {
+      reporter_.Report("Invalid variable type.");
+      exit(1);
+    }
+  }
+}
+
+std::string CodeGenX86::GetPostfix(Type type) {
+  switch (type) {
+    case Type::SHORT: return "";
+    case Type::INT: return "l";
+    case Type::LONG: return "q";
+    default: {
+      reporter_.Report("Invalid variable type.");
+      exit(1);
+    }
+  }
+}
+
+std::string CodeGenX86::GetRegister(int r, Type type) {
+  switch (type) {
+    case Type::SHORT: return kWregisters[r];
+    case Type::INT: return kDregisters[r];
+    case Type::LONG: return kRegisters[r];
+    default: {
+      reporter_.Report("Invalid variable type.");
+      exit(1);
+    }
+  }
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
+  // int size = GetTypeSize(var_decl->var_type_);
   out_ << "\t.comm\t" << var_decl->name_->GetStringValue() << ",8,8\n";
 
   if (var_decl->init_ != nullptr) {
