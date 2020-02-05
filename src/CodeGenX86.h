@@ -28,6 +28,7 @@ class CodeGenX86: public Visitor<int> {
   void Generate(const std::vector<std::shared_ptr<Stmt>>& stmts);
 
   int Visit(const std::shared_ptr<Binary>& binary) override;
+  int Visit(const std::shared_ptr<Unary>& unary) override;
   int Visit(const std::shared_ptr<Literal>& literal) override;
   int Visit(const std::shared_ptr<Assign>& assign) override;
   int Visit(const std::shared_ptr<VarDecl>& var_decl) override;
@@ -58,10 +59,10 @@ class CodeGenX86: public Visitor<int> {
   std::string GetRegister(int r, Type type);
 
   ErrorReporter& reporter_;
-  std::stack<std::pair<std::string, std::string>> loop_stack_;
+  std::stack<std::pair<std::string, std::string>> loop_stack_; // FIXME: move to type checker
   int label_;
   std::ofstream out_;
-  ControlFlowChecker flow_checker_;
+  ControlFlowChecker flow_checker_; // FIXME: move to type checker
   SymbolTable& symbol_table_;
 
   const std::vector<std::string> kRegisters = {"%r8", "%r9", "%r10", "%r11",

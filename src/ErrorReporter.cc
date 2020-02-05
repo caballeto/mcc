@@ -5,6 +5,7 @@
 #include "ErrorReporter.h"
 #include "TokenType.h"
 #include "Type.h"
+#include "ast.h"
 
 namespace mcc {
 
@@ -36,9 +37,49 @@ void ErrorReporter::Report(const std::string& message) {
   errors_++;
 }
 
-void ErrorReporter::ReportSemanticError(const std::string& message, Type t1, Type t2, const std::shared_ptr<Token>& token) {
+void ErrorReporter::PrintType(std::ostream& os, Type type, int indirection) {
+  os << "'" << type;
+  for (int i = 0; i < indirection; i++)
+    os << '*';
+  os << "'";
+}
+
+std::ostream& operator<<(std::ostream& os, const std::shared_ptr<Expr>& expr) {
+  ErrorReporter::PrintType(os, expr->type_, expr->indirection_);
+  return os;
+}
+
+void ErrorReporter::ReportSemanticError(
+    const std::string& message,
+    Type type,
+    int indirection,
+    const std::shared_ptr<Expr>& expr,
+    const std::shared_ptr<Token>& token) {
   PrintErrorLine(input_file_, token->GetLine(), token->GetCount());
-  os_ << message << "(" << t1 << " and " << t2 << ")" << ", near ";
+  os_ << message << "(";
+  PrintType(os_, type, indirection);
+  os_ << " and " << expr << ")" << ", near ";
+
+  if (token->GetType() == TokenType::T_INT_LITERAL) {
+    os_ << "'" << token->GetIntValue() << "'";
+  } else if (token->GetType() == TokenType::T_IDENTIFIER) {
+    os_ << "'" << token->GetStringValue() << "'";
+  } else {
+    os_ << token->GetType();
+  }
+
+  os_ << ", line " << token->GetLine() << std::endl;
+  os_ << std::endl;
+  errors_++;
+}
+
+void ErrorReporter::ReportSemanticError(
+    const std::string& message,
+    const std::shared_ptr<Expr>& e1,
+    const std::shared_ptr<Expr>& e2,
+    const std::shared_ptr<Token>& token) {
+  PrintErrorLine(input_file_, token->GetLine(), token->GetCount());
+  os_ << message << "(" << e1 << " and " << e2 << ")" << ", near ";
 
   if (token->GetType() == TokenType::T_INT_LITERAL) {
     os_ << "'" << token->GetIntValue() << "'";

@@ -131,4 +131,12 @@ int ControlFlow::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<ControlFlow>());
 }
 
+int Unary::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Unary>());
+}
+
+Type Unary::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<Unary>());
+}
+
 } // namespace mcc

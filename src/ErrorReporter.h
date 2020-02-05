@@ -9,11 +9,14 @@
 #include "Type.h"
 #include "Token.h"
 #include "ParseException.h"
+#include "ast.h"
 
 #define RED "\033[0;31m"
 #define RESET "\033[0m"
 
 namespace mcc {
+
+std::ostream& operator<<(std::ostream& os, const std::shared_ptr<Expr>& expr);
 
 class ErrorReporter {
  public:
@@ -27,13 +30,23 @@ class ErrorReporter {
 
   void PrintErrorLine(const std::string& file, int line, int c);
   void ReportParseError(const ParseException& exception);
-  void ReportSemanticError(const std::string& message, Type t1, Type t2, const std::shared_ptr<Token>& token);
+  void ReportSemanticError(const std::string& message,
+                           const std::shared_ptr<Expr>& e1,
+                           const std::shared_ptr<Expr>& e2,
+                           const std::shared_ptr<Token>& token);
 
   void Report(const std::string& message);
   void Report(const std::string& message, char c, int line);
   void Report(const std::string& message, const std::shared_ptr<Token>& token);
 
   bool HadErrors() const;
+
+  static void PrintType(std::ostream& os, Type type, int indirection);
+  void ReportSemanticError(const std::string& message,
+                           Type type,
+                           int indirection,
+                           const std::shared_ptr<Expr>& expr,
+                           const std::shared_ptr<Token>& token);
 
   std::string input_file_;
   std::ostream& os_;

@@ -61,4 +61,8 @@ int ControlFlowChecker::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   return 1;
 }
 
+int ControlFlowChecker::Visit(const std::shared_ptr<Unary>& unary) {
+  return 0;
+}
+
 } // namespace mcc

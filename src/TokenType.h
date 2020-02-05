@@ -31,6 +31,7 @@ enum class TokenType {
   T_LESS_EQUAL,
   T_GREATER_EQUAL,
   T_ASSIGN,
+  T_BIT_AND,
 
   // literals
   T_INT_LITERAL,
@@ -54,7 +55,7 @@ enum class TokenType {
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType type);
-int GetPrecedence(const std::shared_ptr<Token>& op);
+int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary);
 
 } // namespace mcc
 

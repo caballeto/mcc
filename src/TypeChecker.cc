@@ -20,7 +20,7 @@ namespace mcc {
 
 bool TypeChecker::IsPointer(ExprRef expr) {
   if (expr == nullptr) return false;
-  return expr->indirection > 0;
+  return expr->indirection_ > 0;
 }
 
 bool TypeChecker::IsIntegerType(ExprRef expr) {
@@ -28,47 +28,86 @@ bool TypeChecker::IsIntegerType(ExprRef expr) {
   return expr->type_ == Type::INT || expr->type_ == Type::SHORT || expr->type_ == Type::LONG;
 }
 
-// #FIXME: add support for pointers/structs/unions
-bool TypeChecker::MatchType(Type type, int indirection, ExprRef expr) {
-  if (expr->type_ == Type::VOID) {
-    reporter_.Report("'void' type could not be assigned to any variable ", expr->op_);
-    return false;
+bool TypeChecker::MatchTypeInit(Type type, int indirection, ExprRef init) {
+  if (indirection == 0) {
+    return IsPointer(init) ? true : (int) type >= (int) init->type_;
+  } else {
+    return true;
   }
-
-  if (type == expr->type_) return true;
-  int t1 = (int) type, t2 = (int) expr->type_;
-
-  if (t1 < t2) {
-    reporter_.ReportSemanticError("Could not cast right expression", type, expr->type_, expr->op_);
-    return false;
-  }
-
-  return true;
 }
 
 // #TODO: build type hierarchy as a separate structure and provide API for type casting
 // assuming types are not void
 Type TypeChecker::MatchTypes(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary) {
   if (e1->type_ == Type::VOID || e2->type_ == Type::VOID) {
-    reporter_.ReportSemanticError("Invalid operand types in binary expressions", e1->type_, e2->type_, binary->op_);
+    reporter_.ReportSemanticError("Invalid operands types in binary expression, 'void' is not allowed",
+        e1, e2, binary->op_);
     return Type::NONE;
   }
 
+  if (IsPointer(e1) && IsPointer(e2)) {
+    return MatchPointers(e1, e2, to_left, binary);
+  } else if (!IsPointer(e1) && !IsPointer(e2)) {
+    return MatchPrimitives(e1, e2, to_left, binary);
+  } else {
+    return MatchMixed(e1, e2, to_left, binary);
+  }
+}
+
+Type TypeChecker::MatchPointers(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary) {
+  if (to_left && binary->op_->GetType() == TokenType::T_ASSIGN) {
+    // FIXME: issue warnings on incompatible pointer casts
+    binary->type_ = e1->type_;
+    binary->indirection_ = e1->indirection_;
+    return binary->type_;
+  }
+
+  if (e1->type_ != e2->type_ || e1->indirection_ != e2->indirection_) {
+    reporter_.ReportSemanticError("Invalid operands types in binary expression", e1, e2, binary->op_);
+  } else if (binary->op_->GetType() != TokenType::T_MINUS) {
+    reporter_.ReportSemanticError("Invalid binary operation for types", e1, e2, binary->op_);
+  } else {
+    binary->type_ = Type::LONG;
+  }
+  return binary->type_; // Type::NONE by default
+}
+
+Type TypeChecker::MatchPrimitives(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary) {
   if (e1->type_ == e2->type_) return e1->type_;
 
+  // FIXME: fix for structs
   if (!IsIntegerType(e1) || !IsIntegerType(e2)) {
-    reporter_.ReportSemanticError("Invalid operand types in binary expressions", e1->type_, e2->type_, binary->op_);
+    reporter_.ReportSemanticError("Invalid operands types in binary expression", e1, e2, binary->op_);
     return Type::NONE;
   }
 
   return to_left ? PromoteToLeft(e1, e2) : Promote(e1, e2);
 }
 
+Type TypeChecker::MatchMixed(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary) {
+  if (binary->op_->GetType() == TokenType::T_ASSIGN) {
+    // FIXME: issue warnings on invalid assign conversions
+    binary->type_ = e1->type_;
+    binary->indirection_ = e1->indirection_;
+  } else {
+    if ((IsIntegerType(e1) && IsPointer(e2))) {
+      binary->type_ = e2->type_;
+      binary->indirection_ = e2->indirection_;
+    } else if (IsIntegerType(e2) && IsPointer(e1)) {
+      binary->type_ = e1->type_;
+      binary->indirection_ = e1->indirection_;
+    } else {
+      reporter_.ReportSemanticError("Invalid types for pointer arithmetic in binary expression", e1, e2, binary->op_);
+    }
+  }
+  return binary->type_;
+}
+
 Type TypeChecker::PromoteToLeft(ExprRef e1, ExprRef e2) {
   int t1 = (int) e1->type_, t2 = (int) e2->type_;
 
   if (t1 < t2) {
-    reporter_.ReportSemanticError("Could not cast right expression", e1->type_, e2->type_, e1->op_);
+    reporter_.ReportSemanticError("Could not cast right expression", e1, e2, e1->op_);
     return Type::NONE;
   }
 
@@ -80,6 +119,38 @@ Type TypeChecker::Promote(ExprRef e1, ExprRef e2) {
   return (Type) std::max(t1, t2);
 }
 
+Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
+  unary->right_->Accept(*this);
+
+  switch (unary->op_->GetType()) {
+    case TokenType::T_BIT_AND: {
+      if (!unary->right_->IsLvalue()) {
+        reporter_.Report("Expression to '&' operator must be an lvalue", unary->op_);
+        return Type::NONE;
+      }
+
+      unary->indirection_ = unary->right_->indirection_ + 1;
+      unary->type_ = unary->right_->type_;
+      return unary->type_;
+    }
+    case TokenType::T_STAR: {
+      if (!IsPointer(unary->right_)) {
+        reporter_.Report("Expression to '*' must be a pointer", unary->op_);
+        return Type::NONE;
+      }
+
+      unary->is_lvalue = true;
+      unary->indirection_ = unary->right_->indirection_ - 1;
+      unary->type_ = unary->right_->type_;
+      return unary->type_;
+    }
+    default: {
+      reporter_.Report("Invalid operator in 'unary' expression", unary->op_);
+      return Type::NONE;
+    }
+  }
+}
+
 Type TypeChecker::Visit(const std::shared_ptr<Binary>& binary) {
   binary->left_->Accept(*this);
   binary->right_->Accept(*this);
@@ -88,12 +159,13 @@ Type TypeChecker::Visit(const std::shared_ptr<Binary>& binary) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Assign>& assign) {
+  assign->left_->Accept(*this);
+
   if (!assign->left_->IsLvalue()) {
     reporter_.Report("Assign to rvalue is not allowed", assign->op_);
     return Type::NONE;
   }
 
-  assign->left_->Accept(*this);
   assign->right_->Accept(*this);
   assign->type_ = MatchTypes(assign->left_, assign->right_, true, assign);
   return assign->type_;
@@ -115,7 +187,8 @@ Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
       return Type::NONE;
     }
 
-    literal->type_ = symbol_table_.Get(id).type_;
+    literal->type_ = symbol_table_.Get(id).type;
+    literal->indirection_ = symbol_table_.Get(id).indirection;
     return literal->type_;
   } else {
     int val = literal->op_->GetIntValue();
@@ -222,11 +295,12 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     return Type::NONE;
   }
 
+  // FIXME: rewrite VarDecl to take literal as left parameter?
   if (decl->init_ != nullptr) {
     decl->init_->Accept(*this);
-    if (!MatchType(decl->var_type_, decl->indirection_, decl->init_)) {
+    if (!MatchTypeInit(decl->var_type_, decl->indirection_, decl->init_)) {
       reporter_.ReportSemanticError("The type of init expression does not match the declared type of the variable ",
-          decl->var_type_, decl->init_->type_, decl->token_);
+          decl->var_type_, decl->indirection_, decl->init_, decl->token_);
     }
   }
 

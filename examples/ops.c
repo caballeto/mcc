@@ -12,6 +12,7 @@ int main() {
   printf("%d", p1 - x);
   printf("%d", p1 * x);
   printf("%d", p1 / x);
+  printf("%d", p1 & x);
   printf("%d", a + p1);
   printf("%d", g + p1);
   printf("%d", x + y);

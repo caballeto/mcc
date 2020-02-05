@@ -14,7 +14,7 @@ namespace mcc {
 
 struct Entry {
   std::string name;
-  Type type_;
+  Type type;
   int indirection;
 };
 

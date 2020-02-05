@@ -54,6 +54,7 @@ int AstDumper::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<var-decl>\n";
   out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl->name_->GetStringValue() << "</name>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << var_decl->indirection_ << "</ind>\n";
 
   if (var_decl->init_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<init>\n";
@@ -215,6 +216,15 @@ int AstDumper::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   } else {
     out_ << std::string(spaces_, ' ') << "<continue/>\n";
   }
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<Unary>& unary) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<unary op='" << unary->op_->GetType() << "'>" << "\n";
+  unary->right_->Accept(*this);
+  out_ << std::string(spaces_, ' ') << "</unary>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }

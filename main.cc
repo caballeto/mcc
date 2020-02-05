@@ -43,29 +43,29 @@ int main(int argc, char* argv[]) {
   std::vector<std::shared_ptr<mcc::Stmt>> stmts = parser.Parse();
 
   if (reporter.HadErrors()) {
-    std::cerr << "-- encountered " << reporter.errors_ << " syntax errors. Stopping compilation." << std::endl;
+    std::cerr << "Encountered " << reporter.errors_ << " syntax errors. Stopping compilation." << std::endl;
     exit(1);
   }
 
-  std::cout << "-- generated tree" << std::endl;
+  // std::cout << "-- generated tree" << std::endl;
 
   dumper.Dump(stmts);
   dumper.Flush();
 
-  std::cout << "-- dumped tree into '" << AST_DUMP_FILE << "'" << std::endl;
+  // std::cout << "-- dumped tree into '" << AST_DUMP_FILE << "'" << std::endl;
 
   type_checker.TypeCheck(stmts);
 
   if (reporter.HadErrors()) {
-    std::cerr << "-- encountered " << reporter.errors_ << " semantic errors. Stopping compilation." << std::endl;
+    std::cerr << "Encountered " << reporter.errors_ << " semantic errors. Stopping compilation." << std::endl;
     exit(1);
   }
 
-  std::cout << "-- type checked statements" << std::endl;
+  // std::cout << "-- type checked statements" << std::endl;
 
   code_gen.Generate(stmts);
 
-  std::cout << "-- generated assembly into '" << ASSEMBY_FILE << "'" << std::endl;
+  // std::cout << "-- generated assembly into '" << ASSEMBY_FILE << "'" << std::endl;
 
   return 0;
 }

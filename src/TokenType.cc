@@ -43,6 +43,7 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
     case TokenType::T_VOID: return os << "'void'";
     case TokenType::T_SHORT: return os << "'short'";
     case TokenType::T_LONG: return os << "'long'";
+    case TokenType::T_BIT_AND: return os << "&";
   }
 
   return os << static_cast<std::uint16_t>(type);
@@ -50,10 +51,12 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
 
 // #FIXME: the precedence values are relative and will change when new operators added
 // #FIXME: see https://en.cppreference.com/w/c/language/operator_precedence
-int GetPrecedence(const std::shared_ptr<Token>& op) {
+int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary) {
   switch (op->GetType()) {
     case TokenType::T_ASSIGN:
-      return 8;
+      return 2;
+    case TokenType::T_BIT_AND:
+      return is_unary ? 15 : 8;
     case TokenType::T_EQUALS:
     case TokenType::T_NOT_EQUALS:
       return 9;
@@ -66,6 +69,7 @@ int GetPrecedence(const std::shared_ptr<Token>& op) {
     case TokenType::T_MINUS:
       return 11;
     case TokenType::T_STAR:
+      return is_unary ? 13 : 12;
     case TokenType::T_SLASH:
       return 12;
     default:

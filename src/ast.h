@@ -191,6 +191,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   virtual int Accept(Visitor<int>& visitor) = 0;
   virtual Type Accept(Visitor<Type>& visitor) = 0;
+
   virtual bool IsVariable();
   virtual bool IsLvalue();
 
@@ -200,7 +201,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
   }
 
   Type type_ = Type::NONE;
-  int indirection = 0;
+  int indirection_ = 0;
   bool is_lvalue = false;
   std::shared_ptr<Token> op_;
 };
@@ -228,6 +229,19 @@ class Binary : public Expr {
   Type Accept(Visitor<Type>& visitor) override;
 
   std::shared_ptr<Expr> left_;
+  std::shared_ptr<Expr> right_;
+};
+
+// #FIXME: override is variable
+class Unary : public Expr {
+ public:
+  Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
+    : Expr(std::move(op)), right_(std::move(right))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
   std::shared_ptr<Expr> right_;
 };
 

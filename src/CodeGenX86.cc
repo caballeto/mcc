@@ -108,6 +108,28 @@ int CodeGenX86::Visit(const std::shared_ptr<Block>& block_stmt) {
   return NO_RETURN_REGISTER;
 }
 
+int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
+  int r = unary->right_->Accept(*this);
+
+  switch (unary->op_->GetType()) {
+    case TokenType::T_BIT_AND: {
+      out_ << "\tleaq\t" << std::static_pointer_cast<Literal>(unary->right_)->op_->GetStringValue()
+        << "(%rip), " << kRegisters[r] << "\n";
+      break;
+    }
+    case TokenType::T_STAR: {
+      out_ << "\tmovq\t" << "(" << kRegisters[r] << ")" << ", " << kRegisters[r] << "\n";
+      break;
+    }
+    default: {
+      std::cerr << "Invalid operator in binary expression: " << unary->op_ << std::endl;
+      exit(1);
+    }
+  }
+
+  return r;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   int r1 = binary->left_->Accept(*this);
   int r2 = binary->right_->Accept(*this);
@@ -155,15 +177,16 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
 
 // #FIXME: Create separate AST node for identifier?
 int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
-  int reg = NewRegister();
+  int r = NewRegister();
+
   switch (literal->op_->GetType()) {
     case TokenType::T_INT_LITERAL:
       out_ << "\tmovq\t$" << literal->op_->GetIntValue()
-           << "," << kRegisters[reg] << "\n";
+           << "," << kRegisters[r] << "\n";
       break;
     case TokenType::T_IDENTIFIER:
       out_ << "\tmovq\t" << literal->op_->GetStringValue()
-           << "(%rip), " << kRegisters[reg] << "\n";
+           << "(%rip), " << kRegisters[r] << "\n";
       break;
     default:
       std::cerr << "Invalid literal type '" << literal->op_->GetType()
@@ -171,7 +194,7 @@ int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
       exit(1);
   }
 
-  return reg;
+  return r;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Print>& print) {

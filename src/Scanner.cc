@@ -70,6 +70,9 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '}':
       token->SetType(TokenType::T_RBRACE);
       break;
+    case '&':
+      token->SetType(TokenType ::T_BIT_AND);
+      break;
     case '>':
       if ((c = Next()) == '=') {
         token->SetType(TokenType::T_GREATER_EQUAL);

@@ -23,6 +23,7 @@ class TypeChecker : public Visitor<Type> {
 
   void TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts);
 
+  Type Visit(const std::shared_ptr<Unary>& unary) override;
   Type Visit(const std::shared_ptr<Binary>& binary) override;
   Type Visit(const std::shared_ptr<Literal>& literal) override;
   Type Visit(const std::shared_ptr<Assign>& assign) override;
@@ -43,7 +44,20 @@ class TypeChecker : public Visitor<Type> {
   Type Promote(ExprRef e1, ExprRef e2);
   Type PromoteToLeft(ExprRef e1, ExprRef e2);
   Type MatchTypes(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary);
-  bool MatchType(Type type, int indirection, ExprRef expr);
+
+  Type MatchPointers(const std::shared_ptr<Expr>& e1,
+                     const std::shared_ptr<Expr>& e2,
+                     bool to_left,
+                     const std::shared_ptr<Expr>& binary);
+  Type MatchPrimitives(const std::shared_ptr<Expr>& e1,
+                       const std::shared_ptr<Expr>& e2,
+                       bool to_left,
+                       const std::shared_ptr<Expr> &binary);
+  Type MatchMixed(const std::shared_ptr<Expr>& e1,
+                  const std::shared_ptr<Expr>& e2,
+                  bool to_left,
+                  const std::shared_ptr<Expr>& binary);
+  bool MatchTypeInit(Type type, int indirection, const std::shared_ptr<Expr>& init);
 
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;

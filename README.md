@@ -210,6 +210,10 @@ So far, I have implemented the following:
 
 More tasks for today:
 
-- implement pointers (parse + typecheck + dereference/assign ops)
-- think about where to catch `ParseException`, so as to avoid cascading errors
-- add labels/goto if will have time
+- [ ] implement pointers (parse + typecheck + dereference/assign ops)
+- [ ] think about where to catch `ParseException`, so as to avoid cascading errors
+- [ ] add labels/goto if will have time
+- [ ] automatic tests with python script
+
+Edit: have started implementing pointers, but they are more complex than expected.
+Dereferencing and taking address is implemented. Assign to address is left for tomorrow.

@@ -138,9 +138,11 @@ std::shared_ptr<DeclList> Parser::DeclarationList() {
   std::vector<std::shared_ptr<VarDecl>> var_decl_list;
 
   do {
+    int indirection = 0;
+    while (Match(TokenType::T_STAR)) indirection++;
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
     std::shared_ptr<Expr> init = OptionalExpression(0);
-    var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, TokenToType(type_token->GetType()), 0));
+    var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, TokenToType(type_token->GetType()), indirection));
   } while (Match(TokenType::T_COMMA));
 
   Consume(TokenType::T_SEMICOLON, "Expected ';' after variable declaration");
@@ -161,6 +163,7 @@ std::shared_ptr<ExprList> Parser::ExpressionList() {
 
 std::shared_ptr<Stmt> Parser::ExpressionStatement() {
   switch (Peek()->GetType()) {
+    case TokenType::T_STAR:
     case TokenType::T_IDENTIFIER: {
       std::shared_ptr<Expr> expr = Expression(0);
       Consume(TokenType::T_SEMICOLON, "Expected ';' after expression statement");
@@ -192,17 +195,17 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
   if (IsStopToken(curr_op->GetType()))
     return left;
 
-  while (precedence < GetPrecedence(curr_op)) {
+  while (precedence < GetPrecedence(curr_op, false)) {
     switch (curr_op->GetType()) {
       case TokenType::T_ASSIGN: {
         std::shared_ptr<Token> token = Consume(TokenType::T_ASSIGN);
-        right = Expression(GetPrecedence(curr_op) - 1);
+        right = Expression(GetPrecedence(curr_op, false) - 1);
         left = std::make_shared<Assign>(std::move(token), left, right);
         break;
       }
       default: {
         Next();
-        right = Expression(GetPrecedence(curr_op));
+        right = Expression(GetPrecedence(curr_op, false));
         left = std::make_shared<Binary>(curr_op, left, right);
       }
     }
@@ -224,8 +227,6 @@ std::shared_ptr<Expr> Parser::OptionalExpression(int precedence) {
   }
 }
 
-//      }
-
 std::shared_ptr<Expr> Parser::Primary() {
   switch (Peek()->GetType()) {
     case TokenType::T_IDENTIFIER: {
@@ -238,6 +239,13 @@ std::shared_ptr<Expr> Parser::Primary() {
       std::shared_ptr<Literal> literal = std::make_shared<Literal>(Peek());
       Next();
       return literal;
+    }
+    case TokenType::T_BIT_AND:
+    case TokenType::T_STAR: {
+      std::shared_ptr<Token> op = Peek();
+      Next();
+      std::shared_ptr<Expr> right = Expression(GetPrecedence(op, true) - 1);
+      return std::make_shared<Unary>(op, right);
     }
     default:
       throw ParseException("Expected identifier or literal", Peek());

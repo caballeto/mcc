@@ -13,6 +13,7 @@ template <typename T>
 class Visitor {
  public:
   virtual T Visit(const std::shared_ptr<Binary>& binary) = 0;
+  virtual T Visit(const std::shared_ptr<Unary>& unary) = 0;
   virtual T Visit(const std::shared_ptr<Literal>& literal) = 0;
   virtual T Visit(const std::shared_ptr<Assign>& assign) = 0;
   virtual T Visit(const std::shared_ptr<VarDecl>& var_decl) = 0;
