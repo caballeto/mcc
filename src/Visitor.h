@@ -16,6 +16,7 @@ class Visitor {
   virtual T Visit(const std::shared_ptr<Unary>& unary) = 0;
   virtual T Visit(const std::shared_ptr<Literal>& literal) = 0;
   virtual T Visit(const std::shared_ptr<Assign>& assign) = 0;
+  virtual T Visit(const std::shared_ptr<FuncDecl>& func_decl) = 0;
   virtual T Visit(const std::shared_ptr<VarDecl>& var_decl) = 0;
   virtual T Visit(const std::shared_ptr<Print>& print) = 0;
   virtual T Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) = 0;
@@ -26,6 +27,7 @@ class Visitor {
   virtual T Visit(const std::shared_ptr<DeclList>& decl_list) = 0;
   virtual T Visit(const std::shared_ptr<ExprList>& expr_list) = 0;
   virtual T Visit(const std::shared_ptr<ControlFlow>& flow_stmt) = 0;
+  virtual T Visit(const std::shared_ptr<Return>& return_stmt) = 0;
 };
 
 } // namespace mcc

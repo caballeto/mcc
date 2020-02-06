@@ -1,15 +1,13 @@
 import sys
 import os
 import difflib
-import subprocess
+
 from subprocess import Popen, PIPE
 
 TEMP_FILE = "_temp.txt"
 DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJ_PATH = os.path.abspath(os.path.join(DIR_PATH, os.pardir))
 EXEC = "compiler"
-TEST_INPUT = ".input"
-TEST_OUTPUT = ".output"
 
 def run():
     pass

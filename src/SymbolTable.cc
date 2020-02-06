@@ -38,4 +38,8 @@ bool SymbolTable::Remove(const std::string &name) {
   return false;
 }
 
+int SymbolTable::Put(const std::shared_ptr<FuncDecl>& func_decl) {
+  return Put(func_decl->name_->GetStringValue(), func_decl->return_type_, func_decl->indirection_);
+}
+
 } // namespace mcc

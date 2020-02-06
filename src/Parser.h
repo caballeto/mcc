@@ -51,12 +51,16 @@ class Parser {
   static void DisallowDecl(const std::shared_ptr<Stmt>& stmt, const std::shared_ptr<Token>& token);
   void synchronize();
 
+  std::shared_ptr<Token> Consume(TokenType type);
+  static bool IsStopToken(TokenType type);
+  std::shared_ptr<Stmt> Declaration();
+  std::shared_ptr<Stmt> GlobalVarDeclaration(const std::shared_ptr<Token>& type_token, int indirection, std::shared_ptr<Token> name);
+  std::shared_ptr<Return> ReturnStatement();
+  std::shared_ptr<DeclList> ParameterList();
 
   Scanner& scanner_;
   ErrorReporter& reporter_;
   std::shared_ptr<Token> token_;
-  std::shared_ptr<Token> Consume(TokenType type);
-  bool IsStopToken(TokenType type);
 };
 
 } // namespace mcc

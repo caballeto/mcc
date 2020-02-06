@@ -18,7 +18,7 @@ using TokenRef = const std::shared_ptr<Token>&;
 class TypeChecker : public Visitor<Type> {
  public:
   TypeChecker(ErrorReporter& reporter, SymbolTable& symbol_table)
-    : reporter_(reporter), symbol_table_(symbol_table)
+    : reporter_(reporter), symbol_table_(symbol_table), curr_func(nullptr)
   { }
 
   void TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts);
@@ -58,9 +58,12 @@ class TypeChecker : public Visitor<Type> {
                   bool to_left,
                   const std::shared_ptr<Expr>& binary);
   bool MatchTypeInit(Type type, int indirection, const std::shared_ptr<Expr>& init);
+  Type Visit(const std::shared_ptr<FuncDecl> &func_decl) override;
+  Type Visit(const std::shared_ptr<Return> &return_stmt) override;
 
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;
+  std::shared_ptr<FuncDecl> curr_func;
 };
 
 } // namespace mcc

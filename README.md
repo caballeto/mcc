@@ -210,10 +210,56 @@ So far, I have implemented the following:
 
 More tasks for today:
 
-- [ ] implement pointers (parse + typecheck + dereference/assign ops)
-- [ ] think about where to catch `ParseException`, so as to avoid cascading errors
+- [x] implement pointers (parse + typecheck + dereference/assign ops)
+- [x] think about where to catch `ParseException`, so as to avoid cascading errors
 - [ ] add labels/goto if will have time
-- [ ] automatic tests with python script
+- [x] automatic tests with python script
 
 Edit: have started implementing pointers, but they are more complex than expected.
 Dereferencing and taking address is implemented. Assign to address is left for tomorrow.
+
+## Day 9
+
+Today, I worked on adding testing features, which took lots of time. Mainly
+trying to figure out how to work with stream redirections in python/c++/shell
+in order to compare output correctly. The final program is still pretty bad,
+but I will edit it somewhat later.
+
+Implemented:
+
+- pointers dereferencing, taking address, assigning to pointer
+- assigning lvalue flags
+- parsing parameter list
+- function definition (zero parameters only)
+- storing function with no parameters in symbol table (other parameters ignored)
+- code generation for functions definitions
+- return statements (no check for function with no return)
+- checks for compatible return type, return of 'void'
+
+## **Next**
+
+Well, there are lots of features to work on, I getting an understanding
+that it is indeed a challengable project. Features for the near future:
+
+- functions calls with no arguments
+- loading return value of function calls
+- more operators (logical, bitwise, grouping, ++/-- for pointers also)
+- strings and arrays
+- local variables
+- passing function call parameters
+- general function calls (syntax, typecheck, code gen, etc.)
+- labels/goto
+
+Also, thoughts on optimization:
+
+- make a bitfield, which will store flags used during tree traversal
+- add optimizer which will prune the tree
+  1. Eliminate unreachable code.
+  2. Eliminate unused parts of code (that do not have effects).
+  3. Fold constants and useless operators (e. g. &*p1 == p1).
+  4. Add checks for last statements, in order to generate less labels/code.
+  5. Add more checks for eliminating useless instructions.
+
+
+
+

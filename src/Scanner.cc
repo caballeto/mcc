@@ -22,6 +22,7 @@ Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
   keywords_["do"] = TokenType::T_DO;
   keywords_["break"] = TokenType::T_BREAK;
   keywords_["continue"] = TokenType::T_CONTINUE;
+  keywords_["return"] = TokenType::T_RETURN;
 
   // types
   keywords_["int"] = TokenType::T_INT;

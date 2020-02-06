@@ -23,6 +23,7 @@ class CodeGenX86: public Visitor<int> {
     : symbol_table_(symbol_table), reporter_(reporter) {
     out_.open(output_file, std::ios::out);
     label_ = 0;
+    return_label_ = -1;
   }
 
   void Generate(const std::vector<std::shared_ptr<Stmt>>& stmts);
@@ -41,6 +42,8 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<DeclList>& decl_list) override;
   int Visit(const std::shared_ptr<ExprList>& expr_list) override;
   int Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
+  int Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
+  int Visit(const std::shared_ptr<Return>& return_stmt) override;
 
  private:
   int GetLabel();
@@ -61,6 +64,7 @@ class CodeGenX86: public Visitor<int> {
   ErrorReporter& reporter_;
   std::stack<std::pair<std::string, std::string>> loop_stack_; // FIXME: move to type checker
   int label_;
+  int return_label_;
   std::ofstream out_;
   ControlFlowChecker flow_checker_; // FIXME: move to type checker
   SymbolTable& symbol_table_;

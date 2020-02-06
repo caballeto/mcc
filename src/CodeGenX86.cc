@@ -283,6 +283,30 @@ int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   return NO_RETURN_REGISTER;
 }
 
+// #TODO: add local variables and parameter code generation
+int CodeGenX86::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
+  out_ << "\t.text\n";
+  out_ << "\t.globl\t" << func_decl->name_->GetStringValue() << "\n";
+  out_ << "\t.type\t" << func_decl->name_->GetStringValue() << ", @function\n";
+  out_ << func_decl->name_->GetStringValue() << ":\n";
+  out_ << "\tpushq\t%rbp\n";
+  out_ << "\tmovq\t%rsp, %rbp\n";
+  return_label_ = GetLabel();
+  func_decl->body_->Accept(*this);
+  out_ << "L" << return_label_ << ":\n";
+  out_ << "\tpopq\t%rbp\n";
+  out_ << "\tret\n";
+  return NO_RETURN_REGISTER;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Return>& return_stmt) {
+  int r = return_stmt->expr_->Accept(*this);
+  out_ << "\tmovq\t" << kRegisters[r] << ", %rax\n";
+  out_ << "\tjmp\tL" << return_label_ << "\n";
+  FreeRegister(r);
+  return NO_RETURN_REGISTER;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
   int r = expr_stmt->expr_->Accept(*this);
   FreeRegister(r);
@@ -313,7 +337,6 @@ std::string CodeGenX86::GetSetInstr(TokenType type) {
       exit(1);
   }
 }
-
 void CodeGenX86::Preamble() {
   out_ <<
       "\t.text\n"
@@ -331,13 +354,7 @@ void CodeGenX86::Preamble() {
       "\tcall	printf@PLT\n"
       "\tnop\n"
       "\tleave\n"
-      "\tret\n"
-      "\n"
-      "\t.globl\tmain\n"
-      "\t.type\tmain, @function\n"
-      "main:\n"
-      "\tpushq\t%rbp\n"
-      "\tmovq	%rsp, %rbp\n";
+      "\tret\n";
 }
 
 void CodeGenX86::Postamble() {
@@ -345,12 +362,14 @@ void CodeGenX86::Postamble() {
           "\tpopq	%rbp\n"
           "\tret\n";
 }
+
 void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
   Preamble();
   for (const auto& stmt : stmts)
     stmt->Accept(*this);
   Postamble();
 }
+
 void CodeGenX86::PrintInt(int r) {
   out_ << "\tmovq\t" << kRegisters[r] << ", %rdi\n"
     << "\tcall\tprintint\n";
@@ -366,13 +385,11 @@ int CodeGenX86::NewRegister() {
   std::cerr << "Run out of registers." << std::endl; // #TODO: Register spilling
   exit(1);
 }
-
 void CodeGenX86::FreeRegister(int reg) {
   if (reg == NO_RETURN_REGISTER)
     return;
   regs_status[reg] = true;
 }
-
 int CodeGenX86::GetLabel() {
   return label_++;
 }

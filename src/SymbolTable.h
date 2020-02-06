@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "Type.h"
+#include "ast.h"
 
 #define ENTRY_LIMIT 1024
 
@@ -25,6 +26,8 @@ class SymbolTable {
   Entry& Get(int id);
 
   int Get(const std::string& name);
+
+  int Put(const std::shared_ptr<FuncDecl>& func_decl);
 
   int Put(const std::string& name, Type type, int indirection);
 

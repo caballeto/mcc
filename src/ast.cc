@@ -139,4 +139,24 @@ Type Unary::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Unary>());
 }
 
+bool FuncDecl::IsDeclaration() const {
+  return true;
+}
+
+Type FuncDecl::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<FuncDecl>());
+}
+
+int FuncDecl::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<FuncDecl>());
+}
+
+int Return::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Return>());
+}
+
+Type Return::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<Return>());
+}
+
 } // namespace mcc

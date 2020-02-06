@@ -120,6 +120,7 @@ Type TypeChecker::Promote(ExprRef e1, ExprRef e2) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
+  unary->right_->is_const_ = unary->is_const_;
   unary->right_->Accept(*this);
 
   switch (unary->op_->GetType()) {
@@ -152,6 +153,8 @@ Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Binary>& binary) {
+  binary->left_->is_const_ = binary->is_const_;
+  binary->right_->is_const_ = binary->is_const_;
   binary->left_->Accept(*this);
   binary->right_->Accept(*this);
   binary->type_ = MatchTypes(binary->left_, binary->right_, false, binary);
@@ -159,6 +162,8 @@ Type TypeChecker::Visit(const std::shared_ptr<Binary>& binary) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Assign>& assign) {
+  assign->left_->is_const_ = assign->is_const_;
+  assign->right_->is_const_ = assign->is_const_;
   assign->left_->Accept(*this);
 
   if (!assign->left_->IsLvalue()) {
@@ -184,6 +189,12 @@ void TypeChecker::TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts) {
 
 Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
   if (literal->IsVariable()) {
+    if (literal->is_const_) {
+      reporter_.Report("Variables initializers '"
+          + literal->op_->GetStringValue() + "' must be constant", literal->op_);
+      return Type::NONE;
+    }
+
     int id = symbol_table_.Get(literal->op_->GetStringValue());
 
     if (id == -1) {
@@ -285,6 +296,40 @@ Type TypeChecker::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   return Type::NONE;
 }
 
+Type TypeChecker::Visit(const std::shared_ptr<Return>& return_stmt) {
+  return_stmt->expr_->Accept(*this);
+
+  if (curr_func->return_type_ == Type::VOID) {
+    reporter_.ReportSemanticError("Declared return type is 'void', but return statement found",
+                                  curr_func->return_type_, curr_func->indirection_, return_stmt->expr_, return_stmt->token_);
+    return Type::NONE;
+  }
+
+  if (!MatchTypeInit(curr_func->return_type_, curr_func->indirection_, return_stmt->expr_)) {
+    reporter_.ReportSemanticError("Declared type of init expression does not correspond to inferred type ",
+        curr_func->return_type_, curr_func->indirection_, return_stmt->expr_, return_stmt->token_);
+    return Type::NONE;
+  }
+
+  return Type::NONE;
+}
+
+Type TypeChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
+  int id = symbol_table_.Get(func_decl->name_->GetStringValue());
+
+  if (id == -1) {
+    symbol_table_.Put(func_decl);
+  } else {
+    reporter_.Report("Function '" + func_decl->name_->GetStringValue() + "' redefinition", func_decl->name_);
+    return Type::NONE;
+  }
+
+  curr_func = func_decl;
+  func_decl->body_->Accept(*this);
+  curr_func = nullptr;
+  return Type::NONE;
+}
+
 Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
   int id = symbol_table_.Get(decl->name_->GetStringValue());
 
@@ -294,14 +339,14 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
   }
 
   if (id == -1) {
-    id = symbol_table_.Put(decl->name_->GetStringValue(), decl->var_type_, decl->indirection_);
+    symbol_table_.Put(decl->name_->GetStringValue(), decl->var_type_, decl->indirection_);
   } else {
     reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has already been declared", decl->name_);
     return Type::NONE;
   }
 
-  // FIXME: rewrite VarDecl to take literal as left parameter?
   if (decl->init_ != nullptr) {
+    decl->init_->is_const_ = decl->is_const_init_;
     decl->init_->Accept(*this);
     if (!MatchTypeInit(decl->var_type_, decl->indirection_, decl->init_)) {
       reporter_.ReportSemanticError("The type of init expression does not match the declared type of the variable ",

@@ -13,7 +13,7 @@ std::vector<std::shared_ptr<Stmt>> Parser::Parse() {
 
   while (!Check(TokenType::T_EOF)) {
     try {
-      stmts.push_back(Statement());
+      stmts.push_back(Declaration());
     } catch (const ParseException& e) {
       reporter_.ReportParseError(e);
       synchronize();
@@ -23,11 +23,61 @@ std::vector<std::shared_ptr<Stmt>> Parser::Parse() {
   return std::move(stmts);
 }
 
+std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
+    const std::shared_ptr<Token>& type_token, int indirection, std::shared_ptr<Token> name) {
+  std::vector<std::shared_ptr<VarDecl>> var_decl_list;
+  Type decl_type = TokenToType(type_token->GetType());
+  std::shared_ptr<Expr> init = OptionalExpression(0);
+  var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, decl_type, indirection, true));
+
+  if (!Check(TokenType::T_SEMICOLON)) {
+    do {
+      indirection = 0;
+      while (Match(TokenType::T_STAR)) indirection++;
+      name = Consume(TokenType::T_IDENTIFIER, "Expected identifier after type declaration");
+      init = OptionalExpression(0);
+      var_decl_list.push_back(std::make_shared<VarDecl>(
+          type_token, name, init, decl_type, indirection, true));
+    } while (Match(TokenType::T_COMMA));
+  }
+
+  Consume(TokenType::T_SEMICOLON, "Expected ';' after global variable declaration");
+  return std::make_shared<DeclList>(type_token, var_decl_list);
+}
+
+// #FIXME: for strucrs/unions
+std::shared_ptr<Stmt> Parser::Declaration() {
+  switch (Peek()->GetType()) {
+    case TokenType::T_VOID:
+    case TokenType::T_SHORT:
+    case TokenType::T_INT:
+    case TokenType::T_LONG: {
+      std::shared_ptr<Token> type = Peek();
+      Next();
+      int indirection = 0;
+      while (Match(TokenType::T_STAR)) indirection++;
+      std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER, "Identifier expected in global declaration");
+
+      if (Match(TokenType::T_LPAREN)) { // function
+        std::shared_ptr<DeclList> signature = ParameterList();
+        Consume(TokenType::T_RPAREN, "')' expected after function declaration");
+        std::shared_ptr<Block> block = BlockStatement();
+        return std::make_shared<FuncDecl>(TokenToType(type->GetType()), indirection, name, signature, block);
+      } else { // var declaration
+        return GlobalVarDeclaration(type, indirection, name);
+      }
+    }
+    default: {
+      throw ParseException("Unknown type", Peek());
+    }
+  }
+}
+
 // #FIXME: global elements could only have CONSTANT inits (add type check + fix parser)
 // #FIXME: local variables could use themselves in their own inits (will be written to some mem (e. g. addq $1, -4(%rbp))
 std::shared_ptr<Stmt> Parser::Statement() {
   switch (Peek()->GetType()) {
-    case TokenType::T_PRINT:return PrintStatement();
+    case TokenType::T_PRINT:    return PrintStatement();
     case TokenType::T_VOID:
     case TokenType::T_INT:
     case TokenType::T_SHORT:
@@ -39,9 +89,17 @@ std::shared_ptr<Stmt> Parser::Statement() {
     case TokenType::T_LBRACE:   return BlockStatement();
     case TokenType::T_BREAK:    return BreakStatement();
     case TokenType::T_CONTINUE: return ContinueStatement();
+    case TokenType::T_RETURN:   return ReturnStatement();
     default:
       return ExpressionStatement();
   }
+}
+
+std::shared_ptr<Return> Parser::ReturnStatement() {
+  std::shared_ptr<Token> token = Consume(TokenType::T_RETURN);
+  std::shared_ptr<Expr> expr = Expression(0);
+  Consume(TokenType::T_SEMICOLON, "Expected ';' after return statement");
+  return std::make_shared<Return>(token, expr);
 }
 
 std::shared_ptr<ControlFlow> Parser::BreakStatement() {
@@ -132,17 +190,38 @@ std::shared_ptr<While> Parser::WhileStatement() {
   return std::make_shared<While>(while_token, condition, loop_block, false);
 }
 
+std::shared_ptr<DeclList> Parser::ParameterList() {
+  std::shared_ptr<Token> token = Peek();
+  std::vector<std::shared_ptr<VarDecl>> var_decl_list;
+
+  if (!Check(TokenType::T_RPAREN)) {
+    do {
+      std::shared_ptr<Token> token_type = Peek();
+      if (!MatchType()) throw ParseException("Type expected in parameter list", token_type);
+      int indirection = 0;
+      while (Match(TokenType::T_STAR)) indirection++;
+      std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
+      var_decl_list.push_back(std::make_shared<VarDecl>(
+          token, name, nullptr, TokenToType(token_type->GetType()), indirection, false));
+    } while (Match(TokenType::T_COMMA));
+  }
+
+  return std::make_shared<DeclList>(token, var_decl_list);
+}
+
 std::shared_ptr<DeclList> Parser::DeclarationList() {
   std::shared_ptr<Token> type_token = Peek();
   MatchType();
   std::vector<std::shared_ptr<VarDecl>> var_decl_list;
+  Type decl_type = TokenToType(type_token->GetType());
 
   do {
     int indirection = 0;
     while (Match(TokenType::T_STAR)) indirection++;
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
     std::shared_ptr<Expr> init = OptionalExpression(0);
-    var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, TokenToType(type_token->GetType()), indirection));
+    var_decl_list.push_back(std::make_shared<VarDecl>(
+        type_token, name, init, decl_type, indirection,false));
   } while (Match(TokenType::T_COMMA));
 
   Consume(TokenType::T_SEMICOLON, "Expected ';' after variable declaration");

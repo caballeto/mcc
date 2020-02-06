@@ -123,6 +123,18 @@ class ExprList : public Stmt {
   std::vector<std::shared_ptr<Expr>> expr_list_;
 };
 
+class Return : public Stmt {
+ public:
+  explicit Return(std::shared_ptr<Token> token, std::shared_ptr<Expr> expr)
+    : Stmt(std::move(token)), expr_(std::move(expr))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
+  std::shared_ptr<Expr> expr_;
+};
+
 // break/continue
 class ControlFlow : public Stmt {
  public:
@@ -136,11 +148,48 @@ class ControlFlow : public Stmt {
   bool is_break_;
 };
 
-// #TODO: add type in future
+class FuncDecl : public Stmt {
+ public:
+  FuncDecl(
+      Type return_type,
+      int indirection,
+      std::shared_ptr<Token> name,
+      std::shared_ptr<DeclList> signature,
+      std::shared_ptr<Block> body)
+    : Stmt(nullptr),
+    return_type_(return_type),
+    indirection_(indirection),
+    name_(std::move(name)),
+    signature_(std::move(signature)),
+    body_(std::move(body))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+  bool IsDeclaration() const override;
+
+  Type return_type_;
+  int indirection_;
+  std::shared_ptr<Token> name_;
+  std::shared_ptr<DeclList> signature_;
+  std::shared_ptr<Block> body_;
+};
+
 class VarDecl : public Stmt {
  public:
-  VarDecl(std::shared_ptr<Token> token, std::shared_ptr<Token> name, std::shared_ptr<Expr> init, Type var_type, int indirection)
-      : Stmt(std::move(token)), name_(std::move(name)), init_(std::move(init)), var_type_(var_type), indirection_(indirection)
+  VarDecl(
+      std::shared_ptr<Token> token,
+      std::shared_ptr<Token> name,
+      std::shared_ptr<Expr> init,
+      Type var_type,
+      int indirection,
+      bool is_const_init)
+  : Stmt(std::move(token)),
+    name_(std::move(name)),
+    init_(std::move(init)),
+    var_type_(var_type),
+    indirection_(indirection),
+    is_const_init_(is_const_init)
   { }
 
   int Accept(Visitor<int>& visitor) override;
@@ -152,6 +201,7 @@ class VarDecl : public Stmt {
   std::shared_ptr<Expr> init_;
   Type var_type_;
   int indirection_;
+  bool is_const_init_;
 };
 
 class For : public Stmt {
@@ -203,6 +253,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
   Type type_ = Type::NONE;
   int indirection_ = 0;
   bool is_lvalue = false;
+  bool is_const_ = false;
   std::shared_ptr<Token> op_;
 };
 

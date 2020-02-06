@@ -44,6 +44,7 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
     case TokenType::T_SHORT: return os << "'short'";
     case TokenType::T_LONG: return os << "'long'";
     case TokenType::T_BIT_AND: return os << "&";
+    case TokenType::T_RETURN: return os << "'return'";
   }
 
   return os << static_cast<std::uint16_t>(type);

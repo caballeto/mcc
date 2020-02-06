@@ -229,4 +229,33 @@ int AstDumper::Visit(const std::shared_ptr<Unary>& unary) {
   return 0;
 }
 
+// #TODO: add params
+int AstDumper::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<func-decl>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<name>" << func_decl->name_->GetStringValue() << "</name>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<type>" << func_decl->return_type_ << "</type>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << func_decl->indirection_ << "</ind>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<body>\n";
+  spaces_ += TAB_SIZE;
+  func_decl->body_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</body>\n";
+
+  out_ << std::string(spaces_, ' ') << "</func-decl>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<Return>& return_stmt) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<return>\n";
+  return_stmt->expr_->Accept(*this);
+  out_ << std::string(spaces_, ' ') << "</return>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
 } // namespace mcc
