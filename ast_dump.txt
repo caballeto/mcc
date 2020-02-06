@@ -1,32 +1,40 @@
 <decl-list>
   <var-decl>
     <name>x</name>
+    <ind>0</ind>
     <init>
-      <literal val='10'></literal>
+      <literal val='25'></literal>
     </init>
   </var-decl>
   <var-decl>
     <name>y</name>
+    <ind>0</ind>
     <init>
-      <literal val='20'></literal>
+      <binary op=''*''>
+        <literal val='x'></literal>
+        <literal val='4'></literal>
+      </binary>
     </init>
   </var-decl>
 </decl-list>
-<if-stmt>
-  <condition>
-    <binary op='T_EQUALS'>
-      <literal val='x'></literal>
-      <literal val='10'></literal>
-    </binary>
-  </condition>
-  <if>
-    <stmt type='print'>
-      <literal val='x'></literal>
-    </stmt>
-  </if>
-  <else>
-    <stmt type='print'>
-      <literal val='y'></literal>
-    </stmt>
-  </else>
-</if-stmt>
+<decl-list>
+  <var-decl>
+    <name>bigger</name>
+    <ind>0</ind>
+    <init>
+      <literal val='1000'></literal>
+    </init>
+  </var-decl>
+</decl-list>
+<expr-stmt>
+  <assign>
+    <literal val='x'></literal>
+    <literal val='bigger'></literal>
+  </assign>
+</expr-stmt>
+<stmt type='print'>
+  <literal val='x'></literal>
+</stmt>
+<stmt type='print'>
+  <literal val='bigger'></literal>
+</stmt>

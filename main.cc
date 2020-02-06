@@ -23,12 +23,11 @@ void Usage() {
 
 //#TODO: add DEBUG macro for debug messages
 int main(int argc, char* argv[]) {
-  if (argc != 2) {
-    Usage();
-    exit(1);
-  }
-
+  std::cout << argc;
+  for (int i = 0; i < argc; i++)
+    std::cout << argv[0] << std::endl;
   std::string input_file = std::string(argv[1]);
+  std::cout << input_file << std::endl;
 
   mcc::ErrorReporter reporter(std::cerr);
   reporter.SetFile(input_file);

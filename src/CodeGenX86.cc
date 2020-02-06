@@ -118,7 +118,8 @@ int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
       break;
     }
     case TokenType::T_STAR: {
-      out_ << "\tmovq\t" << "(" << kRegisters[r] << ")" << ", " << kRegisters[r] << "\n";
+      if (!unary->is_assign_)
+        out_ << "\tmovq\t" << "(" << kRegisters[r] << ")" << ", " << kRegisters[r] << "\n";
       break;
     }
     default: {
@@ -206,16 +207,19 @@ int CodeGenX86::Visit(const std::shared_ptr<Print>& print) {
 
 // #FIXME: pass <Literal> as type, or cast <Expr> to here?
 int CodeGenX86::Visit(const std::shared_ptr<Assign>& assign) {
-  int r = assign->right_->Accept(*this);
+  int r1 = assign->right_->Accept(*this);
+
   if (assign->left_->IsVariable()) {
-    out_ << "\tmovq\t" << kRegisters[r] << ", "
+    out_ << "\tmovq\t" << kRegisters[r1] << ", "
          << std::static_pointer_cast<Literal>(assign->left_)->op_->GetStringValue()
          << "(%rip)\n";
   } else {
-    std::cerr << "Assign to non variable in assign expression." << std::endl;
-    exit(1);
+    int r2 = assign->left_->Accept(*this);
+    out_ << "\tmovq\t" << kRegisters[r1] << ", (" << kRegisters[r2] << ")\n";
+    FreeRegister(r2);
   }
-  return r;
+
+  return r1;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<DeclList>& decl_list) {

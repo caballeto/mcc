@@ -1,0 +1,13 @@
+/home/vladyslav/CLionProjects/mcc/tests/test18.input:1:20[0;31m error [0m
+Expected identifier or literal, near ';', line 1
+
+/home/vladyslav/CLionProjects/mcc/tests/test18.input:5:1[0;31m error [0m
+Expected ';' after 'print' statement, near '}', line 5
+
+/home/vladyslav/CLionProjects/mcc/tests/test18.input:10:9[0;31m error [0m
+Invalid operator, near '1', line 10
+
+/home/vladyslav/CLionProjects/mcc/tests/test18.input:12:1[0;31m error [0m
+Only assign expressions are supported in top-level expression statements, near '}', line 12
+
+Encountered 4 syntax errors. Stopping compilation.

@@ -166,6 +166,11 @@ Type TypeChecker::Visit(const std::shared_ptr<Assign>& assign) {
     return Type::NONE;
   }
 
+  // FIXME: add IsDeref() ?
+  if (!assign->left_->IsVariable()) {
+    std::static_pointer_cast<Unary>(assign->left_)->is_assign_ = true;
+  }
+
   assign->right_->Accept(*this);
   assign->type_ = MatchTypes(assign->left_, assign->right_, true, assign);
   return assign->type_;

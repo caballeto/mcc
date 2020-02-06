@@ -242,6 +242,7 @@ class Unary : public Expr {
   int Accept(Visitor<int>& visitor) override;
   Type Accept(Visitor<Type>& visitor) override;
 
+  bool is_assign_ = false;
   std::shared_ptr<Expr> right_;
 };
 

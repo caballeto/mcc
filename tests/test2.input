@@ -1,0 +1,8 @@
+int x;
+int y;
+
+y = 5;
+x = y = y + 1;
+
+print x;
+print y;
