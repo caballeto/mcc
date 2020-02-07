@@ -1,0 +1,14 @@
+int func() {
+  int y = 5;
+  if (y == 5) {
+    return 25;
+  } else {
+    return 1;
+  }
+}
+
+int main() {
+  int z = func();
+  print z;
+  return 0;
+}

@@ -37,6 +37,7 @@ class TypeChecker : public Visitor<Type> {
   Type Visit(const std::shared_ptr<DeclList>& decl_list) override;
   Type Visit(const std::shared_ptr<ExprList>& expr_list) override;
   Type Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
+  Type Visit(const std::shared_ptr<Call> &call) override;
 
   static bool IsIntegerType(ExprRef expr);
   static bool IsPointer(ExprRef expr);

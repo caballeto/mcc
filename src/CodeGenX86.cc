@@ -109,9 +109,22 @@ int CodeGenX86::Visit(const std::shared_ptr<Block>& block_stmt) {
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
+  if (unary->op_->GetType() == TokenType::T_INC) {
+    const std::string& name = std::static_pointer_cast<Literal>(unary->right_)->op_->GetStringValue();
+    out_ << "\tinc" << GetPostfix(unary->right_->type_) << "\t"
+         << name << "(%rip)\n";
+  } else if (unary->op_->GetType() == TokenType::T_DEC) {
+    const std::string& name = std::static_pointer_cast<Literal>(unary->right_)->op_->GetStringValue();
+    out_ << "\tdec" << GetPostfix(unary->right_->type_) << "\t"
+         << name << "(%rip)\n";
+  }
+
   int r = unary->right_->Accept(*this);
 
   switch (unary->op_->GetType()) {
+    case TokenType::T_INC:
+    case TokenType::T_DEC:
+      break;
     case TokenType::T_BIT_AND: {
       out_ << "\tleaq\t" << std::static_pointer_cast<Literal>(unary->right_)->op_->GetStringValue()
         << "(%rip), " << kRegisters[r] << "\n";
@@ -134,11 +147,7 @@ int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
 int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   int r1 = binary->left_->Accept(*this);
   int r2 = binary->right_->Accept(*this);
-  // b ->
-  // add w -> 16
-  // l -> 32
-  // q -> 64
-  // GetPostfix(Type) -> {b, "", l, q}
+
   switch (binary->op_->GetType()) {
     case TokenType::T_PLUS:
       out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
@@ -180,14 +189,36 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
 int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   int r = NewRegister();
 
+  // load pointer
+  if (literal->indirection_ != 0) {
+    out_ << "\tmovq\t" << literal->op_->GetStringValue() << "(%rip), " << kRegisters[r] << "\n";
+    return r;
+  }
+
   switch (literal->op_->GetType()) {
     case TokenType::T_INT_LITERAL:
       out_ << "\tmovq\t$" << literal->op_->GetIntValue()
            << "," << kRegisters[r] << "\n";
       break;
     case TokenType::T_IDENTIFIER:
-      out_ << "\tmovq\t" << literal->op_->GetStringValue()
-           << "(%rip), " << kRegisters[r] << "\n";
+      switch (literal->type_) {
+        case Type::SHORT:
+          out_ << "\tmovswq\t" << literal->op_->GetStringValue()
+               << "(%rip), " << kRegisters[r] << "\n";
+          break;
+        case Type::INT:
+          out_ << "\tmovzbq\t" << literal->op_->GetStringValue()
+               << "(%rip), " << kRegisters[r] << "\n";
+          break;
+        case Type::LONG:
+          out_ << "\tmovq\t" << literal->op_->GetStringValue() << "(%rip), " << kRegisters[r] << "\n";
+          break;
+        case Type::VOID:
+        case Type::NONE: {
+          std::cerr << "Invalid literal type. Exiting." << std::endl;
+          exit(1);
+        }
+      }
       break;
     default:
       std::cerr << "Invalid literal type '" << literal->op_->GetType()
@@ -210,9 +241,14 @@ int CodeGenX86::Visit(const std::shared_ptr<Assign>& assign) {
   int r1 = assign->right_->Accept(*this);
 
   if (assign->left_->IsVariable()) {
-    out_ << "\tmovq\t" << kRegisters[r1] << ", "
-         << std::static_pointer_cast<Literal>(assign->left_)->op_->GetStringValue()
-         << "(%rip)\n";
+    const std::string& name = std::static_pointer_cast<Literal>(assign->left_)->op_->GetStringValue();
+    if (assign->left_->indirection_ != 0) {
+      out_ << "\tmovq\t" << kRegisters[r1] << ", " << name << "(%rip)\n";
+    } else {
+      out_ << "\tmov" << GetPostfix(assign->left_->type_) << "\t"
+           << GetRegister(r1, assign->left_->type_)
+           << ", " << name << "(%rip)\n";
+    }
   } else {
     int r2 = assign->left_->Accept(*this);
     out_ << "\tmovq\t" << kRegisters[r1] << ", (" << kRegisters[r2] << ")\n";
@@ -248,7 +284,7 @@ int CodeGenX86::GetTypeSize(Type type) {
 
 std::string CodeGenX86::GetPostfix(Type type) {
   switch (type) {
-    case Type::SHORT: return "";
+    case Type::SHORT: return "w";
     case Type::INT: return "l";
     case Type::LONG: return "q";
     default: {
@@ -271,12 +307,22 @@ std::string CodeGenX86::GetRegister(int r, Type type) {
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
-  // int size = GetTypeSize(var_decl->var_type_);
-  out_ << "\t.comm\t" << var_decl->name_->GetStringValue() << ",8,8\n";
+  int size = GetTypeSize(var_decl->var_type_);
+  const std::string& name = var_decl->name_->GetStringValue();
+
+  out_ << "\t.comm\t" << name << "," << size << "," <<  size << "\n";
 
   if (var_decl->init_ != nullptr) {
     int r = var_decl->init_->Accept(*this);
-    out_ << "\tmovq\t" << kRegisters[r] << ", " << var_decl->name_->GetStringValue() << "(%rip)\n";
+
+    if (var_decl->indirection_ != 0) {
+      out_ << "\tmovq\t" << kRegisters[r] << ", " << name << "(%rip)\n";
+    } else {
+      out_ << "\tmov" << GetPostfix(var_decl->var_type_) << "\t"
+           << GetRegister(r, var_decl->var_type_)
+           << ", " << name << "(%rip)\n";
+    }
+
     FreeRegister(r);
   }
 
@@ -313,6 +359,18 @@ int CodeGenX86::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
   return NO_RETURN_REGISTER;
 }
 
+int CodeGenX86::Visit(const std::shared_ptr<Call>& call) {
+  out_ << "\tcall\t" << call->name_->GetStringValue() << "\n";
+
+  if (call->type_ != Type::VOID) {
+    int r = NewRegister();
+    out_ << "\tmovq\t%rax, " << kRegisters[r] << "\n";
+    return r;
+  }
+
+  return NO_RETURN_REGISTER;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   if (loop_stack_.empty()) {
     std::cerr << ((flow_stmt->is_break_) ? "break" : "continue") << " does not have enclosing loop." << std::endl;
@@ -323,7 +381,6 @@ int CodeGenX86::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   out_ << "\tjmp\t" << (flow_stmt->is_break_ ? labels.first : labels.second) << "\n";
   return NO_RETURN_REGISTER;
 }
-
 std::string CodeGenX86::GetSetInstr(TokenType type) {
   switch (type) {
     case TokenType::T_EQUALS: return "sete";
@@ -337,6 +394,7 @@ std::string CodeGenX86::GetSetInstr(TokenType type) {
       exit(1);
   }
 }
+
 void CodeGenX86::Preamble() {
   out_ <<
       "\t.text\n"
@@ -357,11 +415,7 @@ void CodeGenX86::Preamble() {
       "\tret\n";
 }
 
-void CodeGenX86::Postamble() {
-  out_ << "\tmovl	$0, %eax\n"
-          "\tpopq	%rbp\n"
-          "\tret\n";
-}
+void CodeGenX86::Postamble() { }
 
 void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
   Preamble();
@@ -374,7 +428,6 @@ void CodeGenX86::PrintInt(int r) {
   out_ << "\tmovq\t" << kRegisters[r] << ", %rdi\n"
     << "\tcall\tprintint\n";
 }
-
 int CodeGenX86::NewRegister() {
   for (int i = 0; i < REGISTER_NUM; i++) {
     if (regs_status[i]) {

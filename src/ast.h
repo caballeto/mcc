@@ -257,6 +257,19 @@ class Expr : public std::enable_shared_from_this<Expr> {
   std::shared_ptr<Token> op_;
 };
 
+class Call : public Expr {
+ public:
+  Call(std::shared_ptr<Token> name, std::shared_ptr<ExprList> args)
+    : Expr(nullptr), name_(std::move(name)), args_(std::move(args))
+  { }
+
+  int Accept(Visitor<int> &visitor) override;
+  Type Accept(Visitor<Type> &visitor) override;
+
+  std::shared_ptr<Token> name_;
+  std::shared_ptr<ExprList> args_;
+};
+
 class Assign : public Expr {
  public:
   Assign(std::shared_ptr<Token> op, std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)

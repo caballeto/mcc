@@ -44,6 +44,7 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
   int Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
   int Visit(const std::shared_ptr<Return>& return_stmt) override;
+  int Visit(const std::shared_ptr<Call> &call) override;
 
  private:
   int GetLabel();

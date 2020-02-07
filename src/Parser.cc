@@ -241,17 +241,9 @@ std::shared_ptr<ExprList> Parser::ExpressionList() {
 }
 
 std::shared_ptr<Stmt> Parser::ExpressionStatement() {
-  switch (Peek()->GetType()) {
-    case TokenType::T_STAR:
-    case TokenType::T_IDENTIFIER: {
-      std::shared_ptr<Expr> expr = Expression(0);
-      Consume(TokenType::T_SEMICOLON, "Expected ';' after expression statement");
-      return std::make_shared<ExpressionStmt>(nullptr, expr);
-    }
-    default: {
-      throw ParseException("Only assign expressions are supported in top-level expression statements", Peek());
-    }
-  }
+  std::shared_ptr<Expr> expr = Expression(0);
+  Consume(TokenType::T_SEMICOLON, "Expected ';' after expression statement");
+  return std::make_shared<ExpressionStmt>(nullptr, expr);
 }
 
 std::shared_ptr<Block> Parser::BlockStatement() {
@@ -309,16 +301,25 @@ std::shared_ptr<Expr> Parser::OptionalExpression(int precedence) {
 std::shared_ptr<Expr> Parser::Primary() {
   switch (Peek()->GetType()) {
     case TokenType::T_IDENTIFIER: {
-      std::shared_ptr<Literal> literal = std::make_shared<Literal>(Peek());
-      literal->is_lvalue = true;
+      std::shared_ptr<Token> name = Peek();
       Next();
-      return literal;
+      if (Match(TokenType::T_LPAREN)) {
+        std::shared_ptr<ExprList> args = ExpressionList();
+        Consume(TokenType::T_RPAREN, "')' expected after call");
+        return std::make_shared<Call>(name, args);
+      } else {
+        std::shared_ptr<Literal> literal = std::make_shared<Literal>(name);
+        literal->is_lvalue = true;
+        return literal;
+      }
     }
     case TokenType::T_INT_LITERAL: {
       std::shared_ptr<Literal> literal = std::make_shared<Literal>(Peek());
       Next();
       return literal;
     }
+    case TokenType::T_INC:
+    case TokenType::T_DEC:
     case TokenType::T_BIT_AND:
     case TokenType::T_STAR: {
       std::shared_ptr<Token> op = Peek();

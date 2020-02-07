@@ -159,4 +159,12 @@ Type Return::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Return>());
 }
 
+int Call::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Call>());
+}
+
+Type Call::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<Call>());
+}
+
 } // namespace mcc

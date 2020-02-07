@@ -65,11 +65,15 @@ int ControlFlowChecker::Visit(const std::shared_ptr<Unary>& unary) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<FuncDecl> &func_decl) {
+int ControlFlowChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Return> &return_stmt) {
+int ControlFlowChecker::Visit(const std::shared_ptr<Return>& return_stmt) {
+  return 0;
+}
+
+int ControlFlowChecker::Visit(const std::shared_ptr<Call>& call) {
   return 0;
 }
 

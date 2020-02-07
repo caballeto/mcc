@@ -241,8 +241,8 @@ Implemented:
 Well, there are lots of features to work on, I getting an understanding
 that it is indeed a challengable project. Features for the near future:
 
-- functions calls with no arguments
-- loading return value of function calls
+- [x] functions calls with no arguments
+- [x] loading return value of function calls
 - more operators (logical, bitwise, grouping, ++/-- for pointers also)
 - strings and arrays
 - local variables
@@ -276,6 +276,23 @@ int main() {
   return some_int;
 }
 ```
+
+## Day 10
+
+Had little time to work today due to interview. Implemented following:
+
+- support for different type sizes of variables (all intermediate values are `long` 64 bit)
+- added `hack` support of pre-increment operator of variables
+
+Tasks for tomorrow:
+
+- give good design consideration to parsing prefix/postfix operators
+- think about lvalue/rvalue flags and implementation of increment with pointers/vars
+- implement many other operators (mentioned above)
+- goto/labels
+
+Overall after tomorrow tasks, I should be ready to write local variables - task for Sunday.
+Rewrite SymbolTable and allow functions calls/function parameters on Monday
 
 
 

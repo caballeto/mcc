@@ -19,8 +19,8 @@ int SymbolTable::Get(const std::string &name) {
   return -1;
 }
 
-int SymbolTable::Put(const std::string& name, Type type, int indirection) {
-  entries_[++entry_count_] = {name, type, indirection};
+int SymbolTable::Put(const std::string& name, Type type, int indirection, bool is_function) {
+  entries_[++entry_count_] = {name, type, indirection, is_function};
   return entry_count_;
 }
 
@@ -39,7 +39,7 @@ bool SymbolTable::Remove(const std::string &name) {
 }
 
 int SymbolTable::Put(const std::shared_ptr<FuncDecl>& func_decl) {
-  return Put(func_decl->name_->GetStringValue(), func_decl->return_type_, func_decl->indirection_);
+  return Put(func_decl->name_->GetStringValue(), func_decl->return_type_, func_decl->indirection_, true);
 }
 
 } // namespace mcc

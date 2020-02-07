@@ -10,7 +10,7 @@ namespace mcc {
 
 int AstDumper::Visit(const std::shared_ptr<Binary>& binary) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<binary op='" << binary->op_->GetType() << "'>" << "\n";
+  out_ << std::string(spaces_, ' ') << "<binary op=" << binary->op_->GetType() << ">" << "\n";
   binary->left_->Accept(*this);
   binary->right_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</binary>" << "\n";
@@ -103,6 +103,23 @@ int AstDumper::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
   }
 
   out_ << std::string(spaces_, ' ') << "</if-stmt>" << std::endl;
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<Call>& call) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<call>" << std::endl;
+  out_ << std::string(spaces_ + 2, ' ') << "<name>"
+       << call->name_->GetStringValue() << "</name>" << std::endl;
+
+  out_ << std::string(spaces_ + 2, ' ') << "<args>\n";
+  spaces_ += TAB_SIZE;
+  call->args_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</args>\n";
+
+  out_ << std::string(spaces_, ' ') << "</call>" << std::endl;
   spaces_ -= TAB_SIZE;
   return 0;
 }

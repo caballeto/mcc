@@ -17,6 +17,7 @@ struct Entry {
   std::string name;
   Type type;
   int indirection;
+  bool is_function;
 };
 
 // #FIXME: redesign a better (faster, simpler) symbol table
@@ -29,7 +30,7 @@ class SymbolTable {
 
   int Put(const std::shared_ptr<FuncDecl>& func_decl);
 
-  int Put(const std::string& name, Type type, int indirection);
+  int Put(const std::string& name, Type type, int indirection, bool is_function);
 
   bool Contains(const std::string& name);
 

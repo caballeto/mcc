@@ -42,10 +42,20 @@ std::shared_ptr<Token> Scanner::GetToken() {
   token->SetCount(c_);
   switch (c) {
     case '+':
-      token->SetType(TokenType::T_PLUS);
+      if ((c = Next()) == '+') {
+        token->SetType(TokenType::T_INC);
+      } else {
+        token->SetType(TokenType::T_PLUS);
+        Putback(c);
+      }
       break;
     case '-':
-      token->SetType(TokenType::T_MINUS);
+      if ((c = Next()) == '-') {
+        token->SetType(TokenType::T_DEC);
+      } else {
+        token->SetType(TokenType::T_MINUS);
+        Putback(c);
+      }
       break;
     case '*':
       token->SetType(TokenType::T_STAR);

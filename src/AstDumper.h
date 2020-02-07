@@ -36,6 +36,7 @@ class AstDumper : public Visitor<int> {
   int Visit(const std::shared_ptr<Return> &return_stmt) override;
 
   void Flush();
+  int Visit(const std::shared_ptr<Call> &call) override;
 
   std::ofstream out_;
   int spaces_;

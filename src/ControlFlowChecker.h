@@ -27,6 +27,7 @@ class ControlFlowChecker: public Visitor<int> {
   int Visit(const std::shared_ptr<Unary> &unary) override;
   int Visit(const std::shared_ptr<FuncDecl> &func_decl) override;
   int Visit(const std::shared_ptr<Return> &return_stmt) override;
+  int Visit(const std::shared_ptr<Call> &call) override;
 };
 
 } // namespace mcc

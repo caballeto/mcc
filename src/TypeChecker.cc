@@ -119,11 +119,23 @@ Type TypeChecker::Promote(ExprRef e1, ExprRef e2) {
   return (Type) std::max(t1, t2);
 }
 
+// #FIXME: add support for ++/-- operations + for pointers
 Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
   unary->right_->is_const_ = unary->is_const_;
   unary->right_->Accept(*this);
 
   switch (unary->op_->GetType()) {
+    case TokenType::T_INC:
+    case TokenType::T_DEC: {
+      if (!unary->right_->IsLvalue()) {
+        reporter_.Report("Expression to prefix operators must be an lvalue", unary->op_);
+        return Type::NONE;
+      }
+
+      unary->indirection_ = unary->right_->indirection_;
+      unary->type_ = unary->right_->type_;
+      return unary->type_;
+    }
     case TokenType::T_BIT_AND: {
       if (!unary->right_->IsLvalue()) {
         reporter_.Report("Expression to '&' operator must be an lvalue", unary->op_);
@@ -339,7 +351,7 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
   }
 
   if (id == -1) {
-    symbol_table_.Put(decl->name_->GetStringValue(), decl->var_type_, decl->indirection_);
+    symbol_table_.Put(decl->name_->GetStringValue(), decl->var_type_, decl->indirection_, false);
   } else {
     reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has already been declared", decl->name_);
     return Type::NONE;
@@ -355,6 +367,25 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
   }
 
   return Type::NONE;
+}
+
+Type TypeChecker::Visit(const std::shared_ptr<Call>& call) {
+  int id = symbol_table_.Get(call->name_->GetStringValue());
+
+  if (id == -1) {
+    reporter_.Report("Function '" + call->name_->GetStringValue() + "' has not been declared", call->name_);
+    return Type::NONE;
+  }
+
+  if (!symbol_table_.Get(id).is_function) {
+    reporter_.Report("'" + call->name_->GetStringValue() + "' is not a function", call->name_);
+    return Type::NONE;
+  }
+
+  // #TODO: check for number of parameters + types
+  call->type_ = symbol_table_.Get(id).type;
+  call->indirection_ = symbol_table_.Get(id).indirection;
+  return call->type_;
 }
 
 } // namespace mcc

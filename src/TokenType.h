@@ -32,6 +32,8 @@ enum class TokenType {
   T_GREATER_EQUAL,
   T_ASSIGN,
   T_BIT_AND,
+  T_INC,
+  T_DEC,
 
   // literals
   T_INT_LITERAL,

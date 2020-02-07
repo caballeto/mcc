@@ -45,6 +45,8 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
     case TokenType::T_LONG: return os << "'long'";
     case TokenType::T_BIT_AND: return os << "&";
     case TokenType::T_RETURN: return os << "'return'";
+    case TokenType::T_INC: return os << "'++'";
+    case TokenType::T_DEC: return os << "'--'";
   }
 
   return os << static_cast<std::uint16_t>(type);
@@ -73,6 +75,9 @@ int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary) {
       return is_unary ? 13 : 12;
     case TokenType::T_SLASH:
       return 12;
+    case TokenType::T_DEC:
+    case TokenType::T_INC:
+      return 13;
     default:
       throw ParseException("Invalid operator", op);
   }
