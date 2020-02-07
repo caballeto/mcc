@@ -260,6 +260,22 @@ Also, thoughts on optimization:
   4. Add checks for last statements, in order to generate less labels/code.
   5. Add more checks for eliminating useless instructions.
 
+```c
+int func() {
+  int y = 5;
+  if (y == 5) {
+    return 25;
+  } else {
+    return 1;
+  }
+}
+
+int main() {
+  int some_int = 25;
+  print some_int * 10;
+  return some_int;
+}
+```
 
 
 
