@@ -69,11 +69,47 @@ int AstDumper::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   return 0;
 }
 
+int AstDumper::Visit(const std::shared_ptr<Grouping>& grouping) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<grouping>\n";
+  grouping->expr_->Accept(*this);
+  out_ << std::string(spaces_, ' ') << "</grouping>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
 int AstDumper::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<expr-stmt>\n";
   expr_stmt->expr_->Accept(*this);
-  out_ << std::string(spaces_, ' ') << "</expr-stmt>" << std::endl;
+  out_ << std::string(spaces_, ' ') << "</expr-stmt>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<Ternary> &ternary) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<ternary>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
+  spaces_ += TAB_SIZE;
+  ternary->condition_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<then>\n";
+  spaces_ += TAB_SIZE;
+  ternary->then_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</then>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<else>\n";
+  spaces_ += TAB_SIZE;
+  ternary->else_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</else>\n";
+
+  out_ << std::string(spaces_, ' ') << "</ternary>" << std::endl;
   spaces_ -= TAB_SIZE;
   return 0;
 }
@@ -237,6 +273,15 @@ int AstDumper::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   return 0;
 }
 
+int AstDumper::Visit(const std::shared_ptr<Postfix>& postfix) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<postfix op='" << postfix->op_->GetType() << "'>" << "\n";
+  postfix->expr_->Accept(*this);
+  out_ << std::string(spaces_, ' ') << "</postfix>" << "\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
 int AstDumper::Visit(const std::shared_ptr<Unary>& unary) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<unary op='" << unary->op_->GetType() << "'>" << "\n";
@@ -265,7 +310,6 @@ int AstDumper::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   spaces_ -= TAB_SIZE;
   return 0;
 }
-
 int AstDumper::Visit(const std::shared_ptr<Return>& return_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<return>\n";

@@ -294,5 +294,16 @@ Tasks for tomorrow:
 Overall after tomorrow tasks, I should be ready to write local variables - task for Sunday.
 Rewrite SymbolTable and allow functions calls/function parameters on Monday
 
+## Day 11
 
+First part is done. Implemented parsing of many new prefix/postfix operators.
+Only && and || were left out due to complexity. Now increment and decrement works
+with both variables and dereferenced pointers (`(*x)++`), but scaling when
+adding to pointers has not been added yet.
+
+More tasks for today:
+
+- add pointer scaling
+- rewrite all tests and add new ones (redirect everything to standard output, regenerate tests)
+- implement goto/labels
 

@@ -268,10 +268,25 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
 
   while (precedence < GetPrecedence(curr_op, false)) {
     switch (curr_op->GetType()) {
+      case TokenType::T_INC:
+      case TokenType::T_DEC: {
+        std::shared_ptr<Token> op = Peek();
+        Next();
+        left = std::make_shared<Postfix>(op, left);
+        break;
+      }
+      case TokenType::T_QUESTION: {
+        std::shared_ptr<Token> op = Consume(TokenType::T_QUESTION);
+        std::shared_ptr<Expr> then_branch = Expression(0);
+        Consume(TokenType::T_COLON, "':' expected after '?'");
+        std::shared_ptr<Expr> else_branch = Expression(GetPrecedence(op, false) - 1);
+        left = std::make_shared<Ternary>(op, left, then_branch, else_branch);
+        break;
+      }
       case TokenType::T_ASSIGN: {
-        std::shared_ptr<Token> token = Consume(TokenType::T_ASSIGN);
+        std::shared_ptr<Token> op = Consume(TokenType::T_ASSIGN);
         right = Expression(GetPrecedence(curr_op, false) - 1);
-        left = std::make_shared<Assign>(std::move(token), left, right);
+        left = std::make_shared<Assign>(std::move(op), left, right);
         break;
       }
       default: {
@@ -309,7 +324,7 @@ std::shared_ptr<Expr> Parser::Primary() {
         return std::make_shared<Call>(name, args);
       } else {
         std::shared_ptr<Literal> literal = std::make_shared<Literal>(name);
-        literal->is_lvalue = true;
+        literal->is_lvalue_ = true;
         return literal;
       }
     }
@@ -318,8 +333,19 @@ std::shared_ptr<Expr> Parser::Primary() {
       Next();
       return literal;
     }
+    case TokenType::T_LPAREN: {
+      std::shared_ptr<Token> paren = Peek();
+      Next();
+      std::shared_ptr<Expr> expr = Expression(0);
+      Consume(TokenType::T_RPAREN, "')' expected after grouping expression");
+      return std::make_shared<Grouping>(paren, expr);
+    }
     case TokenType::T_INC:
     case TokenType::T_DEC:
+    case TokenType::T_NEG:
+    case TokenType::T_NOT:
+    case TokenType::T_PLUS:
+    case TokenType::T_MINUS:
     case TokenType::T_BIT_AND:
     case TokenType::T_STAR: {
       std::shared_ptr<Token> op = Peek();
@@ -337,7 +363,8 @@ bool Parser::IsStopToken(TokenType type) {
       || type == TokenType::T_RPAREN
       || type == TokenType::T_COMMA
       || type == TokenType::T_EOF
-      || type == TokenType::T_RBRACE;
+      || type == TokenType::T_RBRACE
+      || type == TokenType::T_COLON;
 }
 
 void Parser::synchronize() {

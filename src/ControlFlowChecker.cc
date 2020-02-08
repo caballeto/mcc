@@ -77,4 +77,16 @@ int ControlFlowChecker::Visit(const std::shared_ptr<Call>& call) {
   return 0;
 }
 
+int ControlFlowChecker::Visit(const std::shared_ptr<Grouping> &grouping) {
+  return 0;
+}
+
+int ControlFlowChecker::Visit(const std::shared_ptr<Ternary> &ternary) {
+  return 0;
+}
+
+int ControlFlowChecker::Visit(const std::shared_ptr<Postfix> &postfix) {
+  return 0;
+}
+
 } // namespace mcc

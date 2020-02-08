@@ -44,7 +44,10 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
   int Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
   int Visit(const std::shared_ptr<Return>& return_stmt) override;
-  int Visit(const std::shared_ptr<Call> &call) override;
+  int Visit(const std::shared_ptr<Call>& call) override;
+  int Visit(const std::shared_ptr<Grouping> &grouping) override;
+  int Visit(const std::shared_ptr<Ternary> &ternary) override;
+  int Visit(const std::shared_ptr<Postfix> &postfix) override;
 
  private:
   int GetLabel();
@@ -58,9 +61,9 @@ class CodeGenX86: public Visitor<int> {
 
   static std::string GetSetInstr(TokenType type);
 
-  int GetTypeSize(Type type);
-  std::string GetPostfix(Type type);
-  std::string GetRegister(int r, Type type);
+  int GetTypeSize(Type type, int ind);
+  std::string GetPostfix(Type type, int ind);
+  std::string GetRegister(int r, Type type, int ind);
 
   ErrorReporter& reporter_;
   std::stack<std::pair<std::string, std::string>> loop_stack_; // FIXME: move to type checker

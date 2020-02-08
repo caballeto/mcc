@@ -52,6 +52,8 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '-':
       if ((c = Next()) == '-') {
         token->SetType(TokenType::T_DEC);
+      } else if (c == '>') {
+        token->SetType(TokenType::T_ARROW);
       } else {
         token->SetType(TokenType::T_MINUS);
         Putback(c);
@@ -63,8 +65,26 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '/':
       token->SetType(TokenType::T_SLASH);
       break;
+    case '%':
+      token->SetType(TokenType::T_MOD);
+      break;
     case ',':
       token->SetType(TokenType::T_COMMA);
+      break;
+    case '.':
+      token->SetType(TokenType::T_DOT);
+      break;
+    case ':':
+      token->SetType(TokenType::T_COLON);
+      break;
+    case '?':
+      token->SetType(TokenType::T_QUESTION);
+      break;
+    case '[':
+      token->SetType(TokenType::T_LBRACKET);
+      break;
+    case ']':
+      token->SetType(TokenType::T_RBRACKET);
       break;
     case ';':
       token->SetType(TokenType::T_SEMICOLON);
@@ -82,11 +102,26 @@ std::shared_ptr<Token> Scanner::GetToken() {
       token->SetType(TokenType::T_RBRACE);
       break;
     case '&':
-      token->SetType(TokenType ::T_BIT_AND);
+      if ((c = Next()) == '&') {
+        token->SetType(TokenType::T_AND);
+      } else {
+        token->SetType(TokenType::T_BIT_AND);
+        Putback(c);
+      }
+      break;
+    case '|':
+      if ((c = Next()) == '|') {
+        token->SetType(TokenType::T_OR);
+      } else {
+        token->SetType(TokenType::T_BIT_OR);
+        Putback(c);
+      }
       break;
     case '>':
       if ((c = Next()) == '=') {
         token->SetType(TokenType::T_GREATER_EQUAL);
+      } if (c == '>') {
+        token->SetType(TokenType::T_RSHIFT); // #TODO: check whether correct
       } else {
         token->SetType(TokenType::T_GREATER);
         Putback(c);
@@ -95,17 +130,22 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '<':
       if ((c = Next()) == '=') {
         token->SetType(TokenType::T_LESS_EQUAL);
+      } else if (c == '<') {
+        token->SetType(TokenType::T_LSHIFT);
       } else {
         token->SetType(TokenType::T_LESS);
         Putback(c);
       }
       break;
+    case '~':
+      token->SetType(TokenType::T_NEG);
+      break;
     case '!':
       if ((c = Next()) == '=') {
         token->SetType(TokenType::T_NOT_EQUALS);
       } else {
-        Putback(c); // #TODO: Add T_NOT bool operator
-        reporter_.Report("Only '!=' operator supported now", c, line_);
+        token->SetType(TokenType::T_NOT);
+        Putback(c);
       }
       break;
     case '=':

@@ -1,0 +1,15 @@
+
+int main() {
+  int *x = 0;
+  int z = 0;
+
+  x = &z;
+  *x = 5;
+
+  print (*x)--;
+  print *x;
+  print --(*x);
+  print *x;
+
+  return 0;
+}

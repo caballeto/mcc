@@ -250,10 +250,12 @@ class Expr : public std::enable_shared_from_this<Expr> {
     return std::static_pointer_cast<T>(shared_from_this());
   }
 
+  // TODO: rewrite flags as bitfields
   Type type_ = Type::NONE;
   int indirection_ = 0;
-  bool is_lvalue = false;
+  bool is_lvalue_ = false;
   bool is_const_ = false;
+  bool return_ptr_ = false;
   std::shared_ptr<Token> op_;
 };
 
@@ -283,6 +285,51 @@ class Assign : public Expr {
   std::shared_ptr<Expr> right_;
 };
 
+class Ternary : public Expr {
+ public:
+  Ternary(
+      std::shared_ptr<Token> op,
+      std::shared_ptr<Expr> condition,
+      std::shared_ptr<Expr> then,
+      std::shared_ptr<Expr> else_branch)
+    : Expr(std::move(op)),
+    condition_(std::move(condition)),
+    then_(std::move(then)),
+    else_(std::move(else_branch))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
+  std::shared_ptr<Expr> condition_;
+  std::shared_ptr<Expr> then_;
+  std::shared_ptr<Expr> else_;
+};
+
+class Postfix : public Expr {
+ public:
+  Postfix(std::shared_ptr<Token> op, std::shared_ptr<Expr> expr)
+    : Expr(std::move(op)), expr_(std::move(expr))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
+  std::shared_ptr<Expr> expr_;
+};
+
+class Grouping : public Expr {
+ public:
+  Grouping(std::shared_ptr<Token> op, std::shared_ptr<Expr> expr)
+    : Expr(std::move(op)), expr_(std::move(expr))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
+  std::shared_ptr<Expr> expr_;
+};
+
 class Binary : public Expr {
  public:
   Binary(std::shared_ptr<Token> op, std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)
@@ -306,7 +353,6 @@ class Unary : public Expr {
   int Accept(Visitor<int>& visitor) override;
   Type Accept(Visitor<Type>& visitor) override;
 
-  bool is_assign_ = false;
   std::shared_ptr<Expr> right_;
 };
 

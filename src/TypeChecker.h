@@ -37,7 +37,10 @@ class TypeChecker : public Visitor<Type> {
   Type Visit(const std::shared_ptr<DeclList>& decl_list) override;
   Type Visit(const std::shared_ptr<ExprList>& expr_list) override;
   Type Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
-  Type Visit(const std::shared_ptr<Call> &call) override;
+  Type Visit(const std::shared_ptr<Call>& call) override;
+  Type Visit(const std::shared_ptr<Grouping>& grouping) override;
+  Type Visit(const std::shared_ptr<Ternary>& ternary) override;
+  Type Visit(const std::shared_ptr<Postfix>& postfix) override;
 
   static bool IsIntegerType(ExprRef expr);
   static bool IsPointer(ExprRef expr);
@@ -58,6 +61,7 @@ class TypeChecker : public Visitor<Type> {
                   const std::shared_ptr<Expr>& e2,
                   bool to_left,
                   const std::shared_ptr<Expr>& binary);
+
   bool MatchTypeInit(Type type, int indirection, const std::shared_ptr<Expr>& init);
   Type Visit(const std::shared_ptr<FuncDecl> &func_decl) override;
   Type Visit(const std::shared_ptr<Return> &return_stmt) override;

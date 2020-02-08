@@ -122,23 +122,25 @@ Type TypeChecker::Promote(ExprRef e1, ExprRef e2) {
 // #FIXME: add support for ++/-- operations + for pointers
 Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
   unary->right_->is_const_ = unary->is_const_;
-  unary->right_->Accept(*this);
 
   switch (unary->op_->GetType()) {
-    case TokenType::T_INC:
-    case TokenType::T_DEC: {
-      if (!unary->right_->IsLvalue()) {
-        reporter_.Report("Expression to prefix operators must be an lvalue", unary->op_);
-        return Type::NONE;
-      }
-
+    case TokenType::T_PLUS:
+    case TokenType::T_MINUS:
+    case TokenType::T_NOT:
+    case TokenType::T_NEG: {
+      unary->right_->Accept(*this);
       unary->indirection_ = unary->right_->indirection_;
       unary->type_ = unary->right_->type_;
       return unary->type_;
     }
+    case TokenType::T_INC:
+    case TokenType::T_DEC:
     case TokenType::T_BIT_AND: {
+      unary->right_->return_ptr_ = true;
+      unary->right_->Accept(*this);
+
       if (!unary->right_->IsLvalue()) {
-        reporter_.Report("Expression to '&' operator must be an lvalue", unary->op_);
+        reporter_.Report("Expression to prefix operators must be an lvalue", unary->op_);
         return Type::NONE;
       }
 
@@ -147,12 +149,14 @@ Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
       return unary->type_;
     }
     case TokenType::T_STAR: {
+      unary->right_->Accept(*this);
+
       if (!IsPointer(unary->right_)) {
         reporter_.Report("Expression to '*' must be a pointer", unary->op_);
         return Type::NONE;
       }
 
-      unary->is_lvalue = true;
+      unary->is_lvalue_ = true;
       unary->indirection_ = unary->right_->indirection_ - 1;
       unary->type_ = unary->right_->type_;
       return unary->type_;
@@ -176,16 +180,12 @@ Type TypeChecker::Visit(const std::shared_ptr<Binary>& binary) {
 Type TypeChecker::Visit(const std::shared_ptr<Assign>& assign) {
   assign->left_->is_const_ = assign->is_const_;
   assign->right_->is_const_ = assign->is_const_;
+  assign->left_->return_ptr_ = true;
   assign->left_->Accept(*this);
 
   if (!assign->left_->IsLvalue()) {
     reporter_.Report("Assign to rvalue is not allowed", assign->op_);
     return Type::NONE;
-  }
-
-  // FIXME: add IsDeref() ?
-  if (!assign->left_->IsVariable()) {
-    std::static_pointer_cast<Unary>(assign->left_)->is_assign_ = true;
   }
 
   assign->right_->Accept(*this);
@@ -386,6 +386,38 @@ Type TypeChecker::Visit(const std::shared_ptr<Call>& call) {
   call->type_ = symbol_table_.Get(id).type;
   call->indirection_ = symbol_table_.Get(id).indirection;
   return call->type_;
+}
+
+Type TypeChecker::Visit(const std::shared_ptr<Grouping>& grouping) {
+  grouping->expr_->is_const_ = grouping->is_const_;
+  grouping->expr_->return_ptr_ = grouping->return_ptr_;
+
+  grouping->expr_->Accept(*this);
+
+  grouping->is_lvalue_ = grouping->expr_->is_lvalue_;
+  grouping->type_ = grouping->expr_->type_;
+  grouping->indirection_ = grouping->expr_->indirection_;
+  return grouping->type_;
+}
+
+Type TypeChecker::Visit(const std::shared_ptr<Ternary>& ternary) {
+  return Type::NONE;
+}
+
+Type TypeChecker::Visit(const std::shared_ptr<Postfix>& postfix) {
+  postfix->expr_->is_const_ = postfix->is_const_; // #FIXME: throw error immediately, as postfix is lvalue?
+  postfix->expr_->return_ptr_ = true;
+  postfix->expr_->Accept(*this);
+
+  if (!postfix->expr_->IsLvalue()) {
+    reporter_.Report("lvalue required as postfix operand", postfix->op_);
+    return Type::NONE;
+  }
+
+  postfix->is_lvalue_ = false;
+  postfix->type_ = postfix->expr_->type_;
+  postfix->indirection_ = postfix->expr_->indirection_;
+  return Type::NONE;
 }
 
 } // namespace mcc

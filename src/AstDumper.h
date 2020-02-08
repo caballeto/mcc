@@ -34,6 +34,9 @@ class AstDumper : public Visitor<int> {
   int Visit(const std::shared_ptr<Unary> &unary) override;
   int Visit(const std::shared_ptr<FuncDecl> &func_decl) override;
   int Visit(const std::shared_ptr<Return> &return_stmt) override;
+  int Visit(const std::shared_ptr<Grouping> &grouping) override;
+  int Visit(const std::shared_ptr<Postfix> &postfix) override;
+  int Visit(const std::shared_ptr<Ternary> &ternary) override;
 
   void Flush();
   int Visit(const std::shared_ptr<Call> &call) override;

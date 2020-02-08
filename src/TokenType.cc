@@ -58,8 +58,18 @@ int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary) {
   switch (op->GetType()) {
     case TokenType::T_ASSIGN:
       return 2;
+    case TokenType::T_QUESTION:
+      return 3;
+    case TokenType::T_OR:
+      return 4;
+    case TokenType::T_AND:
+      return 5;
+    case TokenType::T_BIT_OR:
+      return 6;
+    case TokenType::T_BIT_XOR:
+      return 7;
     case TokenType::T_BIT_AND:
-      return is_unary ? 15 : 8;
+      return is_unary ? 14 : 8;
     case TokenType::T_EQUALS:
     case TokenType::T_NOT_EQUALS:
       return 9;
@@ -68,16 +78,22 @@ int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary) {
     case TokenType::T_GREATER_EQUAL:
     case TokenType::T_LESS_EQUAL:
       return 10;
+    case TokenType::T_LSHIFT:
+    case TokenType::T_RSHIFT:
+      return 11;
     case TokenType::T_PLUS:
     case TokenType::T_MINUS:
-      return 11;
-    case TokenType::T_STAR:
-      return is_unary ? 13 : 12;
-    case TokenType::T_SLASH:
       return 12;
+    case TokenType::T_STAR:
+      return is_unary ? 14 : 13;
+    case TokenType::T_MOD:
+    case TokenType::T_SLASH:
+      return 13;
+    case TokenType::T_NOT:
+    case TokenType::T_NEG:
     case TokenType::T_DEC:
     case TokenType::T_INC:
-      return 13;
+      return 14;
     default:
       throw ParseException("Invalid operator", op);
   }
