@@ -1,8 +1,10 @@
-int i = 0;
+int main() {
+	int i = 0;
 
-for (;;) {
-  if (i == 5) break;
-  i = i + 1;
+	for (;;) {
+	  if (i == 5) break;
+	  ++i;
+	}
+
+	print i;
 }
-
-print i;

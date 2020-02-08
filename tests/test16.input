@@ -1,8 +1,10 @@
-int x = 25, y = x * 4;
+int main() {
+	int x = 25, y = x * 4;
 
-long bigger = 1000;
+	long bigger = 1000;
 
-x = bigger;
+	x = bigger;
 
-print x;
-print bigger;
+	print x;
+	print bigger;
+}

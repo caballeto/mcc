@@ -1,17 +1,19 @@
-int x = 0;
+int main() {
+	int x = 0;
 
-while (x < 10)
-  x = x + 1;
+	while (x < 10)
+	  x = x + 1;
 
-print x;
+	print x;
 
-do
-  x = x + 1;
-while (x < 25);
+	do
+	  x = x + 1;
+	while (x < 25);
 
-print x;
+	print x;
 
-for (; x < 40;)
-  x = x + 1;
+	for (; x < 40;)
+	  x = x + 1;
 
-print x;
+	print x;
+}

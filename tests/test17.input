@@ -1,5 +1,7 @@
-int x = 1, y = 2, z;
+int main() {
+	int x = 1, y = 2, z;
 
-while (x < 100) {
-  x + 99 = y;
+	while (x < 100) {
+	  x + 99 = y;
+	}
 }

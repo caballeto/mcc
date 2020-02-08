@@ -24,6 +24,10 @@ class CodeGenX86: public Visitor<int> {
     out_.open(output_file, std::ios::out);
     label_ = 0;
     return_label_ = -1;
+
+    type_sizes_[Type::INT] = 4;
+    type_sizes_[Type::SHORT] = 2;
+    type_sizes_[Type::LONG] = 8;
   }
 
   void Generate(const std::vector<std::shared_ptr<Stmt>>& stmts);
@@ -65,10 +69,13 @@ class CodeGenX86: public Visitor<int> {
   std::string GetPostfix(Type type, int ind);
   std::string GetRegister(int r, Type type, int ind);
 
+  std::map<Type, int> type_sizes_;
   ErrorReporter& reporter_;
   std::stack<std::pair<std::string, std::string>> loop_stack_; // FIXME: move to type checker
+
   int label_;
   int return_label_;
+
   std::ofstream out_;
   ControlFlowChecker flow_checker_; // FIXME: move to type checker
   SymbolTable& symbol_table_;

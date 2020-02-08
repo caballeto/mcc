@@ -1,4 +1,6 @@
-int x = 5 + 17, y = x * 2;
+int main() {
+	int x = 5 + 17, y = x * 2;
 
-print x;
-print y;
+	print x;
+	print y;
+}

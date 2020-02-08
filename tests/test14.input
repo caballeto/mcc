@@ -1,7 +1,9 @@
-int x = 1, y = 2, x = 25;
+int main() {
+	int x = 1, y = 2, x = 25;
 
-void z = 25;
+	void z = 25;
 
-long m, m = m + m;
+	long m, m = m + m;
 
-print z;
+	print z;
+}

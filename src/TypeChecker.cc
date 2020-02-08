@@ -401,7 +401,14 @@ Type TypeChecker::Visit(const std::shared_ptr<Grouping>& grouping) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Ternary>& ternary) {
-  return Type::NONE;
+  ternary->condition_->is_const_ = ternary->is_const_;
+  ternary->then_->is_const_ = ternary->is_const_;
+  ternary->else_->is_const_ = ternary->is_const_;
+  ternary->condition_->Accept(*this);
+  ternary->then_->Accept(*this);
+  ternary->else_->Accept(*this);
+  ternary->type_ = MatchTypes(ternary->then_, ternary->else_, false, ternary);
+  return ternary->type_;
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Postfix>& postfix) {

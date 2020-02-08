@@ -120,7 +120,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '>':
       if ((c = Next()) == '=') {
         token->SetType(TokenType::T_GREATER_EQUAL);
-      } if (c == '>') {
+      } else if (c == '>') {
         token->SetType(TokenType::T_RSHIFT); // #TODO: check whether correct
       } else {
         token->SetType(TokenType::T_GREATER);

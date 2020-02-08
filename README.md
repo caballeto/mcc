@@ -303,7 +303,28 @@ adding to pointers has not been added yet.
 
 More tasks for today:
 
-- add pointer scaling
-- rewrite all tests and add new ones (redirect everything to standard output, regenerate tests)
-- implement goto/labels
+- [x] add pointer scaling
+- [x] rewrite all tests and add new ones (redirect everything to standard output, regenerate tests)
+
+Fixed pointers increment/decrement issues, rewrote current tests and updated
+`run_tests.py` to compile files and compare output. Code is not in best shape,
+but at least it works as intended. There was confusion about functions `IsVariable()` and
+`IsPointer()`, so I will consider rewriting these and making a clear distinction
+on what they mean.
+
+Also, implemented and tested ternary operators, negative numbers. Haven't tested other
+binary/unary operators like `if (!ptr) { ... }`, but they should work theoretically.
+
+## **Next**
+
+- char type and character representation
+- strings as char* and string pointer iteration (`for (p = "string"; *p; p++)`)
+- arrays (one dimensional for now), type checking
+- subscription in arrays and integrating them with available operators (`x[1]++`)
+
+Extra tasks:
+
+- add logical operators
+- add tests for operators (logical, bitwise, not, negation)
+- adding some bigger program tests
 

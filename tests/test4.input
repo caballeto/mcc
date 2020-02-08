@@ -1,11 +1,13 @@
-int x;
-int y;
+int main() {
+	int x;
+	int y;
 
-x = 6;
-y = 1000;
+	x = 6;
+	y = 1000;
 
-if (x == y - 1) {
-	print x;
-} else {
-	print y;
+	if (x == y - 1) {
+		print x;
+	} else {
+		print y;
+	}
 }

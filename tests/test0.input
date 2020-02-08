@@ -1,15 +1,17 @@
-int x;
-int y;
+int main() {
+	int x;
+	int y;
 
-x = 5;
-y = 6;
+	x = 5;
+	y = 6;
 
-print x + y;
-print x;
-print y;
+	print x + y;
+	print x;
+	print y;
 
-x = y;
-print x;
-print y;
+	x = y;
+	print x;
+	print y;
 
-print 1 + 2 * 5;
+	print 1 + 2 * 5;
+}
