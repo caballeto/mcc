@@ -27,17 +27,30 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
     const std::shared_ptr<Token>& type_token, int indirection, std::shared_ptr<Token> name) {
   std::vector<std::shared_ptr<VarDecl>> var_decl_list;
   Type decl_type = TokenToType(type_token->GetType());
-  std::shared_ptr<Expr> init = OptionalExpression(0);
-  var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, decl_type, indirection, true));
+  std::shared_ptr<Expr> init;
+
+  if (Match(TokenType::T_LBRACKET)) {
+    std::shared_ptr<Token> len = Consume(TokenType::T_INT_LITERAL, "Expected integer length > 0");
+    Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
+    var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
+  } else {
+    init = OptionalExpression(0);
+    var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, decl_type, indirection, true));
+  }
 
   if (!Check(TokenType::T_SEMICOLON)) {
     do {
       indirection = 0;
       while (Match(TokenType::T_STAR)) indirection++;
       name = Consume(TokenType::T_IDENTIFIER, "Expected identifier after type declaration");
-      init = OptionalExpression(0);
-      var_decl_list.push_back(std::make_shared<VarDecl>(
-          type_token, name, init, decl_type, indirection, true));
+      if (Match(TokenType::T_LBRACKET)) {
+        std::shared_ptr<Token> len = Consume(TokenType::T_INT_LITERAL, "Expected integer length > 0");
+        Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
+        var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
+      } else {
+        init = OptionalExpression(0);
+        var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, decl_type, indirection, true));
+      }
     } while (Match(TokenType::T_COMMA));
   }
 
@@ -219,9 +232,14 @@ std::shared_ptr<DeclList> Parser::DeclarationList() {
     int indirection = 0;
     while (Match(TokenType::T_STAR)) indirection++;
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
-    std::shared_ptr<Expr> init = OptionalExpression(0);
-    var_decl_list.push_back(std::make_shared<VarDecl>(
-        type_token, name, init, decl_type, indirection,false));
+    if (Match(TokenType::T_LBRACKET)) {
+      std::shared_ptr<Token> len = Consume(TokenType::T_INT_LITERAL, "Expected integer length > 0");
+      Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
+      var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
+    } else {
+      std::shared_ptr<Expr> init = OptionalExpression(0);
+      var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, decl_type, indirection, false));
+    }
   } while (Match(TokenType::T_COMMA));
 
   Consume(TokenType::T_SEMICOLON, "Expected ';' after variable declaration");
@@ -273,6 +291,20 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
 
   while (precedence < GetPrecedence(curr_op, false)) {
     switch (curr_op->GetType()) {
+      case TokenType::T_LPAREN: {
+        std::shared_ptr<Token> op = Consume(TokenType::T_LPAREN);
+        std::shared_ptr<ExprList> args = ExpressionList();
+        Consume(TokenType::T_RPAREN, "')' expected after call");
+        left = std::make_shared<Call>(op, left, args);
+        break;
+      }
+      case TokenType::T_LBRACKET: {
+        std::shared_ptr<Token> op = Consume(TokenType::T_LBRACKET);
+        std::shared_ptr<Expr> index = Expression(0);
+        Consume(TokenType::T_RBRACKET, "']' expected after array indexing operation");
+        left = std::make_shared<Index>(op, left, index);
+        break;
+      }
       case TokenType::T_INC:
       case TokenType::T_DEC: {
         std::shared_ptr<Token> op = Peek();
@@ -311,7 +343,11 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
 }
 
 std::shared_ptr<Expr> Parser::OptionalExpression(int precedence) {
-  if (Match(TokenType::T_ASSIGN) || (!Check(TokenType::T_SEMICOLON) && !Check(TokenType::T_COMMA) && !Check(TokenType::T_RPAREN))) {
+  if (Match(TokenType::T_ASSIGN) || (
+      !Check(TokenType::T_SEMICOLON) &&
+      !Check(TokenType::T_COMMA) &&
+      !Check(TokenType::T_RPAREN) &&
+      !Check(TokenType::T_LBRACKET))) {
     return Expression(precedence);
   } else {
     return nullptr;
@@ -321,17 +357,10 @@ std::shared_ptr<Expr> Parser::OptionalExpression(int precedence) {
 std::shared_ptr<Expr> Parser::Primary() {
   switch (Peek()->GetType()) {
     case TokenType::T_IDENTIFIER: {
-      std::shared_ptr<Token> name = Peek();
+      std::shared_ptr<Literal> literal = std::make_shared<Literal>(Peek());
+      literal->is_lvalue_ = true;
       Next();
-      if (Match(TokenType::T_LPAREN)) {
-        std::shared_ptr<ExprList> args = ExpressionList();
-        Consume(TokenType::T_RPAREN, "')' expected after call");
-        return std::make_shared<Call>(name, args);
-      } else {
-        std::shared_ptr<Literal> literal = std::make_shared<Literal>(name);
-        literal->is_lvalue_ = true;
-        return literal;
-      }
+      return literal;
     }
     case TokenType::T_INT_LITERAL: {
       std::shared_ptr<Literal> literal = std::make_shared<Literal>(Peek());
@@ -369,7 +398,8 @@ bool Parser::IsStopToken(TokenType type) {
       || type == TokenType::T_COMMA
       || type == TokenType::T_EOF
       || type == TokenType::T_RBRACE
-      || type == TokenType::T_COLON;
+      || type == TokenType::T_COLON
+      || type == TokenType::T_RBRACKET;
 }
 
 void Parser::Synchronize() {

@@ -156,7 +156,7 @@ class FuncDecl : public Stmt {
       std::shared_ptr<Token> name,
       std::shared_ptr<DeclList> signature,
       std::shared_ptr<Block> body)
-    : Stmt(nullptr),
+    : Stmt(name),
     return_type_(return_type),
     indirection_(indirection),
     name_(std::move(name)),
@@ -192,15 +192,32 @@ class VarDecl : public Stmt {
     is_const_init_(is_const_init)
   { }
 
+  VarDecl(
+      std::shared_ptr<Token> token,
+      std::shared_ptr<Token> name,
+      Type var_type,
+      int indirection,
+      int array_len)
+      : Stmt(std::move(token)),
+        name_(std::move(name)),
+        init_(nullptr),
+        var_type_(var_type),
+        indirection_(indirection),
+        array_len_(array_len),
+        is_const_init_(false)
+  { }
+
   int Accept(Visitor<int>& visitor) override;
   Type Accept(Visitor<Type>& visitor) override;
 
   bool IsDeclaration() const override;
+  bool IsArray() const;
 
   std::shared_ptr<Token> name_;
   std::shared_ptr<Expr> init_;
   Type var_type_;
   int indirection_;
+  int array_len_;
   bool is_const_init_;
 };
 
@@ -255,20 +272,36 @@ class Expr : public std::enable_shared_from_this<Expr> {
   int indirection_ = 0;
   bool is_lvalue_ = false;
   bool is_const_ = false;
+  bool is_function_ = false;
+  bool is_indexable_ = false;
+  bool to_scale_ = false;
   bool return_ptr_ = false;
   std::shared_ptr<Token> op_;
 };
 
-class Call : public Expr {
+class Index : public Expr {
  public:
-  Call(std::shared_ptr<Token> name, std::shared_ptr<ExprList> args)
-    : Expr(nullptr), name_(std::move(name)), args_(std::move(args))
+  Index(std::shared_ptr<Token> op, std::shared_ptr<Expr> name, std::shared_ptr<Expr> index)
+    : Expr(std::move(op)), name_(std::move(name)), index_(std::move(index))
   { }
 
-  int Accept(Visitor<int> &visitor) override;
-  Type Accept(Visitor<Type> &visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
 
-  std::shared_ptr<Token> name_;
+  std::shared_ptr<Expr> name_;
+  std::shared_ptr<Expr> index_;
+};
+
+class Call : public Expr {
+ public:
+  Call(std::shared_ptr<Token> op, std::shared_ptr<Expr> name, std::shared_ptr<ExprList> args)
+    : Expr(std::move(op)), name_(std::move(name)), args_(std::move(args))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
+  std::shared_ptr<Expr> name_;
   std::shared_ptr<ExprList> args_;
 };
 

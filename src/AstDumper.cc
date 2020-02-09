@@ -146,8 +146,9 @@ int AstDumper::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
 int AstDumper::Visit(const std::shared_ptr<Call>& call) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<call>" << std::endl;
-  out_ << std::string(spaces_ + 2, ' ') << "<name>"
-       << call->name_->GetStringValue() << "</name>" << std::endl;
+  out_ << std::string(spaces_ + 2, ' ') << "<name>\n";
+  call->name_->Accept(*this);
+  out_ << std::string(spaces_ + 2, ' ') << "</name>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<args>\n";
   spaces_ += TAB_SIZE;
@@ -315,6 +316,24 @@ int AstDumper::Visit(const std::shared_ptr<Return>& return_stmt) {
   out_ << std::string(spaces_, ' ') << "<return>\n";
   return_stmt->expr_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</return>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<Index>& index) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<index>" << std::endl;
+  out_ << std::string(spaces_ + 2, ' ') << "<name>\n";
+  index->name_->Accept(*this);
+  out_ << std::string(spaces_ + 2, ' ') << "</name>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<index-expr>\n";
+  spaces_ += TAB_SIZE;
+  index->index_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</index-expr>\n";
+
+  out_ << std::string(spaces_, ' ') << "</index>" << std::endl;
   spaces_ -= TAB_SIZE;
   return 0;
 }

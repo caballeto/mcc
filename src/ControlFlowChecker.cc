@@ -89,4 +89,8 @@ int ControlFlowChecker::Visit(const std::shared_ptr<Postfix> &postfix) {
   return 0;
 }
 
+int ControlFlowChecker::Visit(const std::shared_ptr<Index> &index) {
+  return 0;
+}
+
 } // namespace mcc

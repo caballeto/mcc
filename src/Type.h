@@ -14,6 +14,7 @@ enum class Type {
   SHORT = 1,
   INT = 2,
   LONG = 3,
+  ARRAY,
   NONE
 };
 

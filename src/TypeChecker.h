@@ -41,6 +41,7 @@ class TypeChecker : public Visitor<Type> {
   Type Visit(const std::shared_ptr<Grouping>& grouping) override;
   Type Visit(const std::shared_ptr<Ternary>& ternary) override;
   Type Visit(const std::shared_ptr<Postfix>& postfix) override;
+  Type Visit(const std::shared_ptr<Index> &index) override;
 
   static bool IsIntegerType(ExprRef expr);
   static bool IsPointer(ExprRef expr);

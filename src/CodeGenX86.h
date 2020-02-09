@@ -49,6 +49,7 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
   int Visit(const std::shared_ptr<Return>& return_stmt) override;
   int Visit(const std::shared_ptr<Call>& call) override;
+  int Visit(const std::shared_ptr<Index> &index) override;
   int Visit(const std::shared_ptr<Grouping> &grouping) override;
   int Visit(const std::shared_ptr<Ternary> &ternary) override;
   int Visit(const std::shared_ptr<Postfix> &postfix) override;
@@ -66,6 +67,7 @@ class CodeGenX86: public Visitor<int> {
   static std::string GetSetInstr(TokenType type);
 
   int GetTypeSize(Type type, int ind);
+  static std::string GetAllocType(Type type, int ind);
   std::string GetPostfix(Type type, int ind);
   std::string GetRegister(int r, Type type, int ind);
 

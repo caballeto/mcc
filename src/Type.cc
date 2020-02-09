@@ -30,6 +30,7 @@ std::ostream& operator<<(std::ostream& os, Type type) {
     case Type::SHORT: return os << "short";
     case Type::INT: return os << "int";
     case Type::LONG: return os << "long";
+    case Type::ARRAY: return os << "array []";
     case Type::NONE: return os << "NO TYPE";
   }
   return os << "InternalError: uncovered type in switch" << type << std::endl;

@@ -85,6 +85,14 @@ void ErrorReporter::Error(
   errors_++;
 }
 
+void ErrorReporter::Warning(const std::string &message,
+                            const std::shared_ptr<Expr>& e1,
+                            const std::shared_ptr<Expr>& e2,
+                            const std::shared_ptr<Token>& token) {
+  PrintWarningLine(input_file_, token->GetLine(), token->GetCount());
+  PrintMessage(message, e1, e2, token);
+}
+
 bool ErrorReporter::HadErrors() const {
   return errors_ != 0;
 }
@@ -107,14 +115,6 @@ void ErrorReporter::PrintWarningLine(const std::string& file, int line, int c) {
 
 void ErrorReporter::PrintErrorLine(const std::string& file, int line, int c) {
   PrintColoredLine(file, line, c, "error", RED);
-}
-
-void ErrorReporter::Warning(const std::string &message,
-                            const std::shared_ptr<Expr>& e1,
-                            const std::shared_ptr<Expr>& e2,
-                            const std::shared_ptr<Token>& token) {
-  PrintWarningLine(input_file_, token->GetLine(), token->GetCount());
-  PrintMessage(message, e1, e2, token);
 }
 
 void ErrorReporter::PrintMessage(const std::string& message,

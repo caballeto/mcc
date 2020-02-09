@@ -89,20 +89,27 @@ Type TypeChecker::MatchMixed(ExprRef e1, ExprRef e2, bool to_left, ExprRef binar
   if (binary->op_->GetType() == TokenType::T_ASSIGN) { // assign
     binary->type_ = e1->type_;
     binary->indirection_ = e1->indirection_;
-    reporter_.Warning("Assignment makes without a cast", e1, e2, binary->op_);
+    reporter_.Warning("Assignment with pointer/integer without a cast", e1, e2, binary->op_);
   } else if (IsComparison(binary->op_->GetType())) { // comparison
-    reporter_.Warning("Comparison between pointer and integer", e1, e2, binary->op_);
     binary->type_ = Type::INT;
     binary->indirection_ = 0;
+    reporter_.Warning("Comparison between pointer and integer", e1, e2, binary->op_);
   } else if (binary->op_->GetType() != TokenType::T_PLUS && binary->op_->GetType() != TokenType::T_MINUS) {
     reporter_.Error("Invalid operand for pointer arithmetic, only '+' and '-' allowed", e1, e2, binary->op_);
     return Type::NONE;
   } else if ((IsIntegerType(e1) && IsPointer(e2))) { // +, - for (int + pointer)
+    if (binary->op_->GetType() == TokenType::T_MINUS) { // #TODO: check if can (x - ptr)
+      reporter_.Error("Invalid operand for pointer arithmetic, only '+' and '-' allowed", e1, e2, binary->op_);
+      return Type::NONE;
+    }
+
     binary->type_ = e2->type_;
     binary->indirection_ = e2->indirection_;
+    e1->to_scale_ = true;
   } else if (IsIntegerType(e2) && IsPointer(e1)) { // +, - for (pointer + int)
     binary->type_ = e1->type_;
     binary->indirection_ = e1->indirection_;
+    e2->to_scale_ = true;
   } else {
     reporter_.Error("Invalid types for pointer arithmetic in binary expression", e1, e2, binary->op_);
   }
@@ -151,6 +158,7 @@ Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
         return Type::NONE;
       }
 
+      unary->to_scale_ = unary->right_->indirection_ > 0; // scale for pointerss
       unary->indirection_ = unary->right_->indirection_ + 1;
       unary->type_ = unary->right_->type_;
       return unary->type_;
@@ -222,8 +230,20 @@ Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
       return Type::NONE;
     }
 
-    literal->type_ = symbol_table_.Get(id).type;
-    literal->indirection_ = symbol_table_.Get(id).indirection;
+    Entry descr = symbol_table_.Get(id);
+
+    if (literal->is_function_ && !descr.is_function) {
+      reporter_.Report("'" + literal->op_->GetStringValue() + "' is not a function", literal->op_);
+      return Type::NONE;
+    }
+
+    if (literal->is_indexable_ && descr.array_len == 0 && descr.indirection == 0) {
+      reporter_.Report("Invalid type for index operation, pointer or array expected", literal->op_);
+      return Type::NONE;
+    }
+
+    literal->type_ = descr.type;
+    literal->indirection_ = descr.indirection;
     return literal->type_;
   } else {
     int val = literal->op_->GetIntValue();
@@ -349,16 +369,17 @@ Type TypeChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   return Type::NONE;
 }
 
+// int array[25];
 Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
   int id = symbol_table_.Get(decl->name_->GetStringValue());
 
-  if (decl->var_type_ == Type::VOID) {
+  if (decl->var_type_ == Type::VOID && decl->indirection_ == 0) {
     reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has unallowable type 'void'", decl->token_);
     return Type::NONE;
   }
 
   if (id == -1) {
-    symbol_table_.Put(decl->name_->GetStringValue(), decl->var_type_, decl->indirection_, false);
+    symbol_table_.Put(decl->name_->GetStringValue(), decl->var_type_, decl->indirection_, decl->array_len_, false);
   } else {
     reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has already been declared", decl->name_);
     return Type::NONE;
@@ -377,22 +398,29 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Call>& call) {
-  int id = symbol_table_.Get(call->name_->GetStringValue());
-
-  if (id == -1) {
-    reporter_.Report("Function '" + call->name_->GetStringValue() + "' has not been declared", call->name_);
-    return Type::NONE;
-  }
-
-  if (!symbol_table_.Get(id).is_function) {
-    reporter_.Report("'" + call->name_->GetStringValue() + "' is not a function", call->name_);
-    return Type::NONE;
-  }
-
+  call->name_->is_function_ = true;
+  call->name_->Accept(*this);
+  call->type_ = call->name_->type_;
+  call->indirection_ = call->name_->indirection_;
   // #TODO: check for number of parameters + types
-  call->type_ = symbol_table_.Get(id).type;
-  call->indirection_ = symbol_table_.Get(id).indirection;
   return call->type_;
+}
+
+Type TypeChecker::Visit(const std::shared_ptr<Index>& index) {
+  index->name_->is_indexable_ = true;
+  index->name_->Accept(*this);
+  index->index_->Accept(*this);
+  index->index_->to_scale_ = true;
+  index->is_lvalue_ = true;
+
+  if (!IsIntegerType(index->index_)) { // #FIXME: could pointers be used as index?
+    reporter_.Report("Index must be an integer type", index->name_->op_);
+    return Type::NONE;
+  }
+
+  index->type_ = index->name_->type_;
+  index->indirection_ = index->name_->indirection_; // FIXME: for pointers
+  return index->type_;
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Grouping>& grouping) {
@@ -428,12 +456,12 @@ Type TypeChecker::Visit(const std::shared_ptr<Postfix>& postfix) {
     return Type::NONE;
   }
 
+  postfix->to_scale_ = postfix->expr_->indirection_ > 0; // scale for pointer
   postfix->is_lvalue_ = false;
   postfix->type_ = postfix->expr_->type_;
   postfix->indirection_ = postfix->expr_->indirection_;
   return Type::NONE;
 }
-
 bool TypeChecker::IsComparison(TokenType type) {
   return type == TokenType::T_EQUALS || type == TokenType::T_NOT_EQUALS
     || type == TokenType::T_LESS || type == TokenType::T_LESS_EQUAL

@@ -127,13 +127,8 @@ int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
     case TokenType::T_INC: {
       if (unary->right_->IsVariable()) {
         const std::string& name = std::static_pointer_cast<Literal>(unary->right_)->op_->GetStringValue();
-        if (unary->right_->indirection_ > 0) {
-          out_ << "\tadd" << GetPostfix(unary->right_->type_, unary->right_->indirection_)
-               << "\t$" << type_sizes_[unary->right_->type_] << ", " << name << "(%rip)\n";
-        } else {
-          out_ << "\tadd" << GetPostfix(unary->right_->type_, unary->right_->indirection_)
-               << "\t$1, " << name << "(%rip)\n";
-        }
+        out_ << "\tadd" << GetPostfix(unary->right_->type_, unary->right_->indirection_)
+             << "\t$" << (unary->to_scale_ ? type_sizes_[unary->right_->type_] : 1) << ", " << name << "(%rip)\n";
         out_ << "\tmov" << GetPostfix(unary->right_->type_, unary->right_->indirection_) << "\t"
              << name << "(%rip), " << GetRegister(r, unary->right_->type_, unary->right_->indirection_) << "\n";
       } else {
@@ -150,13 +145,8 @@ int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
     case TokenType::T_DEC: {
       if (unary->right_->IsVariable()) {
         const std::string& name = std::static_pointer_cast<Literal>(unary->right_)->op_->GetStringValue();
-        if (unary->right_->indirection_ > 0) {
-          out_ << "\tsub" << GetPostfix(unary->right_->type_, unary->right_->indirection_)
-               << "\t$" << type_sizes_[unary->right_->type_] << ", " << name << "(%rip)\n";
-        } else {
-          out_ << "\tsub" << GetPostfix(unary->right_->type_, unary->right_->indirection_)
-               << "\t$1, " << name << "(%rip)\n";
-        }
+        out_ << "\tsub" << GetPostfix(unary->right_->type_, unary->right_->indirection_)
+             << "\t$" << (unary->to_scale_ ? type_sizes_[unary->right_->type_] : 1) << ", " << name << "(%rip)\n";
         out_ << "\tmov" << GetPostfix(unary->right_->type_, unary->right_->indirection_) << "\t"
              << name << "(%rip), " << GetRegister(r, unary->right_->type_, unary->right_->indirection_) << "\n";
       } else {
@@ -194,44 +184,23 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   int r1 = binary->left_->Accept(*this);
   int r2 = binary->right_->Accept(*this);
 
-  // #FIXME: add separate node for pointer scaling, instead of much code here (?)
+  if (binary->left_->to_scale_) {
+    out_ << "\timulq\t$" << GetTypeSize(binary->right_->type_, 0) << ", " << kRegisters[r1] << "\n";
+  }
+
+  if (binary->right_->to_scale_) {
+    out_ << "\timulq\t$" << GetTypeSize(binary->left_->type_, 0) << ", " << kRegisters[r2] << "\n";
+  }
+
   switch (binary->op_->GetType()) {
     case TokenType::T_PLUS:
-      if (binary->indirection_ > 0) {
-        if (binary->left_->indirection_ > 0) { // pointer on the left
-          out_ << "\timulq\t$" << GetTypeSize(binary->left_->type_, 0) << ", " << kRegisters[r2] << "\n";
-          out_ << "\taddq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
-          FreeRegister(r2);
-          return r1;
-        } else { // pointer on the right
-          out_ << "\timulq\t$" << GetTypeSize(binary->right_->type_, 0) << ", " << kRegisters[r1] << "\n";
-          out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-          FreeRegister(r1);
-          return r2;
-        }
-      } else {
-        out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-        FreeRegister(r1);
-        return r2;
-      }
+      out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
+      FreeRegister(r1);
+      return r2;
     case TokenType::T_MINUS:
-      if (binary->indirection_ > 0) {
-        if (binary->left_->indirection_ > 0) { // pointer on the left
-          out_ << "\timulq\t$" << GetTypeSize(binary->left_->type_, 0) << ", " << kRegisters[r2] << "\n";
-          out_ << "\tsubq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
-          FreeRegister(r2);
-          return r1;
-        } else { // pointer on the right
-          out_ << "\timulq\t$" << GetTypeSize(binary->right_->type_, 0) << ", " << kRegisters[r1] << "\n";
-          out_ << "\tsubq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-          FreeRegister(r1);
-          return r2;
-        }
-      } else {
-        out_ << "\tsubq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
-        FreeRegister(r2);
-        return r1;
-      }
+      out_ << "\tsubq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+      FreeRegister(r2);
+      return r1;
     case TokenType::T_STAR:
       out_ << "\timulq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
       FreeRegister(r1);
@@ -290,12 +259,19 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
 int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   int r = NewRegister();
 
-  // load pointer
+  // array
+  if (literal->is_indexable_) {
+    out_ << "\tleaq\t" << literal->op_->GetStringValue() << "(%rip), " << kRegisters[r] << "\n";
+    return r;
+  }
+
+  // pointer
   if (literal->indirection_ != 0) {
     out_ << "\tmovq\t" << literal->op_->GetStringValue() << "(%rip), " << kRegisters[r] << "\n";
     return r;
   }
 
+  // primitives
   switch (literal->op_->GetType()) {
     case TokenType::T_INT_LITERAL:
       out_ << "\tmovq\t$" << literal->op_->GetIntValue()
@@ -314,8 +290,7 @@ int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
         case Type::LONG:
           out_ << "\tmovq\t" << literal->op_->GetStringValue() << "(%rip), " << kRegisters[r] << "\n";
           break;
-        case Type::VOID:
-        case Type::NONE: {
+        default: {
           std::cerr << "Invalid literal type. Exiting." << std::endl;
           exit(1);
         }
@@ -402,14 +377,21 @@ int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   int size = GetTypeSize(var_decl->var_type_, var_decl->indirection_);
   const std::string& name = var_decl->name_->GetStringValue();
 
-  out_ << "\t.comm\t" << name << "," << size << "," <<  size << "\n";
-
-  if (var_decl->init_ != nullptr) {
-    int r = var_decl->init_->Accept(*this);
-    out_ << "\tmov" << GetPostfix(var_decl->var_type_, var_decl->indirection_) << "\t"
-         << GetRegister(r, var_decl->var_type_, var_decl->indirection_)
-         << ", " << name << "(%rip)\n";
-    FreeRegister(r);
+  if (var_decl->array_len_ > 0) {
+    out_ << "\t.data\n" << "\t.globl\t" << name << "\n";
+    out_ << name << ":\n";
+    for (int i = 0; i < var_decl->array_len_; i++) {
+      out_ << "\t." << GetAllocType(var_decl->var_type_, var_decl->indirection_) << "\t0\n";
+    }
+  } else {
+    out_ << "\t.comm\t" << name << "," << size << "," << size << "\n";
+    if (var_decl->init_ != nullptr) {
+      int r = var_decl->init_->Accept(*this);
+      out_ << "\tmov" << GetPostfix(var_decl->var_type_, var_decl->indirection_) << "\t"
+           << GetRegister(r, var_decl->var_type_, var_decl->indirection_)
+           << ", " << name << "(%rip)\n";
+      FreeRegister(r);
+    }
   }
 
   return NO_RETURN_REGISTER;
@@ -449,8 +431,26 @@ int CodeGenX86::Visit(const std::shared_ptr<Grouping>& grouping) {
   return grouping->expr_->Accept(*this);
 }
 
+// array[2] = 15;
+// print array[2];
+int CodeGenX86::Visit(const std::shared_ptr<Index>& index) {
+  int r1 = index->name_->Accept(*this);
+  int r2 = index->index_->Accept(*this);
+
+  // scale the index
+  out_ << "\timulq\t$" << type_sizes_[index->name_->type_] << ", " << kRegisters[r2] << "\n";
+  out_ << "\taddq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+  FreeRegister(r2);
+
+  if (!index->return_ptr_) {
+    out_ << "\tmovq\t(" << kRegisters[r1] << "), " << kRegisters[r1] << "\n";
+  }
+
+  return r1;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<Call>& call) {
-  out_ << "\tcall\t" << call->name_->GetStringValue() << "\n";
+  out_ << "\tcall\t" << std::static_pointer_cast<Literal>(call->name_)->op_->GetStringValue() << "\n";
 
   if (call->type_ != Type::VOID) {
     int r = NewRegister();
@@ -460,6 +460,7 @@ int CodeGenX86::Visit(const std::shared_ptr<Call>& call) {
 
   return NO_RETURN_REGISTER;
 }
+
 int CodeGenX86::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   if (loop_stack_.empty()) {
     std::cerr << ((flow_stmt->is_break_) ? "break" : "continue") << " does not have enclosing loop." << std::endl;
@@ -506,7 +507,6 @@ void CodeGenX86::Preamble() {
 }
 
 void CodeGenX86::Postamble() { }
-
 void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
   Preamble();
   for (const auto& stmt : stmts)
@@ -532,6 +532,7 @@ void CodeGenX86::FreeRegister(int reg) {
     return;
   regs_status[reg] = true;
 }
+
 int CodeGenX86::GetLabel() {
   return label_++;
 }
@@ -563,13 +564,9 @@ int CodeGenX86::Visit(const std::shared_ptr<Postfix>& postfix) {
     case TokenType::T_INC: {
       if (postfix->expr_->IsVariable()) {
         const std::string& name = std::static_pointer_cast<Literal>(postfix->expr_)->op_->GetStringValue();
-        if (postfix->expr_->indirection_ > 0) {
-          out_ << "\tadd" << GetPostfix(postfix->expr_->type_, postfix->expr_->indirection_)
-               << "\t$" << type_sizes_[postfix->expr_->type_] << ", " << name << "(%rip)\n";
-        } else {
-          out_ << "\tadd" << GetPostfix(postfix->expr_->type_, postfix->expr_->indirection_)
-               << "\t$1, " << name << "(%rip)\n";
-        }
+        out_ << "\tadd" << GetPostfix(postfix->expr_->type_, postfix->expr_->indirection_)
+             << "\t$" << (postfix->to_scale_ ? type_sizes_[postfix->expr_->type_] : 1)
+             << ", " << name << "(%rip)\n";
         break;
       } else {
         int r2 = NewRegister();
@@ -587,13 +584,9 @@ int CodeGenX86::Visit(const std::shared_ptr<Postfix>& postfix) {
     case TokenType::T_DEC: {
       if (postfix->expr_->IsVariable()) {
         const std::string& name = std::static_pointer_cast<Literal>(postfix->expr_)->op_->GetStringValue();
-        if (postfix->expr_->indirection_ > 0) {
-          out_ << "\tsub" << GetPostfix(postfix->expr_->type_, postfix->expr_->indirection_)
-               << "\t$" << type_sizes_[postfix->expr_->type_] << ", " << name << "(%rip)\n";
-        } else {
-          out_ << "\tsub" << GetPostfix(postfix->expr_->type_, postfix->expr_->indirection_)
-               << "\t$1, " << name << "(%rip)\n";
-        }
+        out_ << "\tsub" << GetPostfix(postfix->expr_->type_, postfix->expr_->indirection_)
+             << "\t$" << (postfix->to_scale_ ? type_sizes_[postfix->expr_->type_] : 1)
+             << ", " << name << "(%rip)\n";
         break;
       } else {
         int r2 = NewRegister();
@@ -615,6 +608,19 @@ int CodeGenX86::Visit(const std::shared_ptr<Postfix>& postfix) {
   }
 
   return r1;
+}
+
+std::string CodeGenX86::GetAllocType(Type type, int ind) {
+  if (ind > 0) return "quad";
+  switch (type) {
+    case Type::SHORT: return "word";
+    case Type::INT: return "long";
+    case Type::LONG: return "quad";
+    default: {
+      std::cerr << "Invalid type in array allocation." << type << std::endl;
+      exit(1);
+    }
+  }
 }
 
 } // namespace mcc

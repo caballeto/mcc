@@ -333,3 +333,9 @@ Extra tasks:
 Fixed scaling issues in binary operators. Improved error reporting by
 adding `warning` messages for comparison/assignment between int,long and pointer types.
 Also improved handling of scanner errors, also it still throws errors.
+
+- fixed scaling issues
+- partially implemented one-dimensional arrays, more tests needed
+- work with primitive types, but not generalize to pointer arrays yet.
+- rewrote parser to represent calls and index operations as expressions
+- simple tests do path

@@ -1,0 +1,18 @@
+int array[20];
+
+int* ptrs[10];
+
+int main() {
+  array[0] = 5;
+  print array[0];
+  array[0]++;
+  print array[0];
+  array[0]--;
+  print array[0];
+
+  ptrs[0] = &array[0];
+  ptrs[0]++;
+  *ptrs[0] = 25;
+
+  print array[1];
+}

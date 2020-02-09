@@ -63,6 +63,10 @@ bool VarDecl::IsDeclaration() const {
   return true;
 }
 
+bool VarDecl::IsArray() const {
+  return array_len_ > 0;
+}
+
 Type ExpressionStmt::Accept(Visitor<Type> &visitor) {
   return visitor.Visit(shared_from_base<ExpressionStmt>());
 }
@@ -189,6 +193,14 @@ int Ternary::Accept(Visitor<int>& visitor) {
 
 Type Ternary::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Ternary>());
+}
+
+int Index::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(shared_from_base<Index>());
+}
+
+Type Index::Accept(Visitor<Type> &visitor) {
+  return visitor.Visit(shared_from_base<Index>());
 }
 
 } // namespace mcc
