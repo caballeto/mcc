@@ -40,8 +40,8 @@ bool TypeChecker::MatchTypeInit(Type type, int indirection, ExprRef init) {
 // assuming types are not void
 Type TypeChecker::MatchTypes(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary) {
   if (e1->type_ == Type::VOID || e2->type_ == Type::VOID) {
-    reporter_.ReportSemanticError("Invalid operands types in binary expression, 'void' is not allowed",
-        e1, e2, binary->op_);
+    reporter_.Error("Invalid operands types in binary expression, 'void' is not allowed",
+                    e1, e2, binary->op_);
     return Type::NONE;
   }
 
@@ -63,11 +63,12 @@ Type TypeChecker::MatchPointers(ExprRef e1, ExprRef e2, bool to_left, ExprRef bi
   }
 
   if (e1->type_ != e2->type_ || e1->indirection_ != e2->indirection_) {
-    reporter_.ReportSemanticError("Invalid operands types in binary expression", e1, e2, binary->op_);
+    reporter_.Error("Invalid operands types in binary expression", e1, e2, binary->op_);
   } else if (binary->op_->GetType() != TokenType::T_MINUS) {
-    reporter_.ReportSemanticError("Invalid binary operation for types", e1, e2, binary->op_);
+    reporter_.Error("Invalid binary operation for types", e1, e2, binary->op_);
   } else {
-    binary->type_ = Type::LONG;
+    binary->type_ = Type::LONG; // pointer subtraction yields long
+    binary->indirection_ = 0;
   }
   return binary->type_; // Type::NONE by default
 }
@@ -77,7 +78,7 @@ Type TypeChecker::MatchPrimitives(ExprRef e1, ExprRef e2, bool to_left, ExprRef 
 
   // FIXME: fix for structs
   if (!IsIntegerType(e1) || !IsIntegerType(e2)) {
-    reporter_.ReportSemanticError("Invalid operands types in binary expression", e1, e2, binary->op_);
+    reporter_.Error("Invalid operands types in binary expression", e1, e2, binary->op_);
     return Type::NONE;
   }
 
@@ -85,21 +86,27 @@ Type TypeChecker::MatchPrimitives(ExprRef e1, ExprRef e2, bool to_left, ExprRef 
 }
 
 Type TypeChecker::MatchMixed(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary) {
-  if (binary->op_->GetType() == TokenType::T_ASSIGN) {
-    // FIXME: issue warnings on invalid assign conversions
+  if (binary->op_->GetType() == TokenType::T_ASSIGN) { // assign
+    binary->type_ = e1->type_;
+    binary->indirection_ = e1->indirection_;
+    reporter_.Warning("Assignment makes without a cast", e1, e2, binary->op_);
+  } else if (IsComparison(binary->op_->GetType())) { // comparison
+    reporter_.Warning("Comparison between pointer and integer", e1, e2, binary->op_);
+    binary->type_ = Type::INT;
+    binary->indirection_ = 0;
+  } else if (binary->op_->GetType() != TokenType::T_PLUS && binary->op_->GetType() != TokenType::T_MINUS) {
+    reporter_.Error("Invalid operand for pointer arithmetic, only '+' and '-' allowed", e1, e2, binary->op_);
+    return Type::NONE;
+  } else if ((IsIntegerType(e1) && IsPointer(e2))) { // +, - for (int + pointer)
+    binary->type_ = e2->type_;
+    binary->indirection_ = e2->indirection_;
+  } else if (IsIntegerType(e2) && IsPointer(e1)) { // +, - for (pointer + int)
     binary->type_ = e1->type_;
     binary->indirection_ = e1->indirection_;
   } else {
-    if ((IsIntegerType(e1) && IsPointer(e2))) {
-      binary->type_ = e2->type_;
-      binary->indirection_ = e2->indirection_;
-    } else if (IsIntegerType(e2) && IsPointer(e1)) {
-      binary->type_ = e1->type_;
-      binary->indirection_ = e1->indirection_;
-    } else {
-      reporter_.ReportSemanticError("Invalid types for pointer arithmetic in binary expression", e1, e2, binary->op_);
-    }
+    reporter_.Error("Invalid types for pointer arithmetic in binary expression", e1, e2, binary->op_);
   }
+
   return binary->type_;
 }
 
@@ -107,7 +114,7 @@ Type TypeChecker::PromoteToLeft(ExprRef e1, ExprRef e2) {
   int t1 = (int) e1->type_, t2 = (int) e2->type_;
 
   if (t1 < t2) {
-    reporter_.ReportSemanticError("Could not cast right expression", e1, e2, e1->op_);
+    reporter_.Error("Could not cast right expression", e1, e2, e1->op_);
     return Type::NONE;
   }
 
@@ -312,14 +319,14 @@ Type TypeChecker::Visit(const std::shared_ptr<Return>& return_stmt) {
   return_stmt->expr_->Accept(*this);
 
   if (curr_func->return_type_ == Type::VOID) {
-    reporter_.ReportSemanticError("Declared return type is 'void', but return statement found",
-                                  curr_func->return_type_, curr_func->indirection_, return_stmt->expr_, return_stmt->token_);
+    reporter_.Error("Declared return type is 'void', but return statement found",
+                    curr_func->return_type_, curr_func->indirection_, return_stmt->expr_, return_stmt->token_);
     return Type::NONE;
   }
 
   if (!MatchTypeInit(curr_func->return_type_, curr_func->indirection_, return_stmt->expr_)) {
-    reporter_.ReportSemanticError("Declared type of init expression does not correspond to inferred type ",
-        curr_func->return_type_, curr_func->indirection_, return_stmt->expr_, return_stmt->token_);
+    reporter_.Error("Declared type of init expression does not correspond to inferred type ",
+                    curr_func->return_type_, curr_func->indirection_, return_stmt->expr_, return_stmt->token_);
     return Type::NONE;
   }
 
@@ -361,8 +368,8 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     decl->init_->is_const_ = decl->is_const_init_;
     decl->init_->Accept(*this);
     if (!MatchTypeInit(decl->var_type_, decl->indirection_, decl->init_)) {
-      reporter_.ReportSemanticError("The type of init expression does not match the declared type of the variable ",
-          decl->var_type_, decl->indirection_, decl->init_, decl->token_);
+      reporter_.Error("The type of init expression does not match the declared type of the variable ",
+                      decl->var_type_, decl->indirection_, decl->init_, decl->token_);
     }
   }
 
@@ -425,6 +432,12 @@ Type TypeChecker::Visit(const std::shared_ptr<Postfix>& postfix) {
   postfix->type_ = postfix->expr_->type_;
   postfix->indirection_ = postfix->expr_->indirection_;
   return Type::NONE;
+}
+
+bool TypeChecker::IsComparison(TokenType type) {
+  return type == TokenType::T_EQUALS || type == TokenType::T_NOT_EQUALS
+    || type == TokenType::T_LESS || type == TokenType::T_LESS_EQUAL
+    || type == TokenType::T_GREATER || type == TokenType::T_GREATER_EQUAL;
 }
 
 } // namespace mcc

@@ -173,7 +173,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
           token->SetStringValue(identifier);
         }
       } else {
-        reporter_.Report("Can't recognize token", c, line_);
+        reporter_.Report("Unrecognizable token", c, line_, c_);
       }
   }
 

@@ -3,13 +3,14 @@ int main() {
 
 	for (int i = 0, j = 0; i < 10; i = i + 1) {
 	  print i * j
+	  print k++;
 	}
 
-	int z = 100;
+	int z = 100.;
 
 	while (z < 100) {
 	  z = z 1;
-	  print z;
+	  print z
 	}
 
 	print k;

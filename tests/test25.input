@@ -1,0 +1,22 @@
+int main() {
+  int *x, y;
+  x = &y;
+
+  long z = x;
+
+  print x == z;
+  print x + 2 == z + 8;
+  print x - 2 == z - 8;
+
+  x++;
+  z = z + 4;
+
+  print x == z;
+
+  x--;
+  z = z - 4;
+
+  print x == z;
+
+  return 0;
+}

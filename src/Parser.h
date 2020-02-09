@@ -49,7 +49,8 @@ class Parser {
   bool MatchType();
 
   static void DisallowDecl(const std::shared_ptr<Stmt>& stmt, const std::shared_ptr<Token>& token);
-  void synchronize();
+  void Synchronize();
+  void SynchronizeDeclaration();
 
   std::shared_ptr<Token> Consume(TokenType type);
   static bool IsStopToken(TokenType type);

@@ -328,3 +328,8 @@ Extra tasks:
 - add tests for operators (logical, bitwise, not, negation)
 - adding some bigger program tests
 
+## Day 12
+
+Fixed scaling issues in binary operators. Improved error reporting by
+adding `warning` messages for comparison/assignment between int,long and pointer types.
+Also improved handling of scanner errors, also it still throws errors.

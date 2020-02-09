@@ -194,15 +194,44 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   int r1 = binary->left_->Accept(*this);
   int r2 = binary->right_->Accept(*this);
 
+  // #FIXME: add separate node for pointer scaling, instead of much code here (?)
   switch (binary->op_->GetType()) {
     case TokenType::T_PLUS:
-      out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-      FreeRegister(r1);
-      return r2;
+      if (binary->indirection_ > 0) {
+        if (binary->left_->indirection_ > 0) { // pointer on the left
+          out_ << "\timulq\t$" << GetTypeSize(binary->left_->type_, 0) << ", " << kRegisters[r2] << "\n";
+          out_ << "\taddq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+          FreeRegister(r2);
+          return r1;
+        } else { // pointer on the right
+          out_ << "\timulq\t$" << GetTypeSize(binary->right_->type_, 0) << ", " << kRegisters[r1] << "\n";
+          out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
+          FreeRegister(r1);
+          return r2;
+        }
+      } else {
+        out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
+        FreeRegister(r1);
+        return r2;
+      }
     case TokenType::T_MINUS:
-      out_ << "\tsubq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
-      FreeRegister(r2);
-      return r1;
+      if (binary->indirection_ > 0) {
+        if (binary->left_->indirection_ > 0) { // pointer on the left
+          out_ << "\timulq\t$" << GetTypeSize(binary->left_->type_, 0) << ", " << kRegisters[r2] << "\n";
+          out_ << "\tsubq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+          FreeRegister(r2);
+          return r1;
+        } else { // pointer on the right
+          out_ << "\timulq\t$" << GetTypeSize(binary->right_->type_, 0) << ", " << kRegisters[r1] << "\n";
+          out_ << "\tsubq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
+          FreeRegister(r1);
+          return r2;
+        }
+      } else {
+        out_ << "\tsubq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+        FreeRegister(r2);
+        return r1;
+      }
     case TokenType::T_STAR:
       out_ << "\timulq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
       FreeRegister(r1);

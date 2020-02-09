@@ -43,10 +43,25 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
     case TokenType::T_VOID: return os << "'void'";
     case TokenType::T_SHORT: return os << "'short'";
     case TokenType::T_LONG: return os << "'long'";
-    case TokenType::T_BIT_AND: return os << "&";
+    case TokenType::T_BIT_AND: return os << "'&'";
     case TokenType::T_RETURN: return os << "'return'";
     case TokenType::T_INC: return os << "'++'";
     case TokenType::T_DEC: return os << "'--'";
+    case TokenType::T_NOT: return os << "'!'";
+    case TokenType::T_NEG: return os << "'~'";
+    case TokenType::T_DOT: return os << "'.'";
+    case TokenType::T_ARROW: return os << "'->'";
+    case TokenType::T_LBRACKET: return os << "'['";
+    case TokenType::T_RBRACKET: return os << "']'";
+    case TokenType::T_MOD: return os << "'%'";
+    case TokenType::T_BIT_OR: return os << "'|'";
+    case TokenType::T_BIT_XOR: return os << "'^'";
+    case TokenType::T_QUESTION: return os << "'?'";
+    case TokenType::T_COLON: return os << "':'";
+    case TokenType::T_OR: return os << "'||'";
+    case TokenType::T_AND: return os << "'&&'";
+    case TokenType::T_LSHIFT: return os << "'<<'";
+    case TokenType::T_RSHIFT: return os << "'>>'";
   }
 
   return os << static_cast<std::uint16_t>(type);
@@ -95,7 +110,7 @@ int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary) {
     case TokenType::T_INC:
       return 14;
     default:
-      throw ParseException("Invalid operator", op);
+      throw ParseException("Expected operator", op);
   }
 }
 

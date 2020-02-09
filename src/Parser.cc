@@ -16,7 +16,7 @@ std::vector<std::shared_ptr<Stmt>> Parser::Parse() {
       stmts.push_back(Declaration());
     } catch (const ParseException& e) {
       reporter_.ReportParseError(e);
-      synchronize();
+      SynchronizeDeclaration();
     }
   }
 
@@ -250,8 +250,13 @@ std::shared_ptr<Block> Parser::BlockStatement() {
   std::shared_ptr<Token> token = Consume(TokenType::T_LBRACE, "Expected '{' at start of block");
   std::vector<std::shared_ptr<Stmt>> stmts;
 
-  while (!Check(TokenType::T_RBRACE)) {
-    stmts.push_back(Statement());
+  while (!Check(TokenType::T_RBRACE) && !Check(TokenType::T_EOF)) {
+    try {
+      stmts.push_back(Statement());
+    } catch (const ParseException& e) {
+      reporter_.ReportParseError(e);
+      Synchronize();
+    }
   }
 
   Consume(TokenType::T_RBRACE, "Expected '}' after block");
@@ -367,12 +372,13 @@ bool Parser::IsStopToken(TokenType type) {
       || type == TokenType::T_COLON;
 }
 
-void Parser::synchronize() {
-  std::shared_ptr<Token> prev = std::move(Peek());
-  Next();
-  while (!Check(TokenType::T_EOF)) {
-    if (prev->GetType() == TokenType::T_SEMICOLON) return;
+void Parser::Synchronize() {
+  if (Peek()->GetType() == TokenType::T_SEMICOLON) {
+    Next();
+    return;
+  }
 
+  while (!Check(TokenType::T_EOF)) {
     switch (Peek()->GetType()) {
       case TokenType::T_INT:
       case TokenType::T_SHORT:
@@ -383,6 +389,21 @@ void Parser::synchronize() {
       case TokenType::T_WHILE:
       case TokenType::T_DO:
       case TokenType::T_PRINT:
+      case TokenType::T_RBRACE:
+        return;
+    }
+
+    Next();
+  }
+}
+
+void Parser::SynchronizeDeclaration() {
+  while (!Check(TokenType::T_EOF)) {
+    switch (Peek()->GetType()) {
+      case TokenType::T_INT:
+      case TokenType::T_SHORT:
+      case TokenType::T_VOID:
+      case TokenType::T_LONG:
         return;
     }
 
@@ -428,7 +449,6 @@ std::shared_ptr<Token> Parser::Consume(TokenType type) {
     throw ParseException("", Peek());
   }
 }
-
 std::shared_ptr<Token> Parser::Consume(TokenType type, const std::string& message) {
   if (Check(type)) {
     std::shared_ptr<Token> token = Peek();

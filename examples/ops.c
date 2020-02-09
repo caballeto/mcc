@@ -8,6 +8,12 @@ int main() {
   char **pp1, **pp2;
   long **l1, **l2;
 
+  printf("%d", p1 == x);
+  printf("%d", p1 != x);
+  printf("%d", p1 >= x);
+  printf("%d", p1 <= x);
+  printf("%d", p1 > x);
+  printf("%d", p1 < x);
   printf("%d", p1 + x);
   printf("%d", p1 - x);
   printf("%d", p1 * x);

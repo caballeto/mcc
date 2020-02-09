@@ -44,6 +44,7 @@ class TypeChecker : public Visitor<Type> {
 
   static bool IsIntegerType(ExprRef expr);
   static bool IsPointer(ExprRef expr);
+  static bool IsComparison(TokenType type);
 
   Type Promote(ExprRef e1, ExprRef e2);
   Type PromoteToLeft(ExprRef e1, ExprRef e2);

@@ -41,6 +41,10 @@ def main(args):
     files = [x for x in os.listdir(DIR_PATH) if x.endswith(".input")]
     for input in files:
         output = input[:-6] + ".output"
+
+        if not os.path.isfile(DIR_PATH + "/" + output):
+            continue
+
         command = [PROJ_PATH, "/", EXEC, " ", DIR_PATH, "/", input]
 
         p = Popen(["".join(command)], stdout=PIPE, stderr=PIPE, shell=True)
