@@ -1,10 +1,7 @@
-/home/vladyslav/CLionProjects/mcc/tests/test1.input:16:20[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test1.input:16:23[0;31m error [0m
 Variable 'k' has not been declared, near 'k', line 16
 
-/home/vladyslav/CLionProjects/mcc/tests/test1.input:16:18[0;31m error [0m
-Invalid operands types in binary expression('short' and 'NO TYPE'), near '+', line 16
+/home/vladyslav/CLionProjects/mcc/tests/test1.input:16:21[0;31m error [0m
+Invalid operands types in binary expression('char' and 'NO TYPE'), near '+', line 16
 
-/home/vladyslav/CLionProjects/mcc/tests/test1.input:16:2[0;31m error [0m
-'print' statement expects integer, near 'print', line 16
-
-Encountered 3 semantic errors. Stopping compilation.
+Encountered 2 semantic errors. Stopping compilation.

@@ -5,13 +5,13 @@ int main() {
 	x = 5;
 	y = 6;
 
-	print x + y;
-	print x;
-	print y;
+	printint(x + y);
+	printint(x);
+	printint(y);
 
 	x = y;
-	print x;
-	print y;
+	printint(x);
+	printint(y);
 
-	print 1 + 2 * 5;
+	printint(1 + 2 * 5);
 }

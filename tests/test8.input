@@ -2,16 +2,16 @@ int main() {
 	for (int i = 0; i < 5; i = i + 1) {
 	  if (i == 2)
 		continue;
-	  print i;
+	  printint(i);
 	}
 
-	print 100000;
+	printint(100000);
 
 	for (i = 0; i < 10; i = i + 1) {
 	  if (i == 5)
 		break;
-	  print i;
+	  printint(i);
 	}
 
-	print i;
+	printint(i);
 }

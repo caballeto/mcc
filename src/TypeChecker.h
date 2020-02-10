@@ -9,6 +9,7 @@
 #include "ErrorReporter.h"
 #include "SymbolTable.h"
 #include "Type.h"
+#include "CodeGenX86.h"
 
 namespace mcc {
 
@@ -17,8 +18,8 @@ using TokenRef = const std::shared_ptr<Token>&;
 
 class TypeChecker : public Visitor<Type> {
  public:
-  TypeChecker(ErrorReporter& reporter, SymbolTable& symbol_table)
-    : reporter_(reporter), symbol_table_(symbol_table), curr_func(nullptr)
+  TypeChecker(CodeGenX86& code_gen, ErrorReporter& reporter, SymbolTable& symbol_table)
+    : code_gen_(code_gen), reporter_(reporter), symbol_table_(symbol_table), curr_func(nullptr)
   { }
 
   void TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts);
@@ -65,9 +66,10 @@ class TypeChecker : public Visitor<Type> {
                   const std::shared_ptr<Expr>& binary);
 
   bool MatchTypeInit(Type type, int indirection, const std::shared_ptr<Expr>& init);
-  Type Visit(const std::shared_ptr<FuncDecl> &func_decl) override;
-  Type Visit(const std::shared_ptr<Return> &return_stmt) override;
+  Type Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
+  Type Visit(const std::shared_ptr<Return>& return_stmt) override;
 
+  CodeGenX86& code_gen_; // #FIXME: rewrite for higher abstraction using `CodeGen : Visitor<int>` as interface
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;
   std::shared_ptr<FuncDecl> curr_func;

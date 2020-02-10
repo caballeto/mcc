@@ -29,7 +29,7 @@ def generate():
         out = p.stderr.read().decode("utf-8")
 
         if not out:
-            os.system("cc -o out out.s")
+            os.system("cc -o out out.s ./examples/printint.c")
             p = Popen(["./out"], stdout=PIPE, stderr=STDOUT, shell=True)
             with open(DIR_PATH + "/" + output, 'w') as f:
                 f.write(p.stdout.read().decode("utf-8"))
@@ -51,7 +51,7 @@ def main(args):
         out = p.stderr.read().decode("utf-8")
 
         if not out:
-            os.system("cc -o out out.s")
+            os.system("cc -o out out.s ./examples/printint.c")
             p = Popen(["./out"], stdout=PIPE, stderr=STDOUT, shell=True)
             out = p.stdout.read().decode("utf-8")
 

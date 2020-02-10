@@ -5,6 +5,6 @@ int main() {
 
 	x = bigger;
 
-	print x;
-	print bigger;
+	printint(x);
+	printint(bigger);
 }

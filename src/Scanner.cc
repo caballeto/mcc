@@ -196,7 +196,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
 std::string Scanner::ScanStr() {
   std::string s;
   char c;
-  while ((c = Next()) != '"')
+  while ((c = (char) ScanChar()) != '"')
     s.push_back(c);
   return std::move(s);
 }

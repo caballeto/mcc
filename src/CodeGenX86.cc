@@ -5,6 +5,7 @@
 #include "CodeGenX86.h"
 
 // #TODO: future optimization - don't generate code for sub-trees that have no effects
+// #TODO: eliminate useless condition expression generation
 
 namespace mcc {
 
@@ -12,7 +13,9 @@ namespace mcc {
 int CodeGenX86::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
   int r = cond_stmt->condition_->Accept(*this);
   int l_start = GetLabel(), l_end = GetLabel();
+
   out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
+
   FreeRegister(r);
   out_ << "\tje\t" << "L" << l_start << "\n";
   cond_stmt->then_block_->Accept(*this);
@@ -168,7 +171,8 @@ int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
     }
     case TokenType::T_STAR: {
       if (!unary->return_ptr_)
-        out_ << "\tmovq\t" << "(" << kRegisters[r] << ")" << ", " << kRegisters[r] << "\n";
+        out_ << "\tmov" << GetLoadPostfix(unary->expr_->type_, unary->expr_->indirection_ - 1)
+             << "\t" << "(" << kRegisters[r] << ")" << ", " << kRegisters[r] << "\n";
       break;
     }
     default: {
@@ -184,13 +188,12 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   int r1 = binary->left_->Accept(*this);
   int r2 = binary->right_->Accept(*this);
 
-  if (binary->left_->to_scale_) {
+  int rsize = GetTypeSize(binary->right_->type_, 0);
+  int lsize = GetTypeSize(binary->left_->type_, 0);
+  if (binary->left_->to_scale_ && rsize > 1)
     out_ << "\timulq\t$" << GetTypeSize(binary->right_->type_, 0) << ", " << kRegisters[r1] << "\n";
-  }
-
-  if (binary->right_->to_scale_) {
+  if (binary->right_->to_scale_ && lsize > 1)
     out_ << "\timulq\t$" << GetTypeSize(binary->left_->type_, 0) << ", " << kRegisters[r2] << "\n";
-  }
 
   switch (binary->op_->GetType()) {
     case TokenType::T_PLUS:
@@ -279,14 +282,6 @@ int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
       break;
     case TokenType::T_STR_LIT: {
       const std::string &s = literal->op_->GetStringValue();
-      if (strings_.count(s) == 0) {
-        int label = GetLabel();
-        out_ << "L" << label << ":\n";
-        for (char c : s)
-          out_ << "\t.byte\t" << (int) c << "\n";
-        out_ << "\t.byte\t0\n";
-        strings_[s] = label;
-      }
       out_ << "\tleaq\tL" << strings_[s] << "(%rip), " << kRegisters[r] << "\n";
       break;
     }
@@ -364,6 +359,20 @@ int CodeGenX86::Visit(const std::shared_ptr<ExprList>& expr_list) {
 int CodeGenX86::GetTypeSize(Type type, int indirection) {
   if (indirection > 0) return 8;
   return type_sizes_[type];
+}
+
+std::string CodeGenX86::GetLoadPostfix(Type type, int ind) {
+  if (ind > 0) return "q";
+  switch (type) {
+    case Type::CHAR: return "zbq";
+    case Type::SHORT: return "zwq";
+    case Type::INT: return "slq";
+    case Type::LONG: return "q";
+    default: {
+      reporter_.Report("Invalid variable type.");
+      exit(1);
+    }
+  }
 }
 
 std::string CodeGenX86::GetPostfix(Type type, int ind) {
@@ -464,7 +473,8 @@ int CodeGenX86::Visit(const std::shared_ptr<Index>& index) {
   FreeRegister(r2);
 
   if (!index->return_ptr_) {
-    out_ << "\tmovq\t(" << kRegisters[r1] << "), " << kRegisters[r1] << "\n";
+    out_ << "\tmov" << GetLoadPostfix(index->name_->type_, index->name_->indirection_ - 1) // #FIXME: check if name type is type + *
+         << "\t" << "(" << kRegisters[r1] << ")" << ", " << kRegisters[r1] << "\n";
   }
 
   return r1;
@@ -525,10 +535,12 @@ void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
     stmt->Accept(*this);
   Postamble();
 }
+
 void CodeGenX86::PrintInt(int r) {
   out_ << "\tmovq\t" << kRegisters[r] << ", %rdi\n"
     << "\tcall\tprintint\n";
 }
+
 int CodeGenX86::NewRegister() {
   for (int i = 0; i < REGISTER_NUM; i++) {
     if (regs_status[i]) {
@@ -539,6 +551,7 @@ int CodeGenX86::NewRegister() {
   std::cerr << "Run out of registers." << std::endl; // #TODO: Register spilling
   exit(1);
 }
+
 void CodeGenX86::FreeRegister(int reg) {
   if (reg == NO_RETURN_REGISTER)
     return;
@@ -549,9 +562,21 @@ int CodeGenX86::GetLabel() {
   return label_++;
 }
 
+void CodeGenX86::GenGlobalString(const std::string& s) {
+  if (strings_.count(s) == 0) {
+    int label = GetLabel();
+    out_ << "L" << label << ":\n";
+    for (char c : s)
+      out_ << "\t.byte\t" << (int) c << "\n";
+    out_ << "\t.byte\t0\n";
+    strings_[s] = label;
+  }
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<Ternary>& ternary) {
   int r = ternary->condition_->Accept(*this);
   int l_start = GetLabel(), l_end = GetLabel();
+
   out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
 
   out_ << "\tje\t" << "L" << l_start << "\n";

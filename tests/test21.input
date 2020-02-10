@@ -9,6 +9,6 @@ int func() {
 
 int main() {
   int z = func();
-  print z;
+  printint(z);
   return 0;
 }

@@ -5,5 +5,5 @@ int main() {
 
 	long m, m = m + m;
 
-	print z;
+	printint(z);
 }

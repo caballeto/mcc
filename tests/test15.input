@@ -1,5 +1,5 @@
 int main() {
 	int x = 0, y = 1, z = 2;
 
-	print x + y + z + d;
+	printint(x + y + z + d);
 }

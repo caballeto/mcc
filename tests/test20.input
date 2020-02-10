@@ -9,6 +9,6 @@ int func() {
 
 int main() {
   int some_int = 25;
-  print some_int * 10;
+  printint(some_int * 10);
   return some_int;
 }

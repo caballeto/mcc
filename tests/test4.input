@@ -6,8 +6,8 @@ int main() {
 	y = 1000;
 
 	if (x == y - 1) {
-		print x;
+		printint(x);
 	} else {
-		print y;
+		printint(y);
 	}
 }

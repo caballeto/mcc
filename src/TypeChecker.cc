@@ -135,7 +135,7 @@ Type TypeChecker::Promote(ExprRef e1, ExprRef e2) {
   return (Type) std::max(t1, t2);
 }
 
-// #FIXME: add support for ++/-- operations + for pointers
+// #FIXME: code gen of conditions with '!'
 Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
   unary->expr_->is_const_ = unary->is_const_;
 
@@ -266,6 +266,7 @@ Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
   } else if (literal->op_->GetType() == TokenType::T_STR_LIT) {
     literal->type_ = Type::CHAR;
     literal->indirection_ = 1;
+    code_gen_.GenGlobalString(literal->op_->GetStringValue()); // generate global string
     return literal->type_;
   } else { // integer
     int val = literal->op_->GetIntValue();
@@ -328,8 +329,9 @@ Type TypeChecker::Visit(const std::shared_ptr<While>& while_stmt) {
 Type TypeChecker::Visit(const std::shared_ptr<For>& for_stmt) {
   for_stmt->init_->Accept(*this);
 
-  if (for_stmt->condition_ != nullptr)
+  if (for_stmt->condition_ != nullptr) {
     for_stmt->condition_->Accept(*this);
+  }
 
   if (for_stmt->condition_ != nullptr && !IsIntegerType(for_stmt->condition_) && !IsPointer(for_stmt->condition_)) {
     reporter_.Report("Used not-scalar where scalar is required", for_stmt->token_);
@@ -495,6 +497,7 @@ Type TypeChecker::Visit(const std::shared_ptr<Postfix>& postfix) {
   postfix->indirection_ = postfix->expr_->indirection_;
   return Type::NONE;
 }
+
 bool TypeChecker::IsComparison(TokenType type) {
   return type == TokenType::T_EQUALS || type == TokenType::T_NOT_EQUALS
     || type == TokenType::T_LESS || type == TokenType::T_LESS_EQUAL

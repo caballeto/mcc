@@ -22,6 +22,7 @@ void Usage() {
 }
 
 //#TODO: add DEBUG macro for debug messages
+//#TODO: add Compiler class to initialize all the stuff
 int main(int argc, char* argv[]) {
   //if (argc > 2) {
   //  Usage();
@@ -29,14 +30,15 @@ int main(int argc, char* argv[]) {
   //}
 
   std::string input_file = std::string(argv[1]);
+  std::ofstream out(ASSEMBY_FILE, std::ios::out);
   mcc::ErrorReporter reporter(std::cerr);
   reporter.SetFile(input_file);
 
   mcc::SymbolTable symbol_table;
   mcc::Scanner scanner(input_file, reporter);
   mcc::Parser parser(scanner, reporter);
-  mcc::TypeChecker type_checker(reporter, symbol_table);
-  mcc::CodeGenX86 code_gen(ASSEMBY_FILE, symbol_table, reporter);
+  mcc::CodeGenX86 code_gen(out, symbol_table, reporter);
+  mcc::TypeChecker type_checker(code_gen, reporter, symbol_table);
   mcc::AstDumper dumper(AST_DUMP_FILE);
 
   symbol_table.Put("printint", mcc::Type::VOID, 0, 0, true);

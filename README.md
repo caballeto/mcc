@@ -355,11 +355,21 @@ Implemented following
 
 TODO:
 
-- fix types in dereferencing namely, when moving char use
+- [x] fix types in dereferencing namely, when moving char use
   `movzbq (%r8) %r8`, not `movq (%r8), %r8`, as it will print
   far out than zero char.
-- declare the globals first, go over program and declare
+- [x] declare the globals first, go over program and declare
   global variables and anonymous strings in data section
-- then generate code for functions
-- improve generating of conditional expressions (eliminate too many comparisons
+- [x] then generate code for functions
+- [ ] improve generating of conditional expressions (eliminate too many comparisons
   with top level check for conditional expression)
+ 
+Finally implemented working program with strings. Fixed bugs with loading from pointer
+and incorrect scanning. Now storage for strings is generated during type checking.
+So code generator is passed to type checker. Not the most elegant, but the fastest solution.
+Rewrote tests to use `printint` function, instead of `print` statement.
+
+In conclusion, all major parts are working, there are definitely bugs in implementation, but
+still it is working. That means that I can start working on local variables and function calls.
+It will be the most essential part of compiler, so will have to take some time to design things
+well. Cool, let's go!

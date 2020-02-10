@@ -19,9 +19,8 @@ namespace mcc {
 
 class CodeGenX86: public Visitor<int> {
  public:
-  CodeGenX86(const std::string& output_file, SymbolTable& symbol_table, ErrorReporter& reporter)
-    : symbol_table_(symbol_table), reporter_(reporter) {
-    out_.open(output_file, std::ios::out);
+  CodeGenX86(std::ostream& out, SymbolTable& symbol_table, ErrorReporter& reporter)
+    : out_(out), symbol_table_(symbol_table), reporter_(reporter) {
     label_ = 0;
     return_label_ = -1;
 
@@ -55,8 +54,9 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<Ternary> &ternary) override;
   int Visit(const std::shared_ptr<Postfix> &postfix) override;
 
- private:
   int GetLabel();
+
+  void GenGlobalString(const std::string& s);
 
   void Preamble();
   void Postamble();
@@ -70,6 +70,7 @@ class CodeGenX86: public Visitor<int> {
   int GetTypeSize(Type type, int ind);
   static std::string GetAllocType(Type type, int ind);
   std::string GetPostfix(Type type, int ind);
+  std::string GetLoadPostfix(Type type, int ind);
   std::string GetRegister(int r, Type type, int ind);
 
   std::map<std::string, int> strings_;
@@ -80,7 +81,7 @@ class CodeGenX86: public Visitor<int> {
   int label_;
   int return_label_;
 
-  std::ofstream out_;
+  std::ostream& out_;
   ControlFlowChecker flow_checker_; // FIXME: move to type checker
   SymbolTable& symbol_table_;
 

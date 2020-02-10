@@ -7,10 +7,7 @@ Variable 'z' has unallowable type 'void', near 'void', line 4
 /home/vladyslav/CLionProjects/mcc/tests/test14.input:6:10[0;31m error [0m
 Variable 'm' has already been declared, near 'm', line 6
 
-/home/vladyslav/CLionProjects/mcc/tests/test14.input:8:8[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test14.input:8:11[0;31m error [0m
 Variable 'z' has not been declared, near 'z', line 8
 
-/home/vladyslav/CLionProjects/mcc/tests/test14.input:8:2[0;31m error [0m
-'print' statement expects integer, near 'print', line 8
-
-Encountered 5 semantic errors. Stopping compilation.
+Encountered 4 semantic errors. Stopping compilation.

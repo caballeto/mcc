@@ -5,10 +5,10 @@ int main() {
   x = &z;
   *x = 5;
 
-  print (*x)--;
-  print *x;
-  print --(*x);
-  print *x;
+  printint((*x)--);
+  printint(*x);
+  printint(--(*x));
+  printint(*x);
 
   return 0;
 }

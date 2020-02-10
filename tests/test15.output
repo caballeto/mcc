@@ -1,10 +1,7 @@
-/home/vladyslav/CLionProjects/mcc/tests/test15.input:4:20[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test15.input:4:23[0;31m error [0m
 Variable 'd' has not been declared, near 'd', line 4
 
-/home/vladyslav/CLionProjects/mcc/tests/test15.input:4:18[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test15.input:4:21[0;31m error [0m
 Invalid operands types in binary expression('int' and 'NO TYPE'), near '+', line 4
 
-/home/vladyslav/CLionProjects/mcc/tests/test15.input:4:2[0;31m error [0m
-'print' statement expects integer, near 'print', line 4
-
-Encountered 3 semantic errors. Stopping compilation.
+Encountered 2 semantic errors. Stopping compilation.

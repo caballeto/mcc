@@ -3,5 +3,5 @@ int main() {
 	short y = 2;
 	long z = 5;
 
-	print x + y + z;
+	printint(x + y + z);
 }
