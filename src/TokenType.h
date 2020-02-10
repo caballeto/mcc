@@ -51,7 +51,8 @@ enum class TokenType {
   T_RSHIFT,
 
   // literals
-  T_INT_LITERAL,
+  T_INT_LIT,
+  T_STR_LIT,
   T_IDENTIFIER,
 
   // keywords
@@ -67,9 +68,10 @@ enum class TokenType {
 
   // types
   T_VOID = 100,
-  T_SHORT = 101,
-  T_INT = 102,
-  T_LONG = 103
+  T_CHAR = 101,
+  T_SHORT = 102,
+  T_INT = 103,
+  T_LONG = 104
 };
 
 std::ostream& operator<<(std::ostream& os, TokenType type);

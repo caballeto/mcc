@@ -25,8 +25,9 @@ class CodeGenX86: public Visitor<int> {
     label_ = 0;
     return_label_ = -1;
 
-    type_sizes_[Type::INT] = 4;
+    type_sizes_[Type::CHAR] = 1;
     type_sizes_[Type::SHORT] = 2;
+    type_sizes_[Type::INT] = 4;
     type_sizes_[Type::LONG] = 8;
   }
 
@@ -71,6 +72,7 @@ class CodeGenX86: public Visitor<int> {
   std::string GetPostfix(Type type, int ind);
   std::string GetRegister(int r, Type type, int ind);
 
+  std::map<std::string, int> strings_;
   std::map<Type, int> type_sizes_;
   ErrorReporter& reporter_;
   std::stack<std::pair<std::string, std::string>> loop_stack_; // FIXME: move to type checker

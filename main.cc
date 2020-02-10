@@ -39,6 +39,9 @@ int main(int argc, char* argv[]) {
   mcc::CodeGenX86 code_gen(ASSEMBY_FILE, symbol_table, reporter);
   mcc::AstDumper dumper(AST_DUMP_FILE);
 
+  symbol_table.Put("printint", mcc::Type::VOID, 0, 0, true);
+  symbol_table.Put("printchar", mcc::Type::VOID, 0, 0, true);
+
   std::vector<std::shared_ptr<mcc::Stmt>> stmts = parser.Parse();
 
   if (reporter.HadErrors()) {

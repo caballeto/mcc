@@ -11,10 +11,10 @@ namespace mcc {
 
 enum class Type {
   VOID = 0,
-  SHORT = 1,
-  INT = 2,
-  LONG = 3,
-  ARRAY,
+  CHAR = 1,
+  SHORT = 2,
+  INT = 3,
+  LONG = 4,
   NONE
 };
 

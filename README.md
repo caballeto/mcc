@@ -339,3 +339,27 @@ Also improved handling of scanner errors, also it still throws errors.
 - work with primitive types, but not generalize to pointer arrays yet.
 - rewrote parser to represent calls and index operations as expressions
 - simple tests do path
+
+## Day 13
+
+Implemented following
+
+- ended 1d array implementation for prim types
+- added functionality for array to work with pointer
+- following is supported: `int* ptr = array;`, `int* ptr = &array[0]`,
+  `*(array + 1) = 1;`, `ptr[2] = 1`, `array[1] = 1`
+- added warning for pointer type conversions
+- made changing of array variable in inc/dec expressions invalid
+
+- Implemented hacked version of program (declared print funcs manually, rewrote assembly)
+
+TODO:
+
+- fix types in dereferencing namely, when moving char use
+  `movzbq (%r8) %r8`, not `movq (%r8), %r8`, as it will print
+  far out than zero char.
+- declare the globals first, go over program and declare
+  global variables and anonymous strings in data section
+- then generate code for functions
+- improve generating of conditional expressions (eliminate too many comparisons
+  with top level check for conditional expression)

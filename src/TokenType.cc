@@ -15,7 +15,7 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
     case TokenType::T_MINUS: return os << "'-'";
     case TokenType::T_STAR: return os << "'*'";
     case TokenType::T_SLASH: return os << "'/'";
-    case TokenType::T_INT_LITERAL: return os << "INT_LITERAL";
+    case TokenType::T_INT_LIT: return os << "INT_LITERAL";
     case TokenType::T_EOF: return os << "EOF";
     case TokenType::T_SEMICOLON: return os << "';'";;
     case TokenType::T_ASSIGN: return os << "'='";

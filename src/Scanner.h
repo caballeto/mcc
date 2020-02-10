@@ -33,6 +33,8 @@ class Scanner {
   int line_;
   int c_ = 0;
   char putback_ = '\0';
+  int ScanChar();
+  std::string ScanStr();
 };
 
 } // namespace mcc

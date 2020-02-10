@@ -20,7 +20,7 @@ void ErrorReporter::Report(const std::string& message, const std::shared_ptr<Tok
   PrintErrorLine(input_file_, token->GetLine(), token->GetCount());
 
   os_ << message << ", near ";
-  if (token->GetType() == TokenType::T_INT_LITERAL) {
+  if (token->GetType() == TokenType::T_INT_LIT) {
     os_ << "'" << token->GetIntValue() << "'";
   } else if (token->GetType() == TokenType::T_IDENTIFIER) {
     os_ << "'" << token->GetStringValue() << "'";
@@ -62,7 +62,7 @@ void ErrorReporter::Error(
   PrintType(os_, type, indirection);
   os_ << " and " << expr << ")" << ", near ";
 
-  if (token->GetType() == TokenType::T_INT_LITERAL) {
+  if (token->GetType() == TokenType::T_INT_LIT) {
     os_ << "'" << token->GetIntValue() << "'";
   } else if (token->GetType() == TokenType::T_IDENTIFIER) {
     os_ << "'" << token->GetStringValue() << "'";
@@ -123,7 +123,29 @@ void ErrorReporter::PrintMessage(const std::string& message,
                                  const std::shared_ptr<Token>& token) {
   os_ << message << "(" << e1 << " and " << e2 << ")" << ", near ";
 
-  if (token->GetType() == TokenType::T_INT_LITERAL) {
+  if (token->GetType() == TokenType::T_INT_LIT) {
+    os_ << "'" << token->GetIntValue() << "'";
+  } else if (token->GetType() == TokenType::T_IDENTIFIER) {
+    os_ << "'" << token->GetStringValue() << "'";
+  } else {
+    os_ << token->GetType();
+  }
+
+  os_ << ", line " << token->GetLine() << std::endl;
+  os_ << std::endl;
+}
+
+void ErrorReporter::Warning(const std::string& message,
+                            Type type,
+                            int indirection,
+                            const std::shared_ptr<Expr>& expr,
+                            const std::shared_ptr<Token>& token) {
+  PrintWarningLine(input_file_, token->GetLine(), token->GetCount());
+  os_ << message << "(";
+  PrintType(os_, type, indirection);
+  os_ << " and " << expr << ")" << ", near ";
+
+  if (token->GetType() == TokenType::T_INT_LIT) {
     os_ << "'" << token->GetIntValue() << "'";
   } else if (token->GetType() == TokenType::T_IDENTIFIER) {
     os_ << "'" << token->GetStringValue() << "'";

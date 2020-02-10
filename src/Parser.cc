@@ -30,7 +30,7 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
   std::shared_ptr<Expr> init;
 
   if (Match(TokenType::T_LBRACKET)) {
-    std::shared_ptr<Token> len = Consume(TokenType::T_INT_LITERAL, "Expected integer length > 0");
+    std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
     Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
     var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
   } else {
@@ -44,7 +44,7 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
       while (Match(TokenType::T_STAR)) indirection++;
       name = Consume(TokenType::T_IDENTIFIER, "Expected identifier after type declaration");
       if (Match(TokenType::T_LBRACKET)) {
-        std::shared_ptr<Token> len = Consume(TokenType::T_INT_LITERAL, "Expected integer length > 0");
+        std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
         Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
         var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
       } else {
@@ -62,6 +62,7 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
 std::shared_ptr<Stmt> Parser::Declaration() {
   switch (Peek()->GetType()) {
     case TokenType::T_VOID:
+    case TokenType::T_CHAR:
     case TokenType::T_SHORT:
     case TokenType::T_INT:
     case TokenType::T_LONG: {
@@ -92,6 +93,7 @@ std::shared_ptr<Stmt> Parser::Statement() {
   switch (Peek()->GetType()) {
     case TokenType::T_PRINT:    return PrintStatement();
     case TokenType::T_VOID:
+    case TokenType::T_CHAR:
     case TokenType::T_INT:
     case TokenType::T_SHORT:
     case TokenType::T_LONG:     return DeclarationList();
@@ -233,7 +235,7 @@ std::shared_ptr<DeclList> Parser::DeclarationList() {
     while (Match(TokenType::T_STAR)) indirection++;
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
     if (Match(TokenType::T_LBRACKET)) {
-      std::shared_ptr<Token> len = Consume(TokenType::T_INT_LITERAL, "Expected integer length > 0");
+      std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
       Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
       var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
     } else {
@@ -362,7 +364,8 @@ std::shared_ptr<Expr> Parser::Primary() {
       Next();
       return literal;
     }
-    case TokenType::T_INT_LITERAL: {
+    case TokenType::T_STR_LIT:
+    case TokenType::T_INT_LIT: {
       std::shared_ptr<Literal> literal = std::make_shared<Literal>(Peek());
       Next();
       return literal;
@@ -411,6 +414,7 @@ void Parser::Synchronize() {
   while (!Check(TokenType::T_EOF)) {
     switch (Peek()->GetType()) {
       case TokenType::T_INT:
+      case TokenType::T_CHAR:
       case TokenType::T_SHORT:
       case TokenType::T_VOID:
       case TokenType::T_LONG:
@@ -431,6 +435,7 @@ void Parser::SynchronizeDeclaration() {
   while (!Check(TokenType::T_EOF)) {
     switch (Peek()->GetType()) {
       case TokenType::T_INT:
+      case TokenType::T_CHAR:
       case TokenType::T_SHORT:
       case TokenType::T_VOID:
       case TokenType::T_LONG:
@@ -452,6 +457,7 @@ bool Parser::Check(TokenType type) {
 
 bool Parser::MatchType() {
   return Match(TokenType::T_INT)
+    || Match(TokenType::T_CHAR)
     || Match(TokenType::T_SHORT)
     || Match(TokenType::T_LONG)
     || Match(TokenType::T_VOID);

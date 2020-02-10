@@ -25,9 +25,10 @@ Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
   keywords_["return"] = TokenType::T_RETURN;
 
   // types
-  keywords_["int"] = TokenType::T_INT;
   keywords_["void"] = TokenType::T_VOID;
+  keywords_["char"] = TokenType::T_CHAR;
   keywords_["short"] = TokenType::T_SHORT;
+  keywords_["int"] = TokenType::T_INT;
   keywords_["long"] = TokenType::T_LONG;
 }
 
@@ -101,6 +102,18 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '}':
       token->SetType(TokenType::T_RBRACE);
       break;
+    case '\'':
+      token->SetIntValue(ScanChar());
+      token->SetType(TokenType::T_INT_LIT);
+      if ((c = Next()) != '\'') {
+        reporter_.Report("Char literal should end in quote", c, line_, c_);
+        Putback(c);
+      }
+      break;
+    case '"':
+      token->SetStringValue(ScanStr());
+      token->SetType(TokenType::T_STR_LIT);
+      break;
     case '&':
       if ((c = Next()) == '&') {
         token->SetType(TokenType::T_AND);
@@ -163,7 +176,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
       if (std::isdigit(c)) {
         int value = ScanInt(c - '0');
         token->SetIntValue(value);
-        token->SetType(TokenType::T_INT_LITERAL);
+        token->SetType(TokenType::T_INT_LIT);
       } else if (std::isalpha(c) || c == '_') {
         std::string identifier = ScanIdent(c);
         if (IsKeyword(identifier)) {
@@ -178,6 +191,38 @@ std::shared_ptr<Token> Scanner::GetToken() {
   }
 
   return token;
+}
+
+std::string Scanner::ScanStr() {
+  std::string s;
+  char c;
+  while ((c = Next()) != '"')
+    s.push_back(c);
+  return std::move(s);
+}
+
+int Scanner::ScanChar() {
+  char c = Next();
+
+  if (c == '\\') {
+    switch (c = Next()) {
+      case 'a':  return '\a';
+      case 'b':  return '\b';
+      case 'f':  return '\f';
+      case 'n':  return '\n';
+      case 'r':  return '\r';
+      case 't':  return '\t';
+      case 'v':  return '\v';
+      case '\\': return '\\';
+      case '"':  return '"' ;
+      case '\'': return '\'';
+      default:
+        reporter_.Report("Unknown escape sequence", c, line_, c_);
+        Putback(c);
+    }
+  }
+
+  return c;
 }
 
 char Scanner::NextCharSkipSpaces() {

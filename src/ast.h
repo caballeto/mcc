@@ -379,14 +379,14 @@ class Binary : public Expr {
 // #FIXME: override is variable
 class Unary : public Expr {
  public:
-  Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
-    : Expr(std::move(op)), right_(std::move(right))
+  Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> expr)
+    : Expr(std::move(op)), expr_(std::move(expr))
   { }
 
   int Accept(Visitor<int>& visitor) override;
   Type Accept(Visitor<Type>& visitor) override;
 
-  std::shared_ptr<Expr> right_;
+  std::shared_ptr<Expr> expr_;
 };
 
 class Literal : public Expr {
@@ -399,6 +399,10 @@ class Literal : public Expr {
   Type Accept(Visitor<Type>& visitor) override;
 
   bool IsVariable() override;
+
+  bool IsArray();
+
+  bool is_array;
 };
 
 } // namespace mcc

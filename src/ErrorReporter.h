@@ -51,6 +51,12 @@ class ErrorReporter {
                const std::shared_ptr<Expr>& e2,
                const std::shared_ptr<Token>& token);
 
+  void Warning(const std::string& message,
+             Type type,
+             int indirection,
+             const std::shared_ptr<Expr>& expr,
+             const std::shared_ptr<Token>& token);
+
   void Report(const std::string& message);
   void Report(const std::string& message, char c, int line, int count);
 

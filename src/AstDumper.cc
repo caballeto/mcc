@@ -286,7 +286,7 @@ int AstDumper::Visit(const std::shared_ptr<Postfix>& postfix) {
 int AstDumper::Visit(const std::shared_ptr<Unary>& unary) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<unary op='" << unary->op_->GetType() << "'>" << "\n";
-  unary->right_->Accept(*this);
+  unary->expr_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</unary>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;

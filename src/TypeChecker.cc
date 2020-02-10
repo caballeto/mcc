@@ -25,13 +25,15 @@ bool TypeChecker::IsPointer(ExprRef expr) {
 
 bool TypeChecker::IsIntegerType(ExprRef expr) {
   if (expr == nullptr) return false;
-  return expr->type_ == Type::INT || expr->type_ == Type::SHORT || expr->type_ == Type::LONG;
+  return expr->type_ == Type::INT || expr->type_ == Type::SHORT || expr->type_ == Type::LONG || expr->type_ == Type::CHAR;
 }
 
 bool TypeChecker::MatchTypeInit(Type type, int indirection, ExprRef init) {
   if (indirection == 0) {
     return IsPointer(init) ? true : (int) type >= (int) init->type_;
   } else {
+    if (type != init->type_ || indirection != init->indirection_)
+      reporter_.Warning("Assign of different type to pointer without a cast", type, indirection, init, init->op_);
     return true;
   }
 }
@@ -135,45 +137,52 @@ Type TypeChecker::Promote(ExprRef e1, ExprRef e2) {
 
 // #FIXME: add support for ++/-- operations + for pointers
 Type TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
-  unary->right_->is_const_ = unary->is_const_;
+  unary->expr_->is_const_ = unary->is_const_;
 
   switch (unary->op_->GetType()) {
     case TokenType::T_PLUS:
     case TokenType::T_MINUS:
     case TokenType::T_NOT:
     case TokenType::T_NEG: {
-      unary->right_->Accept(*this);
-      unary->indirection_ = unary->right_->indirection_;
-      unary->type_ = unary->right_->type_;
+      unary->expr_->Accept(*this);
+      unary->indirection_ = unary->expr_->indirection_;
+      unary->type_ = unary->expr_->type_;
       return unary->type_;
     }
     case TokenType::T_INC:
     case TokenType::T_DEC:
     case TokenType::T_BIT_AND: {
-      unary->right_->return_ptr_ = true;
-      unary->right_->Accept(*this);
+      unary->expr_->return_ptr_ = true;
+      unary->expr_->Accept(*this);
 
-      if (!unary->right_->IsLvalue()) {
-        reporter_.Report("Expression to prefix operators must be an lvalue", unary->op_);
+      if (!unary->expr_->IsLvalue()) {
+        reporter_.Report("Lvalue required for prefix operand", unary->op_);
         return Type::NONE;
       }
 
-      unary->to_scale_ = unary->right_->indirection_ > 0; // scale for pointerss
-      unary->indirection_ = unary->right_->indirection_ + 1;
-      unary->type_ = unary->right_->type_;
+      // inc/dec on array is invalid
+      if ((unary->op_->GetType() == TokenType::T_INC || unary->op_->GetType() == TokenType::T_DEC)
+          && unary->expr_->is_indexable_) {
+        reporter_.Report("Increment or decrement operations are invalid for arrays", unary->op_);
+        return Type::NONE;
+      }
+
+      unary->to_scale_ = unary->expr_->indirection_ > 0; // scale for pointerss
+      unary->indirection_ = unary->expr_->indirection_ + 1;
+      unary->type_ = unary->expr_->type_;
       return unary->type_;
     }
     case TokenType::T_STAR: {
-      unary->right_->Accept(*this);
+      unary->expr_->Accept(*this);
 
-      if (!IsPointer(unary->right_)) {
+      if (!IsPointer(unary->expr_)) {
         reporter_.Report("Expression to '*' must be a pointer", unary->op_);
         return Type::NONE;
       }
 
       unary->is_lvalue_ = true;
-      unary->indirection_ = unary->right_->indirection_ - 1;
-      unary->type_ = unary->right_->type_;
+      unary->indirection_ = unary->expr_->indirection_ - 1;
+      unary->type_ = unary->expr_->type_;
       return unary->type_;
     }
     default: {
@@ -215,7 +224,7 @@ void TypeChecker::TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
-  if (literal->IsVariable()) {
+  if (literal->op_->GetType() == TokenType::T_IDENTIFIER) {
     if (literal->is_const_) {
       reporter_.Report("Variables initializers '"
           + literal->op_->GetStringValue() + "' must be constant", literal->op_);
@@ -244,10 +253,23 @@ Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
 
     literal->type_ = descr.type;
     literal->indirection_ = descr.indirection;
+    literal->is_array = descr.array_len > 0;
+
+    // usage of array as pointer, literal->is_indexable_ is false, set to true
+    // so usage *(array + 5) = 10, will return pointer to array
+    if (!literal->is_indexable_ && descr.array_len > 0) {
+      literal->is_indexable_ = true;
+      literal->indirection_++;
+    }
+
     return literal->type_;
-  } else {
+  } else if (literal->op_->GetType() == TokenType::T_STR_LIT) {
+    literal->type_ = Type::CHAR;
+    literal->indirection_ = 1;
+    return literal->type_;
+  } else { // integer
     int val = literal->op_->GetIntValue();
-    literal->type_ = (val <= 255 && val >= -256) ? Type::SHORT : Type::INT;
+    literal->type_ = (val <= 255 && val >= -256) ? Type::CHAR : Type::INT;
     return literal->type_;
   }
 }
@@ -403,6 +425,10 @@ Type TypeChecker::Visit(const std::shared_ptr<Call>& call) {
   call->type_ = call->name_->type_;
   call->indirection_ = call->name_->indirection_;
   // #TODO: check for number of parameters + types
+  if (!call->args_->expr_list_.empty()) {
+    call->args_->expr_list_[0]->Accept(*this);
+  }
+
   return call->type_;
 }
 
@@ -419,7 +445,7 @@ Type TypeChecker::Visit(const std::shared_ptr<Index>& index) {
   }
 
   index->type_ = index->name_->type_;
-  index->indirection_ = index->name_->indirection_; // FIXME: for pointers
+  index->indirection_ = std::max(index->name_->indirection_ - 1, 0); // FIXME: for pointers
   return index->type_;
 }
 
@@ -452,7 +478,14 @@ Type TypeChecker::Visit(const std::shared_ptr<Postfix>& postfix) {
   postfix->expr_->Accept(*this);
 
   if (!postfix->expr_->IsLvalue()) {
-    reporter_.Report("lvalue required as postfix operand", postfix->op_);
+    reporter_.Report("Lvalue required for postfix operand", postfix->op_);
+    return Type::NONE;
+  }
+
+  // inc/dec on array is invalid
+  if ((postfix->op_->GetType() == TokenType::T_INC || postfix->op_->GetType() == TokenType::T_DEC)
+      && postfix->expr_->is_indexable_) {
+    reporter_.Report("Increment or decrement operations are invalid for arrays", postfix->op_);
     return Type::NONE;
   }
 

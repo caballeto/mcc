@@ -23,6 +23,10 @@ int Literal::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Literal>());
 }
 
+bool Literal::IsArray() {
+  return is_array;
+}
+
 bool Expr::IsVariable() {
   return false;
 }

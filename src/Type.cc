@@ -14,6 +14,7 @@ namespace mcc {
 Type TokenToType(TokenType type) {
   switch (type) {
     case TokenType::T_VOID: return Type::VOID;
+    case TokenType::T_CHAR: return Type::CHAR;
     case TokenType::T_SHORT: return Type::SHORT;
     case TokenType::T_INT: return Type::INT;
     case TokenType::T_LONG: return Type::LONG;
@@ -30,7 +31,7 @@ std::ostream& operator<<(std::ostream& os, Type type) {
     case Type::SHORT: return os << "short";
     case Type::INT: return os << "int";
     case Type::LONG: return os << "long";
-    case Type::ARRAY: return os << "array []";
+    case Type::CHAR: return os << "char";
     case Type::NONE: return os << "NO TYPE";
   }
   return os << "InternalError: uncovered type in switch" << type << std::endl;
