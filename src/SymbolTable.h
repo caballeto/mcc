@@ -14,32 +14,37 @@
 namespace mcc {
 
 struct Entry {
-  std::string name;
   Type type;
   int indirection;
   int array_len;
   bool is_function;
+  bool is_local;
+  int offset;
 };
 
 // #FIXME: redesign a better (faster, simpler) symbol table
 class SymbolTable {
  public:
+  SymbolTable();
 
-  Entry& Get(int id);
+  Entry* Get(const std::string& name);
 
-  int Get(const std::string& name);
+  Entry* GetLocal(const std::string& name);
 
-  int Put(const std::shared_ptr<FuncDecl>& func_decl);
+  void Put(const std::shared_ptr<FuncDecl>& func_decl);
 
-  int Put(const std::string& name, Type type, int indirection, int len, bool is_function);
+  void PutLocal(const std::string& name, Type type, int ind, int len, int offset);
+
+  void PutGlobal(const std::string& name, Type type, int ind, int len, bool is_function);
+
+  void NewScope();
+
+  void EndScope();
 
   bool Contains(const std::string& name);
 
-  bool Remove(const std::string& name);
-
  private:
-  int entry_count_ = 0;
-  Entry entries_[ENTRY_LIMIT];
+  std::vector<std::unordered_map<std::string, Entry>> scopes_;
 };
 
 } // namespace mcc

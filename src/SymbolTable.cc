@@ -6,40 +6,52 @@
 
 namespace mcc {
 
-Entry& SymbolTable::Get(int id) {
-  return entries_[id];
-}
-
-int SymbolTable::Get(const std::string &name) {
-  for (int i = 0; i <= entry_count_; i++) {
-    if (entries_[i].name == name) {
-      return i;
+Entry* SymbolTable::Get(const std::string& name) {
+  for (auto i = scopes_.rbegin(); i != scopes_.rend(); ++i) {
+    if ((*i).count(name) != 0) {
+      return &(*i)[name];
     }
   }
-  return -1;
+
+  return nullptr;
 }
 
-int SymbolTable::Put(const std::string& name, Type type, int indirection, int len, bool is_function) {
-  entries_[++entry_count_] = {name, type, indirection, len, is_function};
-  return entry_count_;
+Entry* SymbolTable::GetLocal(const std::string& name) {
+  if (scopes_.back().count(name) != 0)
+    return &scopes_.back()[name];
+  return nullptr;
 }
 
-bool SymbolTable::Contains(const std::string &name) {
-  return Get(name) != -1;
+SymbolTable::SymbolTable() {
+  NewScope();
 }
 
-bool SymbolTable::Remove(const std::string &name) {
-  for (int i = 0; i < entry_count_; i++) {
-    if (entries_[i].name == name) {
-      entries_[i].name = "";
-      return true;
-    }
-  }
-  return false;
+void SymbolTable::Put(const std::shared_ptr<FuncDecl>& func_decl) {
+  PutGlobal(func_decl->name_->GetStringValue(),
+      func_decl->return_type_,
+      func_decl->indirection_,
+      0,
+      true);
 }
 
-int SymbolTable::Put(const std::shared_ptr<FuncDecl>& func_decl) {
-  return Put(func_decl->name_->GetStringValue(), func_decl->return_type_, func_decl->indirection_, 0, true);
+void SymbolTable::PutLocal(const std::string& name, Type type, int ind, int len, int offset) {
+  scopes_.back()[name] = {type, ind, len, false, true, offset};
+}
+
+void SymbolTable::PutGlobal(const std::string& name, Type type, int ind, int len, bool is_function) {
+  scopes_.front()[name] = {type, ind, len, is_function, false, 0};
+}
+
+void SymbolTable::NewScope() {
+  scopes_.emplace_back();
+}
+
+void SymbolTable::EndScope() {
+  scopes_.pop_back();
+}
+
+bool SymbolTable::Contains(const std::string& name) {
+  return Get(name) != nullptr;
 }
 
 } // namespace mcc

@@ -170,6 +170,7 @@ class FuncDecl : public Stmt {
 
   Type return_type_;
   int indirection_;
+  int local_offset_;
   std::shared_ptr<Token> name_;
   std::shared_ptr<DeclList> signature_;
   std::shared_ptr<Block> body_;
@@ -183,13 +184,15 @@ class VarDecl : public Stmt {
       std::shared_ptr<Expr> init,
       Type var_type,
       int indirection,
-      bool is_const_init)
+      bool is_const_init,
+      bool is_local)
   : Stmt(std::move(token)),
     name_(std::move(name)),
     init_(std::move(init)),
     var_type_(var_type),
     indirection_(indirection),
-    is_const_init_(is_const_init)
+    is_const_init_(is_const_init),
+    is_local_(is_local)
   { }
 
   VarDecl(
@@ -197,14 +200,16 @@ class VarDecl : public Stmt {
       std::shared_ptr<Token> name,
       Type var_type,
       int indirection,
-      int array_len)
+      int array_len,
+      bool is_local)
       : Stmt(std::move(token)),
         name_(std::move(name)),
         init_(nullptr),
         var_type_(var_type),
         indirection_(indirection),
         array_len_(array_len),
-        is_const_init_(false)
+        is_const_init_(false),
+        is_local_(is_local)
   { }
 
   int Accept(Visitor<int>& visitor) override;
@@ -218,7 +223,9 @@ class VarDecl : public Stmt {
   Type var_type_;
   int indirection_;
   int array_len_;
+  int offset_;
   bool is_const_init_;
+  bool is_local_;
 };
 
 class For : public Stmt {
@@ -270,12 +277,16 @@ class Expr : public std::enable_shared_from_this<Expr> {
   // TODO: rewrite flags as bitfields
   Type type_ = Type::NONE;
   int indirection_ = 0;
+  int offset_;
+
   bool is_lvalue_ = false;
   bool is_const_ = false;
   bool is_function_ = false;
+  bool is_local_ = false;
   bool is_indexable_ = false;
   bool to_scale_ = false;
   bool return_ptr_ = false;
+
   std::shared_ptr<Token> op_;
 };
 

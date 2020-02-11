@@ -69,7 +69,7 @@ class CodeGenX86: public Visitor<int> {
 
   int GetTypeSize(Type type, int ind);
   static std::string GetAllocType(Type type, int ind);
-  std::string GetPostfix(Type type, int ind);
+  std::string GetSavePostfix(Type type, int ind);
   std::string GetLoadPostfix(Type type, int ind);
   std::string GetRegister(int r, Type type, int ind);
 
@@ -95,6 +95,8 @@ class CodeGenX86: public Visitor<int> {
                                                 "%r12b", "%r13b", "%r14b", "%r15b"};
 
   bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true, true, true};
+  std::string GenLoad(const std::string &name, int offset, bool is_local);
+  std::string GenLoad(const std::shared_ptr<Literal> &literal);
 };
 
 } // namespace mcc

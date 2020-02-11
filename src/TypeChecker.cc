@@ -231,33 +231,33 @@ Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
       return Type::NONE;
     }
 
-    int id = symbol_table_.Get(literal->op_->GetStringValue());
+    Entry* var = symbol_table_.Get(literal->op_->GetStringValue());
 
-    if (id == -1) {
+    if (var == nullptr) {
       reporter_.Report("Variable '"
           + literal->op_->GetStringValue() + "' has not been declared", literal->op_);
       return Type::NONE;
     }
 
-    Entry descr = symbol_table_.Get(id);
-
-    if (literal->is_function_ && !descr.is_function) {
+    if (literal->is_function_ && !var->is_function) {
       reporter_.Report("'" + literal->op_->GetStringValue() + "' is not a function", literal->op_);
       return Type::NONE;
     }
 
-    if (literal->is_indexable_ && descr.array_len == 0 && descr.indirection == 0) {
+    if (literal->is_indexable_ && var->array_len == 0 && var->indirection == 0) {
       reporter_.Report("Invalid type for index operation, pointer or array expected", literal->op_);
       return Type::NONE;
     }
 
-    literal->type_ = descr.type;
-    literal->indirection_ = descr.indirection;
-    literal->is_array = descr.array_len > 0;
+    literal->type_ = var->type;
+    literal->indirection_ = var->indirection;
+    literal->is_local_ = var->is_local;
+    literal->offset_ = var->offset;
+    literal->is_array = var->array_len > 0;
 
     // usage of array as pointer, literal->is_indexable_ is false, set to true
     // so usage *(array + 5) = 10, will return pointer to array
-    if (!literal->is_indexable_ && descr.array_len > 0) {
+    if (!literal->is_indexable_ && var->array_len > 0) {
       literal->is_indexable_ = true;
       literal->indirection_++;
     }
@@ -309,8 +309,10 @@ Type TypeChecker::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<Block>& block_stmt) {
+  symbol_table_.NewScope();
   for (const auto& stmt : block_stmt->stmts_)
     stmt->Accept(*this);
+  symbol_table_.EndScope();
   return Type::NONE;
 }
 
@@ -378,9 +380,11 @@ Type TypeChecker::Visit(const std::shared_ptr<Return>& return_stmt) {
 }
 
 Type TypeChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
-  int id = symbol_table_.Get(func_decl->name_->GetStringValue());
+  ResetLocals();
 
-  if (id == -1) {
+  Entry* func = symbol_table_.Get(func_decl->name_->GetStringValue());
+
+  if (func == nullptr) {
     symbol_table_.Put(func_decl);
   } else {
     reporter_.Report("Function '" + func_decl->name_->GetStringValue() + "' redefinition", func_decl->name_);
@@ -389,27 +393,44 @@ Type TypeChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
 
   curr_func = func_decl;
   func_decl->body_->Accept(*this);
+  func_decl->local_offset_ = local_offset_;
   curr_func = nullptr;
   return Type::NONE;
 }
 
 // int array[25];
 Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
-  int id = symbol_table_.Get(decl->name_->GetStringValue());
+  Entry* var = symbol_table_.GetLocal(decl->name_->GetStringValue());
 
   if (decl->var_type_ == Type::VOID && decl->indirection_ == 0) {
     reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has unallowable type 'void'", decl->token_);
     return Type::NONE;
   }
 
-  if (id == -1) {
-    symbol_table_.Put(decl->name_->GetStringValue(), decl->var_type_, decl->indirection_, decl->array_len_, false);
+  if (var == nullptr) {
+    if (decl->is_local_) {
+      int offset = GetLocalOffset(decl->var_type_, decl->indirection_);
+      decl->offset_ = offset;
+      symbol_table_.PutLocal(
+          decl->name_->GetStringValue(),
+          decl->var_type_,
+          decl->indirection_,
+          decl->array_len_,
+          offset);
+    } else {
+      symbol_table_.PutGlobal(
+          decl->name_->GetStringValue(),
+          decl->var_type_,
+          decl->indirection_,
+          decl->array_len_,
+          false);
+    }
   } else {
     reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has already been declared", decl->name_);
     return Type::NONE;
   }
 
-  if (decl->init_ != nullptr) {
+  if (decl->init_ != nullptr) { // #TODO: reconsider const initializer and code gen for them
     decl->init_->is_const_ = decl->is_const_init_;
     decl->init_->Accept(*this);
     if (!MatchTypeInit(decl->var_type_, decl->indirection_, decl->init_)) {
@@ -502,6 +523,29 @@ bool TypeChecker::IsComparison(TokenType type) {
   return type == TokenType::T_EQUALS || type == TokenType::T_NOT_EQUALS
     || type == TokenType::T_LESS || type == TokenType::T_LESS_EQUAL
     || type == TokenType::T_GREATER || type == TokenType::T_GREATER_EQUAL;
+}
+
+int TypeChecker::GetLocalOffset(Type type, int ind) {
+  if (ind > 0) return - (local_offset_ += 8);
+  local_offset_ += GetTypeSize(type) > 4 ? GetTypeSize(type) : 4;
+  return -local_offset_;
+}
+
+int TypeChecker::GetTypeSize(Type type) {
+  switch (type) {
+    case Type::CHAR: return 1;
+    case Type::SHORT: return 2;
+    case Type::INT: return 4;
+    case Type::LONG: return 8;
+    default: {
+      std::cerr << "Internal error: invalid type." << std::endl;
+      exit(1);
+    }
+  }
+}
+
+void TypeChecker::ResetLocals() {
+  local_offset_ = 0;
 }
 
 } // namespace mcc

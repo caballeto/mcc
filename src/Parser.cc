@@ -32,10 +32,12 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
   if (Match(TokenType::T_LBRACKET)) {
     std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
     Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
-    var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
+    var_decl_list.push_back(std::make_shared<VarDecl>(
+        type_token, name, decl_type, indirection, len->GetIntValue(),false));
   } else {
     init = OptionalExpression(0);
-    var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, decl_type, indirection, true));
+    var_decl_list.push_back(std::make_shared<VarDecl>(
+        type_token, name, init, decl_type, indirection, true, false));
   }
 
   if (!Check(TokenType::T_SEMICOLON)) {
@@ -46,10 +48,12 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
       if (Match(TokenType::T_LBRACKET)) {
         std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
         Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
-        var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
+        var_decl_list.push_back(std::make_shared<VarDecl>(
+            type_token, name, decl_type, indirection, len->GetIntValue(),false));
       } else {
         init = OptionalExpression(0);
-        var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, decl_type, indirection, true));
+        var_decl_list.push_back(std::make_shared<VarDecl>(
+            type_token, name, init, decl_type, indirection, true, false));
       }
     } while (Match(TokenType::T_COMMA));
   }
@@ -217,7 +221,7 @@ std::shared_ptr<DeclList> Parser::ParameterList() {
       while (Match(TokenType::T_STAR)) indirection++;
       std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
       var_decl_list.push_back(std::make_shared<VarDecl>(
-          token, name, nullptr, TokenToType(token_type->GetType()), indirection, false));
+          token, name, nullptr, TokenToType(token_type->GetType()), indirection, false, true));
     } while (Match(TokenType::T_COMMA));
   }
 
@@ -237,10 +241,12 @@ std::shared_ptr<DeclList> Parser::DeclarationList() {
     if (Match(TokenType::T_LBRACKET)) {
       std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
       Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
-      var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, decl_type, indirection, len->GetIntValue()));
+      var_decl_list.push_back(std::make_shared<VarDecl>(
+          type_token, name, decl_type, indirection, len->GetIntValue(), true));
     } else {
       std::shared_ptr<Expr> init = OptionalExpression(0);
-      var_decl_list.push_back(std::make_shared<VarDecl>(type_token, name, init, decl_type, indirection, false));
+      var_decl_list.push_back(std::make_shared<VarDecl>(
+          type_token, name, init, decl_type, indirection, false, true));
     }
   } while (Match(TokenType::T_COMMA));
 

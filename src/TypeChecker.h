@@ -69,6 +69,12 @@ class TypeChecker : public Visitor<Type> {
   Type Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
   Type Visit(const std::shared_ptr<Return>& return_stmt) override;
 
+  int GetLocalOffset(Type type, int ind);
+  void ResetLocals();
+  static int GetTypeSize(Type type);
+
+  int local_offset_ = 0;
+
   CodeGenX86& code_gen_; // #FIXME: rewrite for higher abstraction using `CodeGen : Visitor<int>` as interface
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;

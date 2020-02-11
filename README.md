@@ -373,3 +373,50 @@ In conclusion, all major parts are working, there are definitely bugs in impleme
 still it is working. That means that I can start working on local variables and function calls.
 It will be the most essential part of compiler, so will have to take some time to design things
 well. Cool, let's go!
+
+## Day 14
+
+### Local variables.
+
+**Design notes**
+
+Variable generation:
+if variable is local, then `movq -8(%rbp), %r8`, if variable
+is global `movq name(%rip), %r8`
+
+```asm
+pushq   %rbp
+movq    %rsp, %rbp
+subq    64, %rsp
+...
+leave
+ret
+```
+
+Symbol table is a simple abstraction:
+
+SymbolTable = std::vector<std::unordered_maps<std::string, Entry>>;
+
+The typechecker will go over the tree and will save information
+about the variable position on stack. Symbol table would be represented
+as stack of maps, from name to `struct Entry` descriptor. The descriptor
+of variable will store, whether the variable is local or is global.
+
+The generating code will have a function for generating loading part of the 
+instruction for given variable. It will get a variable descriptor, and
+will generate appropriate code for loading.
+
+The stack offset variable will store the general stack offset. The local
+offset variable will store the local offset of function. These are variables
+of TypeChecker, that will then store them in FuncDecl node and in individual
+variables.
+
+**Results**
+
+Rewrote symbol table to support adding and removing scopes. Implemented local 
+variables that support multiple scopes. They are stored on the stack with a minimum of 4-byte alignment.
+Fixed bugs with loading from address and storing into address. 
+
+**Next**
+
+Params/arguments/local arrays are next on the list.
