@@ -1,3 +1,5 @@
+void printint(long x);
+
 int main() {
 	int i;
 

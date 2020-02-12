@@ -27,19 +27,19 @@ SymbolTable::SymbolTable() {
 }
 
 void SymbolTable::Put(const std::shared_ptr<FuncDecl>& func_decl) {
-  PutGlobal(func_decl->name_->GetStringValue(),
+  PutGlobal(func_decl->name_->String(),
       func_decl->return_type_,
       func_decl->indirection_,
       0,
-      true);
+      func_decl.get());
 }
 
 void SymbolTable::PutLocal(const std::string& name, Type type, int ind, int len, int offset) {
-  scopes_.back()[name] = {type, ind, len, false, true, offset};
+  scopes_.back()[name] = {type, ind, len, true, offset, nullptr};
 }
 
-void SymbolTable::PutGlobal(const std::string& name, Type type, int ind, int len, bool is_function) {
-  scopes_.front()[name] = {type, ind, len, is_function, false, 0};
+void SymbolTable::PutGlobal(const std::string& name, Type type, int ind, int len, FuncDecl* func) {
+  scopes_.front()[name] = {type, ind, len, false, 0, func};
 }
 
 void SymbolTable::NewScope() {

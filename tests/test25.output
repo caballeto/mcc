@@ -1,15 +1,15 @@
-/home/vladyslav/CLionProjects/mcc/tests/test25.input:7:14[36m warning [0m
-Comparison between pointer and integer('int*' and 'long'), near '==', line 7
-
-/home/vladyslav/CLionProjects/mcc/tests/test25.input:8:18[36m warning [0m
-Comparison between pointer and integer('int*' and 'long'), near '==', line 8
-
-/home/vladyslav/CLionProjects/mcc/tests/test25.input:9:18[36m warning [0m
+/home/vladyslav/CLionProjects/mcc/tests/test25.input:9:14[36m warning [0m
 Comparison between pointer and integer('int*' and 'long'), near '==', line 9
 
-/home/vladyslav/CLionProjects/mcc/tests/test25.input:14:14[36m warning [0m
-Comparison between pointer and integer('int*' and 'long'), near '==', line 14
+/home/vladyslav/CLionProjects/mcc/tests/test25.input:10:18[36m warning [0m
+Comparison between pointer and integer('int*' and 'long'), near '==', line 10
 
-/home/vladyslav/CLionProjects/mcc/tests/test25.input:19:14[36m warning [0m
-Comparison between pointer and integer('int*' and 'long'), near '==', line 19
+/home/vladyslav/CLionProjects/mcc/tests/test25.input:11:18[36m warning [0m
+Comparison between pointer and integer('int*' and 'long'), near '==', line 11
+
+/home/vladyslav/CLionProjects/mcc/tests/test25.input:16:14[36m warning [0m
+Comparison between pointer and integer('int*' and 'long'), near '==', line 16
+
+/home/vladyslav/CLionProjects/mcc/tests/test25.input:21:14[36m warning [0m
+Comparison between pointer and integer('int*' and 'long'), near '==', line 21
 

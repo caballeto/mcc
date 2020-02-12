@@ -21,9 +21,9 @@ void ErrorReporter::Report(const std::string& message, const std::shared_ptr<Tok
 
   os_ << message << ", near ";
   if (token->GetType() == TokenType::T_INT_LIT) {
-    os_ << "'" << token->GetIntValue() << "'";
+    os_ << "'" << token->Int() << "'";
   } else if (token->GetType() == TokenType::T_IDENTIFIER) {
-    os_ << "'" << token->GetStringValue() << "'";
+    os_ << "'" << token->String() << "'";
   } else {
     os_ << token->GetType();
   }
@@ -63,9 +63,9 @@ void ErrorReporter::Error(
   os_ << " and " << expr << ")" << ", near ";
 
   if (token->GetType() == TokenType::T_INT_LIT) {
-    os_ << "'" << token->GetIntValue() << "'";
+    os_ << "'" << token->Int() << "'";
   } else if (token->GetType() == TokenType::T_IDENTIFIER) {
-    os_ << "'" << token->GetStringValue() << "'";
+    os_ << "'" << token->String() << "'";
   } else {
     os_ << token->GetType();
   }
@@ -124,9 +124,9 @@ void ErrorReporter::PrintMessage(const std::string& message,
   os_ << message << "(" << e1 << " and " << e2 << ")" << ", near ";
 
   if (token->GetType() == TokenType::T_INT_LIT) {
-    os_ << "'" << token->GetIntValue() << "'";
+    os_ << "'" << token->Int() << "'";
   } else if (token->GetType() == TokenType::T_IDENTIFIER) {
-    os_ << "'" << token->GetStringValue() << "'";
+    os_ << "'" << token->String() << "'";
   } else {
     os_ << token->GetType();
   }
@@ -146,9 +146,9 @@ void ErrorReporter::Warning(const std::string& message,
   os_ << " and " << expr << ")" << ", near ";
 
   if (token->GetType() == TokenType::T_INT_LIT) {
-    os_ << "'" << token->GetIntValue() << "'";
+    os_ << "'" << token->Int() << "'";
   } else if (token->GetType() == TokenType::T_IDENTIFIER) {
-    os_ << "'" << token->GetStringValue() << "'";
+    os_ << "'" << token->String() << "'";
   } else {
     os_ << token->GetType();
   }

@@ -1,3 +1,5 @@
+void printint(long x);
+
 int array[20];
 
 int* ptrs[10];

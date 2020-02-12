@@ -1,13 +1,13 @@
-/home/vladyslav/CLionProjects/mcc/tests/test18.input:2:21[0;31m error [0m
-Expected identifier or literal, near ';', line 2
+/home/vladyslav/CLionProjects/mcc/tests/test18.input:4:21[0;31m error [0m
+Expected identifier or literal, near ';', line 4
 
-/home/vladyslav/CLionProjects/mcc/tests/test18.input:7:2[0;31m error [0m
-Expected ';' after expression statement, near '}', line 7
+/home/vladyslav/CLionProjects/mcc/tests/test18.input:9:2[0;31m error [0m
+Expected ';' after expression statement, near '}', line 9
 
-/home/vladyslav/CLionProjects/mcc/tests/test18.input:9:13[0;31m error [0m
-Expected operator, near '.', line 9
+/home/vladyslav/CLionProjects/mcc/tests/test18.input:11:13[0;31m error [0m
+Expected operator, near '.', line 11
 
-/home/vladyslav/CLionProjects/mcc/tests/test18.input:12:10[0;31m error [0m
-Expected operator, near '1', line 12
+/home/vladyslav/CLionProjects/mcc/tests/test18.input:14:10[0;31m error [0m
+Expected operator, near '1', line 14
 
 Encountered 4 syntax errors. Stopping compilation.

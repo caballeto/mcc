@@ -36,7 +36,7 @@ bool Expr::IsLvalue() {
 }
 
 bool Literal::IsVariable() {
-  return !op_->GetStringValue().empty();
+  return !op_->String().empty();
 }
 
 Type Print::Accept(Visitor<Type> &visitor) {

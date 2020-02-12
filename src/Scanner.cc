@@ -102,16 +102,14 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '}':
       token->SetType(TokenType::T_RBRACE);
       break;
-    case '\'':
-      token->SetIntValue(ScanChar());
+    case '\'':token->SetInt(ScanChar());
       token->SetType(TokenType::T_INT_LIT);
       if ((c = Next()) != '\'') {
         reporter_.Report("Char literal should end in quote", c, line_, c_);
         Putback(c);
       }
       break;
-    case '"':
-      token->SetStringValue(ScanStr());
+    case '"':token->SetString(ScanStr());
       token->SetType(TokenType::T_STR_LIT);
       break;
     case '&':
@@ -175,7 +173,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
     default:
       if (std::isdigit(c)) {
         int value = ScanInt(c - '0');
-        token->SetIntValue(value);
+        token->SetInt(value);
         token->SetType(TokenType::T_INT_LIT);
       } else if (std::isalpha(c) || c == '_') {
         std::string identifier = ScanIdent(c);
@@ -183,7 +181,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
           token->SetType(GetKeywordToken(identifier));
         } else {
           token->SetType(TokenType::T_IDENTIFIER);
-          token->SetStringValue(identifier);
+          token->SetString(identifier);
         }
       } else {
         reporter_.Report("Unrecognizable token", c, line_, c_);

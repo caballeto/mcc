@@ -1,3 +1,5 @@
+void printint(long x);
+
 int func() {
   int y = 5;
   if (y == 5) {

@@ -17,9 +17,9 @@ struct Entry {
   Type type;
   int indirection;
   int array_len;
-  bool is_function;
   bool is_local;
   int offset;
+  FuncDecl* func;
 };
 
 // #FIXME: redesign a better (faster, simpler) symbol table
@@ -35,7 +35,7 @@ class SymbolTable {
 
   void PutLocal(const std::string& name, Type type, int ind, int len, int offset);
 
-  void PutGlobal(const std::string& name, Type type, int ind, int len, bool is_function);
+  void PutGlobal(const std::string& name, Type type, int ind, int len, FuncDecl* func);
 
   void NewScope();
 

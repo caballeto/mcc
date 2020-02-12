@@ -32,9 +32,9 @@ int AstDumper::Visit(const std::shared_ptr<Literal>& literal) {
   out_ << std::string(spaces_, ' ')
      << "<literal val='";
   if (literal->IsVariable())
-    out_ << literal->op_->GetStringValue();
+    out_ << literal->op_->String();
   else
-    out_ << literal->op_->GetIntValue();
+    out_ << literal->op_->Int();
   out_ << "'></literal>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;
@@ -53,7 +53,7 @@ int AstDumper::Visit(const std::shared_ptr<Assign>& assign) {
 int AstDumper::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<var-decl>\n";
-  out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl->name_->GetStringValue() << "</name>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl->name_->String() << "</name>\n";
   out_ << std::string(spaces_ + 2, ' ') << "<ind>" << var_decl->indirection_ << "</ind>\n";
 
   if (var_decl->init_ != nullptr) {
@@ -297,15 +297,17 @@ int AstDumper::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<func-decl>\n";
 
-  out_ << std::string(spaces_ + 2, ' ') << "<name>" << func_decl->name_->GetStringValue() << "</name>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<name>" << func_decl->name_->String() << "</name>\n";
   out_ << std::string(spaces_ + 2, ' ') << "<type>" << func_decl->return_type_ << "</type>\n";
   out_ << std::string(spaces_ + 2, ' ') << "<ind>" << func_decl->indirection_ << "</ind>\n";
 
-  out_ << std::string(spaces_ + 2, ' ') << "<body>\n";
-  spaces_ += TAB_SIZE;
-  func_decl->body_->Accept(*this);
-  spaces_ -= TAB_SIZE;
-  out_ << std::string(spaces_ + 2, ' ') << "</body>\n";
+  if (func_decl->body_ != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<body>\n";
+    spaces_ += TAB_SIZE;
+    func_decl->body_->Accept(*this);
+    spaces_ -= TAB_SIZE;
+    out_ << std::string(spaces_ + 2, ' ') << "</body>\n";
+  }
 
   out_ << std::string(spaces_, ' ') << "</func-decl>\n";
   spaces_ -= TAB_SIZE;

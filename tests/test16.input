@@ -1,3 +1,5 @@
+void printint(long x);
+
 int main() {
 	int x = 25, y = x * 4;
 

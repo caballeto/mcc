@@ -227,20 +227,20 @@ Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
   if (literal->op_->GetType() == TokenType::T_IDENTIFIER) {
     if (literal->is_const_) {
       reporter_.Report("Variables initializers '"
-          + literal->op_->GetStringValue() + "' must be constant", literal->op_);
+          + literal->op_->String() + "' must be constant", literal->op_);
       return Type::NONE;
     }
 
-    Entry* var = symbol_table_.Get(literal->op_->GetStringValue());
+    Entry* var = symbol_table_.Get(literal->op_->String());
 
     if (var == nullptr) {
       reporter_.Report("Variable '"
-          + literal->op_->GetStringValue() + "' has not been declared", literal->op_);
+          + literal->op_->String() + "' has not been declared", literal->op_);
       return Type::NONE;
     }
 
-    if (literal->is_function_ && !var->is_function) {
-      reporter_.Report("'" + literal->op_->GetStringValue() + "' is not a function", literal->op_);
+    if (literal->is_function_ && var->func == nullptr) {
+      reporter_.Report("'" + literal->op_->String() + "' is not a function", literal->op_);
       return Type::NONE;
     }
 
@@ -266,10 +266,10 @@ Type TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
   } else if (literal->op_->GetType() == TokenType::T_STR_LIT) {
     literal->type_ = Type::CHAR;
     literal->indirection_ = 1;
-    code_gen_.GenGlobalString(literal->op_->GetStringValue()); // generate global string
+    code_gen_.GenGlobalString(literal->op_->String()); // generate global string
     return literal->type_;
   } else { // integer
-    int val = literal->op_->GetIntValue();
+    int val = literal->op_->Int();
     literal->type_ = (val <= 255 && val >= -256) ? Type::CHAR : Type::INT;
     return literal->type_;
   }
@@ -310,6 +310,20 @@ Type TypeChecker::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
 
 Type TypeChecker::Visit(const std::shared_ptr<Block>& block_stmt) {
   symbol_table_.NewScope();
+
+  if (gen_params_) { // parameter generation for functions
+    int param_offset = 8;
+
+    for (int i = 0; i < curr_func->signature_->var_decl_list_.size(); i++) {
+      const auto& decl = curr_func->signature_->var_decl_list_[i];
+      int offset = (i < 6) ? GetLocalOffset(decl->var_type_, decl->indirection_) : (param_offset += 8);
+      decl->offset_ = offset;
+      symbol_table_.PutLocal(decl->name_->String(), decl->var_type_, decl->indirection_, 0, offset);
+    }
+
+    gen_params_ = false;
+  }
+
   for (const auto& stmt : block_stmt->stmts_)
     stmt->Accept(*this);
   symbol_table_.EndScope();
@@ -382,28 +396,32 @@ Type TypeChecker::Visit(const std::shared_ptr<Return>& return_stmt) {
 Type TypeChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   ResetLocals();
 
-  Entry* func = symbol_table_.Get(func_decl->name_->GetStringValue());
+  Entry* func = symbol_table_.Get(func_decl->name_->String());
 
   if (func == nullptr) {
     symbol_table_.Put(func_decl);
   } else {
-    reporter_.Report("Function '" + func_decl->name_->GetStringValue() + "' redefinition", func_decl->name_);
+    reporter_.Report("Function '" + func_decl->name_->String() + "' redefinition", func_decl->name_);
     return Type::NONE;
   }
 
-  curr_func = func_decl;
-  func_decl->body_->Accept(*this);
-  func_decl->local_offset_ = local_offset_;
-  curr_func = nullptr;
+  if (func_decl->body_ != nullptr) { // not prototype
+    curr_func = func_decl;
+    gen_params_ = true;
+    func_decl->body_->Accept(*this);
+    func_decl->local_offset_ = local_offset_;
+    curr_func = nullptr;
+  }
+
   return Type::NONE;
 }
 
 // int array[25];
 Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
-  Entry* var = symbol_table_.GetLocal(decl->name_->GetStringValue());
+  Entry* var = symbol_table_.GetLocal(decl->name_->String());
 
   if (decl->var_type_ == Type::VOID && decl->indirection_ == 0) {
-    reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has unallowable type 'void'", decl->token_);
+    reporter_.Report("Variable '" + decl->name_->String() + "' has unallowable type 'void'", decl->token_);
     return Type::NONE;
   }
 
@@ -412,21 +430,21 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
       int offset = GetLocalOffset(decl->var_type_, decl->indirection_);
       decl->offset_ = offset;
       symbol_table_.PutLocal(
-          decl->name_->GetStringValue(),
+          decl->name_->String(),
           decl->var_type_,
           decl->indirection_,
           decl->array_len_,
           offset);
     } else {
       symbol_table_.PutGlobal(
-          decl->name_->GetStringValue(),
+          decl->name_->String(),
           decl->var_type_,
           decl->indirection_,
           decl->array_len_,
-          false);
+          nullptr);
     }
   } else {
-    reporter_.Report("Variable '" + decl->name_->GetStringValue() + "' has already been declared", decl->name_);
+    reporter_.Report("Variable '" + decl->name_->String() + "' has already been declared", decl->name_);
     return Type::NONE;
   }
 
@@ -447,9 +465,23 @@ Type TypeChecker::Visit(const std::shared_ptr<Call>& call) {
   call->name_->Accept(*this);
   call->type_ = call->name_->type_;
   call->indirection_ = call->name_->indirection_;
-  // #TODO: check for number of parameters + types
-  if (!call->args_->expr_list_.empty()) {
-    call->args_->expr_list_[0]->Accept(*this);
+
+  const std::shared_ptr<Literal>& literal = std::static_pointer_cast<Literal>(call->name_);
+  FuncDecl* func = symbol_table_.Get(literal->op_->String())->func;
+
+  if (call->args_->expr_list_.size() != func->signature_->var_decl_list_.size()) {
+    reporter_.Report("Number of arguments does not correspond to declared number of parameters", literal->op_);
+    return Type::NONE;
+  }
+
+  for (int i = 0; i < call->args_->expr_list_.size(); i++) {
+    const auto& arg   = call->args_->expr_list_[i];
+    const auto& param = func->signature_->var_decl_list_[i];
+    arg->Accept(*this);
+    if (!MatchTypeInit(param->var_type_, param->indirection_, arg)) {
+      reporter_.Error("Declared type of parameter does not correspond to inferred argument type",
+                      param->var_type_, param->indirection_, arg, arg->op_);
+    }
   }
 
   return call->type_;

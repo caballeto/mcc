@@ -85,14 +85,14 @@ class CodeGenX86: public Visitor<int> {
   ControlFlowChecker flow_checker_; // FIXME: move to type checker
   SymbolTable& symbol_table_;
 
-  const std::vector<std::string> kRegisters = {"%r8", "%r9", "%r10", "%r11",
-                                               "%r12", "%r13", "%r14", "%r15"};
-  const std::vector<std::string> kDregisters = {"%r8d", "%r9d", "%r10d", "%r11d",
-                                                "%r12d", "%r13d", "%r14d", "%r15d"};
-  const std::vector<std::string> kWregisters = {"%r8w", "%r9w", "%r10w", "%r11w",
-                                                "%r12w", "%r13w", "%r14w", "%r15w"};
-  const std::vector<std::string> kBregisters = {"%r8b", "%r9b", "%r10b", "%r11b",
-                                                "%r12b", "%r13b", "%r14b", "%r15b"};
+  const std::vector<std::string> kRegisters = {"%r10", "%r11", "%r12", "%r13",
+                                               "%r9", "%r8", "%rcx", "%rdx", "%rsi", "%rdi"};
+  const std::vector<std::string> kDregisters = {"%r10d", "%r11d", "%r12d", "%r13d",
+                                               "%r9d", "%r8d", "%ecx", "%edx", "%esi", "%edi"};
+  const std::vector<std::string> kBregisters = {"%r10b", "%r11b", "%r12b", "%r13b",
+                                               "%r9b", "%r8b", "%cl", "%dl", "%sil", "%dil"};
+  const std::vector<std::string> kWregisters = {"%r10w", "%r11w", "%r12w", "%r13w",
+                                               "%r9w", "%r8w", "%cx", "%dx", "%si", "%di"};
 
   bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true, true, true};
   std::string GenLoad(const std::string &name, int offset, bool is_local);

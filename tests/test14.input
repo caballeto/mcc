@@ -1,3 +1,5 @@
+void printint(long x);
+
 int main() {
 	int x = 1, y = 2, x = 25;
 

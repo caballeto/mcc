@@ -420,3 +420,44 @@ Fixed bugs with loading from address and storing into address.
 **Next**
 
 Params/arguments/local arrays are next on the list.
+
+## Day 15
+
+### Parameters
+
+In `FuncDecl` class, generate code to move parameter variables from registers
+onto the stack. See stack layout.
+
+### Arguments
+
+Arguments are loaded partially into registers (6), and the rest is loaded onto stack.
+Think about stack spilling.
+
+### **Results**
+
+Implemented features:
+
+- allocating space for 6 first parameters, which are passed in registers
+- loading all other registers on stack, and saving offset
+- function prototypes (signatures)
+- type checking function calls (function exists, number and parameter types match)
+- code gen for function calls
+- added few tests (no tests with pointers)
+
+**Next**
+
+At this point it seems, that the major part of the compiler is done.
+We can create functions and call them. I have tried to test an implementation
+with recursive function, but figured out that it wouldn't work without register
+spilling. In other cases, registers will be reassigned and correct values would be
+lost. So the next tasks I would aim to do are following:
+
+- local arrays
+- register spilling
+- structs
+- unions
+- enums
+- switch
+- type casts
+- preprocessor
+- refactoring, testing and small optimization

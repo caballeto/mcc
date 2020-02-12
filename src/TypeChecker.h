@@ -74,6 +74,7 @@ class TypeChecker : public Visitor<Type> {
   static int GetTypeSize(Type type);
 
   int local_offset_ = 0;
+  bool gen_params_ = false; // hack to implement param generation
 
   CodeGenX86& code_gen_; // #FIXME: rewrite for higher abstraction using `CodeGen : Visitor<int>` as interface
   ErrorReporter& reporter_;

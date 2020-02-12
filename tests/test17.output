@@ -1,4 +1,4 @@
-/home/vladyslav/CLionProjects/mcc/tests/test17.input:5:11[0;31m error [0m
-Assign to rvalue is not allowed, near '=', line 5
+/home/vladyslav/CLionProjects/mcc/tests/test17.input:7:11[0;31m error [0m
+Assign to rvalue is not allowed, near '=', line 7
 
 Encountered 1 semantic errors. Stopping compilation.

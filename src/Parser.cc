@@ -33,7 +33,7 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
     std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
     Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
     var_decl_list.push_back(std::make_shared<VarDecl>(
-        type_token, name, decl_type, indirection, len->GetIntValue(),false));
+        type_token, name, decl_type, indirection, len->Int(), false));
   } else {
     init = OptionalExpression(0);
     var_decl_list.push_back(std::make_shared<VarDecl>(
@@ -49,7 +49,7 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(
         std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
         Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
         var_decl_list.push_back(std::make_shared<VarDecl>(
-            type_token, name, decl_type, indirection, len->GetIntValue(),false));
+            type_token, name, decl_type, indirection, len->Int(), false));
       } else {
         init = OptionalExpression(0);
         var_decl_list.push_back(std::make_shared<VarDecl>(
@@ -79,7 +79,12 @@ std::shared_ptr<Stmt> Parser::Declaration() {
       if (Match(TokenType::T_LPAREN)) { // function
         std::shared_ptr<DeclList> signature = ParameterList();
         Consume(TokenType::T_RPAREN, "')' expected after function declaration");
-        std::shared_ptr<Block> block = BlockStatement();
+        std::shared_ptr<Block> block = nullptr;
+        if (Check(TokenType::T_LBRACE)) {
+          block = BlockStatement();
+        } else {
+          Consume(TokenType::T_SEMICOLON, "';' expected after function prototype");
+        }
         return std::make_shared<FuncDecl>(TokenToType(type->GetType()), indirection, name, signature, block);
       } else { // var declaration
         return GlobalVarDeclaration(type, indirection, name);
@@ -242,7 +247,7 @@ std::shared_ptr<DeclList> Parser::DeclarationList() {
       std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
       Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
       var_decl_list.push_back(std::make_shared<VarDecl>(
-          type_token, name, decl_type, indirection, len->GetIntValue(), true));
+          type_token, name, decl_type, indirection, len->Int(), true));
     } else {
       std::shared_ptr<Expr> init = OptionalExpression(0);
       var_decl_list.push_back(std::make_shared<VarDecl>(

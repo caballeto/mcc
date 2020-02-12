@@ -13,11 +13,11 @@ namespace mcc {
 class Token {
  public:
 
-  inline void SetStringValue(std::string value) {
+  inline void SetString(std::string value) {
     identifier_ = std::move(value);
   }
 
-  inline std::string& GetStringValue() {
+  inline std::string& String() {
     return identifier_;
   }
 
@@ -37,11 +37,11 @@ class Token {
     return line_;
   }
 
-  inline void SetIntValue(int value) {
+  inline void SetInt(int value) {
     int_value_ = value;
   }
 
-  inline int GetIntValue() {
+  inline int Int() {
     return int_value_;
   }
 

@@ -277,11 +277,11 @@ int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   // primitives
   switch (literal->op_->GetType()) {
     case TokenType::T_INT_LIT:
-      out_ << "\tmovq\t$" << literal->op_->GetIntValue()
+      out_ << "\tmovq\t$" << literal->op_->Int()
            << "," << kRegisters[r] << "\n";
       break;
     case TokenType::T_STR_LIT: {
-      const std::string &s = literal->op_->GetStringValue();
+      const std::string &s = literal->op_->String();
       out_ << "\tleaq\tL" << strings_[s] << "(%rip), " << kRegisters[r] << "\n";
       break;
     }
@@ -302,7 +302,7 @@ int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
         default: {
           std::cerr << "Invalid literal type. Exiting." << std::endl;
           std::cout << literal->type_ << std::endl;
-          std::cout << literal->op_->GetStringValue() << std::endl;
+          std::cout << literal->op_->String() << std::endl;
           exit(1);
         }
       }
@@ -404,7 +404,7 @@ std::string CodeGenX86::GetRegister(int r, Type type, int ind) {
 
 int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   int size = GetTypeSize(var_decl->var_type_, var_decl->indirection_);
-  const std::string& name = var_decl->name_->GetStringValue();
+  const std::string& name = var_decl->name_->String();
 
   if (var_decl->array_len_ > 0) {
     out_ << "\t.data\n" << "\t.globl\t" << name << "\n";
@@ -431,25 +431,37 @@ int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
 
 // #TODO: add local variables and parameter code generation
 int CodeGenX86::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
+  if (func_decl->body_ == nullptr) return NO_RETURN_REGISTER;
   out_ << "\t.text\n";
-  out_ << "\t.globl\t" << func_decl->name_->GetStringValue() << "\n";
-  out_ << "\t.type\t" << func_decl->name_->GetStringValue() << ", @function\n";
-  out_ << func_decl->name_->GetStringValue() << ":\n";
+  out_ << "\t.globl\t" << func_decl->name_->String() << "\n";
+  out_ << "\t.type\t" << func_decl->name_->String() << ", @function\n";
+  out_ << func_decl->name_->String() << ":\n";
   out_ << "\tpushq\t%rbp\n";
   out_ << "\tmovq\t%rsp, %rbp\n";
   int stack_offset = (func_decl->local_offset_ + 15) & ~15;
   out_ << "\tsubq\t$" << stack_offset << ", %rsp\n";
+
+  int size = func_decl->signature_->var_decl_list_.size();
+  int preg = kRegisters.size() - 1;
+
+  for (int i = 0; i < std::min(size, 6); i++) {
+    const auto& decl = func_decl->signature_->var_decl_list_[i];
+    out_ << "\tmov" << GetSavePostfix(decl->var_type_, decl->indirection_) << "\t"
+         << GetRegister(preg--, decl->var_type_, decl->indirection_) << ", " << decl->offset_ << "(%rbp)\n";
+  }
+
   return_label_ = GetLabel();
   func_decl->body_->Accept(*this);
   out_ << "L" << return_label_ << ":\n";
-  out_ << "\tleave\n";
+  out_ << "\taddq\t$" << stack_offset << ", %rsp\n";
+  out_ << "\tpopq\t%rbp\n";
   out_ << "\tret\n";
   return NO_RETURN_REGISTER;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Return>& return_stmt) {
   int r = return_stmt->expr_->Accept(*this);
-  out_ << "\tmovq\t" << kRegisters[r] << ", %rax\n";
+  out_ << "\tmovq\t" << kRegisters[r] << ", %rax\n"; // #FIXME: add typed move?
   out_ << "\tjmp\tL" << return_label_ << "\n";
   FreeRegister(r);
   return NO_RETURN_REGISTER;
@@ -485,16 +497,31 @@ int CodeGenX86::Visit(const std::shared_ptr<Index>& index) {
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Call>& call) {
-  if (!call->args_->expr_list_.empty()) { // load first arg
-    int r = call->args_->expr_list_[0]->Accept(*this);
-    out_ << "\tmovq\t" << kRegisters[r] << ", %rdi\n";
+  int size = call->args_->expr_list_.size(), r;
+  for (int i = 0; i < size; i++) {
+    if (i < 6) {
+      const auto& arg = call->args_->expr_list_[i];
+      r = arg->Accept(*this);
+      out_ << "\tmovq" << "\t" << kRegisters[r] << ", "
+           << kRegisters[kRegisters.size() - i - 1] << "\n";
+    } else {
+      const auto& arg = call->args_->expr_list_[size - i + 5]; // push in reverse order
+      r = arg->Accept(*this);
+      out_ << "\tpushq\t" << kRegisters[r] << "\n";
+    }
+
     FreeRegister(r);
   }
 
-  out_ << "\tcall\t" << std::static_pointer_cast<Literal>(call->name_)->op_->GetStringValue() << "\n";
+  out_ << "\tcall\t" << std::static_pointer_cast<Literal>(call->name_)->op_->String() << "\n";
+
+  r = NewRegister();
+  for (int i = 0; i < size - 6; i++)
+    out_ << "\tpopq\t" << kRegisters[r] << "\n";
+  FreeRegister(r);
 
   if (call->type_ != Type::VOID) {
-    int r = NewRegister();
+    r = NewRegister();
     out_ << "\tmovq\t%rax, " << kRegisters[r] << "\n";
     return r;
   }
@@ -578,7 +605,7 @@ void CodeGenX86::GenGlobalString(const std::string& s) {
 }
 
 std::string CodeGenX86::GenLoad(const std::shared_ptr<Literal>& literal) {
-  return GenLoad(literal->op_->GetStringValue(), literal->offset_, literal->is_local_);
+  return GenLoad(literal->op_->String(), literal->offset_, literal->is_local_);
 }
 
 std::string CodeGenX86::GenLoad(const std::string& name, int offset, bool is_local) {

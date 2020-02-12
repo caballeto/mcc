@@ -41,9 +41,6 @@ int main(int argc, char* argv[]) {
   mcc::TypeChecker type_checker(code_gen, reporter, symbol_table);
   mcc::AstDumper dumper(AST_DUMP_FILE);
 
-  symbol_table.PutGlobal("printint", mcc::Type::VOID, 0, 0, true);
-  symbol_table.PutGlobal("printchar", mcc::Type::VOID, 0, 0, true);
-
   std::vector<std::shared_ptr<mcc::Stmt>> stmts = parser.Parse();
 
   if (reporter.HadErrors()) {
