@@ -12,6 +12,8 @@ namespace mcc {
 template <typename T>
 class Visitor {
  public:
+  virtual T Visit(const std::shared_ptr<Label>& label) = 0;
+  virtual T Visit(const std::shared_ptr<GoTo>& go_to) = 0;
   virtual T Visit(const std::shared_ptr<Index>& index) = 0;
   virtual T Visit(const std::shared_ptr<Call>& call) = 0;
   virtual T Visit(const std::shared_ptr<Ternary>& ternary) = 0;

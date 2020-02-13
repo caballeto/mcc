@@ -114,7 +114,13 @@ std::shared_ptr<Stmt> Parser::Statement() {
     case TokenType::T_BREAK:    return BreakStatement();
     case TokenType::T_CONTINUE: return ContinueStatement();
     case TokenType::T_RETURN:   return ReturnStatement();
+    case TokenType::T_GOTO:     return GotoStatement();
     default:
+      if (Check(TokenType::T_IDENTIFIER) && PeekNext()->GetType() == TokenType::T_COLON) {
+        std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER);
+        Consume(TokenType::T_COLON, "':' expected after label");
+        return std::make_shared<Label>(name);
+      }
       return ExpressionStatement();
   }
 }
@@ -294,6 +300,13 @@ std::shared_ptr<Block> Parser::BlockStatement() {
   return std::make_shared<Block>(token, std::move(stmts));
 }
 
+std::shared_ptr<GoTo> Parser::GotoStatement() {
+  Match(TokenType::T_GOTO);
+  std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER, "Label name expected");
+  Consume(TokenType::T_SEMICOLON, "';' expected after goto statement");
+  return std::make_shared<GoTo>(std::move(name));
+}
+
 // Read about named local return value optimization and copy-elision
 std::shared_ptr<Expr> Parser::Expression(int precedence) {
   std::shared_ptr<Expr> left = Primary(), right;
@@ -458,8 +471,20 @@ void Parser::SynchronizeDeclaration() {
 }
 
 std::shared_ptr<Token> Parser::Next() {
+  if (look_ahead_ != nullptr) {
+    token_ = look_ahead_;
+    look_ahead_ = nullptr;
+    return token_;
+  }
+
   token_ = scanner_.GetToken();
   return token_;
+}
+
+std::shared_ptr<Token> Parser::PeekNext() {
+  if (look_ahead_ != nullptr) return look_ahead_;
+  look_ahead_ = scanner_.GetToken();
+  return look_ahead_;
 }
 
 bool Parser::Check(TokenType type) {

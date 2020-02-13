@@ -454,10 +454,37 @@ lost. So the next tasks I would aim to do are following:
 
 - local arrays
 - register spilling
+- switch
+- preprocessor
 - structs
 - unions
 - enums
-- switch
 - type casts
-- preprocessor
+- sizeof
+- extern, static
 - refactoring, testing and small optimization
+
+## Day 16
+
+So, today I am going to do the following tasks:
+
+- [X] local arrays
+- [X] register spilling (very inefficient)
+- [X] goto/labels
+
+I have implemented all of the above features. The register spilling
+is very inefficient, I will rewrite it to spill only used registers, instead
+of all registers.
+
+I will also have to spend some time of refactoring, because code generation
+have many repeatable code fragments, which should be abbreviated by functions, like
+generate label or generate jump, etc.
+
+Not many features left (from the subset I aim to implement), so the goal
+is to finish the compiler by Day 20.
+
+**Next**
+
+- refactoring code
+- switch
+- type casting

@@ -65,6 +65,7 @@ enum class TokenType {
   T_BREAK,
   T_CONTINUE,
   T_RETURN,
+  T_GOTO,
 
   // types
   T_VOID = 100,

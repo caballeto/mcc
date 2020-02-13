@@ -303,6 +303,30 @@ class Index : public Expr {
   std::shared_ptr<Expr> index_;
 };
 
+class Label : public Stmt {
+ public:
+  explicit Label(std::shared_ptr<Token> name)
+    : Stmt(std::move(name)), label_(-1)
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
+  int label_{};
+};
+
+class GoTo : public Stmt {
+ public:
+  explicit GoTo(std::shared_ptr<Token> name)
+    : Stmt(std::move(name)), label_(-1)
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  Type Accept(Visitor<Type>& visitor) override;
+
+  int label_;
+};
+
 class Call : public Expr {
  public:
   Call(std::shared_ptr<Token> op, std::shared_ptr<Expr> name, std::shared_ptr<ExprList> args)

@@ -314,9 +314,9 @@ Type TypeChecker::Visit(const std::shared_ptr<Block>& block_stmt) {
   if (gen_params_) { // parameter generation for functions
     int param_offset = 8;
 
-    for (int i = 0; i < curr_func->signature_->var_decl_list_.size(); i++) {
-      const auto& decl = curr_func->signature_->var_decl_list_[i];
-      int offset = (i < 6) ? GetLocalOffset(decl->var_type_, decl->indirection_) : (param_offset += 8);
+    for (int i = 0; i < curr_func_->signature_->var_decl_list_.size(); i++) {
+      const auto& decl = curr_func_->signature_->var_decl_list_[i];
+      int offset = (i < 6) ? GetLocalOffset(decl->var_type_, decl->indirection_, 1) : (param_offset += 8);
       decl->offset_ = offset;
       symbol_table_.PutLocal(decl->name_->String(), decl->var_type_, decl->indirection_, 0, offset);
     }
@@ -378,15 +378,15 @@ Type TypeChecker::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
 Type TypeChecker::Visit(const std::shared_ptr<Return>& return_stmt) {
   return_stmt->expr_->Accept(*this);
 
-  if (curr_func->return_type_ == Type::VOID) {
+  if (curr_func_->return_type_ == Type::VOID) {
     reporter_.Error("Declared return type is 'void', but return statement found",
-                    curr_func->return_type_, curr_func->indirection_, return_stmt->expr_, return_stmt->token_);
+                    curr_func_->return_type_, curr_func_->indirection_, return_stmt->expr_, return_stmt->token_);
     return Type::NONE;
   }
 
-  if (!MatchTypeInit(curr_func->return_type_, curr_func->indirection_, return_stmt->expr_)) {
+  if (!MatchTypeInit(curr_func_->return_type_, curr_func_->indirection_, return_stmt->expr_)) {
     reporter_.Error("Declared type of init expression does not correspond to inferred type ",
-                    curr_func->return_type_, curr_func->indirection_, return_stmt->expr_, return_stmt->token_);
+                    curr_func_->return_type_, curr_func_->indirection_, return_stmt->expr_, return_stmt->token_);
     return Type::NONE;
   }
 
@@ -406,11 +406,13 @@ Type TypeChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   }
 
   if (func_decl->body_ != nullptr) { // not prototype
-    curr_func = func_decl;
+    NewLabelScope(func_decl);
+    curr_func_ = func_decl;
     gen_params_ = true;
     func_decl->body_->Accept(*this);
     func_decl->local_offset_ = local_offset_;
-    curr_func = nullptr;
+    curr_func_ = nullptr;
+    CheckLabelScope(func_decl);
   }
 
   return Type::NONE;
@@ -425,27 +427,18 @@ Type TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     return Type::NONE;
   }
 
-  if (var == nullptr) {
-    if (decl->is_local_) {
-      int offset = GetLocalOffset(decl->var_type_, decl->indirection_);
-      decl->offset_ = offset;
-      symbol_table_.PutLocal(
-          decl->name_->String(),
-          decl->var_type_,
-          decl->indirection_,
-          decl->array_len_,
-          offset);
-    } else {
-      symbol_table_.PutGlobal(
-          decl->name_->String(),
-          decl->var_type_,
-          decl->indirection_,
-          decl->array_len_,
-          nullptr);
-    }
-  } else {
+  if (var != nullptr) {
     reporter_.Report("Variable '" + decl->name_->String() + "' has already been declared", decl->name_);
     return Type::NONE;
+  }
+
+  if (decl->is_local_) {
+    int len = decl->array_len_ == 0 ? 1 : decl->array_len_;
+    int offset = GetLocalOffset(decl->var_type_, decl->indirection_, len);
+    decl->offset_ = offset;
+    symbol_table_.PutLocal(decl->name_->String(), decl->var_type_, decl->indirection_, decl->array_len_, offset);
+  } else {
+    symbol_table_.PutGlobal(decl->name_->String(), decl->var_type_, decl->indirection_, decl->array_len_,nullptr);
   }
 
   if (decl->init_ != nullptr) { // #TODO: reconsider const initializer and code gen for them
@@ -527,6 +520,37 @@ Type TypeChecker::Visit(const std::shared_ptr<Ternary>& ternary) {
   return ternary->type_;
 }
 
+Type TypeChecker::Visit(const std::shared_ptr<Label>& label) {
+  label->label_ = code_gen_.GetLabel();
+  const std::string& name = label->token_->String();
+  if (code_gen_.labels_.count(name) > 0) {
+    reporter_.Report("Label redefinition", label->token_);
+    return Type::NONE;
+  }
+  code_gen_.labels_[curr_func_->name_->String()][label->token_->String()] = label->label_;
+  return Type::NONE;
+}
+
+Type TypeChecker::Visit(const std::shared_ptr<GoTo>& go_to) {
+  const std::string& name = go_to->token_->String();
+  if (code_gen_.labels_[curr_func_->name_->String()].count(name) == 0)
+    code_gen_.labels_[curr_func_->name_->String()][go_to->token_->String()] = -1;
+  return Type::NONE;
+}
+
+void TypeChecker::NewLabelScope(const std::shared_ptr<FuncDecl>& func_decl) {
+  code_gen_.labels_[func_decl->name_->String()] = {};
+}
+
+void TypeChecker::CheckLabelScope(const std::shared_ptr<FuncDecl>& func_decl) {
+  const std::string& name = func_decl->name_->String();
+  for (const auto& pair : code_gen_.labels_[name]) {
+    if (pair.second == -1) {
+      reporter_.Report("Label '" + pair.first + "' used, but not declared, in function", func_decl->name_);
+    }
+  }
+}
+
 Type TypeChecker::Visit(const std::shared_ptr<Postfix>& postfix) {
   postfix->expr_->is_const_ = postfix->is_const_; // #FIXME: throw error immediately, as postfix is lvalue?
   postfix->expr_->return_ptr_ = true;
@@ -557,10 +581,10 @@ bool TypeChecker::IsComparison(TokenType type) {
     || type == TokenType::T_GREATER || type == TokenType::T_GREATER_EQUAL;
 }
 
-int TypeChecker::GetLocalOffset(Type type, int ind) {
-  if (ind > 0) return - (local_offset_ += 8);
-  local_offset_ += GetTypeSize(type) > 4 ? GetTypeSize(type) : 4;
-  return -local_offset_;
+int TypeChecker::GetLocalOffset(Type type, int ind, int len) {
+  if (ind > 0) return - (local_offset_ += 8 * len);
+  local_offset_ += len * (GetTypeSize(type) > 4 ? GetTypeSize(type) : 4);
+  return - local_offset_;
 }
 
 int TypeChecker::GetTypeSize(Type type) {

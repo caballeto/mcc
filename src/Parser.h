@@ -14,7 +14,7 @@ namespace mcc {
 class Parser {
  public:
   explicit Parser(Scanner& scanner, ErrorReporter& reporter)
-    : scanner_(scanner), reporter_(reporter)
+    : scanner_(scanner), reporter_(reporter), token_(nullptr), look_ahead_(nullptr)
   { Next(); }
 
   std::vector<std::shared_ptr<Stmt>> Parse();
@@ -33,7 +33,9 @@ class Parser {
 
   std::shared_ptr<Token> Next();
   std::shared_ptr<Token> Peek();
+  std::shared_ptr<Token> PeekNext();
   std::shared_ptr<Token> Consume(TokenType type, const std::string& message);
+  std::shared_ptr<Token> Consume(TokenType type);
 
   bool Check(TokenType type);
   bool Match(TokenType type);
@@ -43,25 +45,26 @@ class Parser {
   std::shared_ptr<While> DoWhileStatement();
   std::shared_ptr<Conditional> IfStatement();
   std::shared_ptr<Print> PrintStatement();
-
   std::shared_ptr<ControlFlow> BreakStatement();
   std::shared_ptr<ControlFlow> ContinueStatement();
-  bool MatchType();
+  std::shared_ptr<GoTo> GotoStatement();
 
+
+  bool MatchType();
   static void DisallowDecl(const std::shared_ptr<Stmt>& stmt, const std::shared_ptr<Token>& token);
   void Synchronize();
   void SynchronizeDeclaration();
-
-  std::shared_ptr<Token> Consume(TokenType type);
   static bool IsStopToken(TokenType type);
+
   std::shared_ptr<Stmt> Declaration();
   std::shared_ptr<Stmt> GlobalVarDeclaration(const std::shared_ptr<Token>& type_token, int indirection, std::shared_ptr<Token> name);
   std::shared_ptr<Return> ReturnStatement();
-  std::shared_ptr<DeclList> ParameterList();
 
+  std::shared_ptr<DeclList> ParameterList();
   Scanner& scanner_;
   ErrorReporter& reporter_;
   std::shared_ptr<Token> token_;
+  std::shared_ptr<Token> look_ahead_;
 };
 
 } // namespace mcc

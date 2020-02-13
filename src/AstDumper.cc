@@ -340,4 +340,20 @@ int AstDumper::Visit(const std::shared_ptr<Index>& index) {
   return 0;
 }
 
+int AstDumper::Visit(const std::shared_ptr<Label> &label) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<label>"
+       << label->token_->String() << "</label>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<GoTo> &go_to) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<goto>"
+       << go_to->token_->String() << "</goto>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
 } // namespace mcc

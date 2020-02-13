@@ -12,7 +12,7 @@
 #include "ControlFlowChecker.h"
 #include "ErrorReporter.h"
 
-#define REGISTER_NUM 8
+#define REGISTER_NUM 6
 #define NO_RETURN_REGISTER -1
 
 namespace mcc {
@@ -21,8 +21,9 @@ class CodeGenX86: public Visitor<int> {
  public:
   CodeGenX86(std::ostream& out, SymbolTable& symbol_table, ErrorReporter& reporter)
     : out_(out), symbol_table_(symbol_table), reporter_(reporter) {
-    label_ = 0;
+    label_ = 1;
     return_label_ = -1;
+    spilled_reg_ = 0;
 
     type_sizes_[Type::CHAR] = 1;
     type_sizes_[Type::SHORT] = 2;
@@ -53,10 +54,17 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<Grouping> &grouping) override;
   int Visit(const std::shared_ptr<Ternary> &ternary) override;
   int Visit(const std::shared_ptr<Postfix> &postfix) override;
+  int Visit(const std::shared_ptr<Label> &label) override;
+  int Visit(const std::shared_ptr<GoTo> &go_to) override;
 
   int GetLabel();
 
   void GenGlobalString(const std::string& s);
+
+  void SpillRegs();
+  void UnspillRegs();
+  void Spill(int r);
+  void Unspill(int r);
 
   void Preamble();
   void Postamble();
@@ -73,17 +81,25 @@ class CodeGenX86: public Visitor<int> {
   std::string GetLoadPostfix(Type type, int ind);
   std::string GetRegister(int r, Type type, int ind);
 
+  static std::string GenLoad(const std::string &name, int offset, bool is_local);
+  static std::string GenLoad(const std::shared_ptr<Literal> &literal);
+  std::ostream& GenLabel(int label);
+
   std::map<std::string, int> strings_;
   std::map<Type, int> type_sizes_;
-  ErrorReporter& reporter_;
   std::stack<std::pair<std::string, std::string>> loop_stack_; // FIXME: move to type checker
+  std::unordered_map<std::string, std::unordered_map<std::string, int>> labels_;
+
+  std::shared_ptr<FuncDecl> curr_func;
 
   int label_;
   int return_label_;
+  int spilled_reg_;
 
   std::ostream& out_;
   ControlFlowChecker flow_checker_; // FIXME: move to type checker
   SymbolTable& symbol_table_;
+  ErrorReporter& reporter_;
 
   const std::vector<std::string> kRegisters = {"%r10", "%r11", "%r12", "%r13",
                                                "%r9", "%r8", "%rcx", "%rdx", "%rsi", "%rdi"};
@@ -94,9 +110,7 @@ class CodeGenX86: public Visitor<int> {
   const std::vector<std::string> kWregisters = {"%r10w", "%r11w", "%r12w", "%r13w",
                                                "%r9w", "%r8w", "%cx", "%dx", "%si", "%di"};
 
-  bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true, true, true};
-  std::string GenLoad(const std::string &name, int offset, bool is_local);
-  std::string GenLoad(const std::shared_ptr<Literal> &literal);
+  bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true};
 };
 
 } // namespace mcc

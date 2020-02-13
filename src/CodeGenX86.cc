@@ -197,40 +197,40 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
 
   switch (binary->op_->GetType()) {
     case TokenType::T_PLUS:
-      out_ << "\taddq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-      FreeRegister(r1);
-      return r2;
+      out_ << "\taddq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+      FreeRegister(r2);
+      return r1;
     case TokenType::T_MINUS:
       out_ << "\tsubq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
       FreeRegister(r2);
       return r1;
     case TokenType::T_STAR:
-      out_ << "\timulq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-      FreeRegister(r1);
-      return r2;
+      out_ << "\timulq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+      FreeRegister(r2);
+      return r1;
     case TokenType::T_SLASH:
       out_ << "\tmovq\t" << kRegisters[r1] << ", %rax\n"
            << "\tcqo\n"
            << "\tidivq\t" << kRegisters[r2] << "\n"
            << "\tmovq\t%rax, " << kRegisters[r1] << "\n";
-      FreeRegister(2);
+      FreeRegister(r2);
       return r1;
     case TokenType::T_OR:
     case TokenType::T_AND:
       std::cerr << "Not implemented error '&&', '||' operators" << std::endl;
       exit(1);
     case TokenType::T_BIT_AND:
-      out_ << "\tandq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-      FreeRegister(r1);
-      return r2;
+      out_ << "\tandq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+      FreeRegister(r2);
+      return r1;
     case TokenType::T_BIT_OR:
-      out_ << "\torq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-      FreeRegister(r1);
-      return r2;
+      out_ << "\torq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+      FreeRegister(r2);
+      return r1;
     case TokenType::T_BIT_XOR:
-      out_ << "\txorq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-      FreeRegister(r1);
-      return r2;
+      out_ << "\txorq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
+      FreeRegister(r2);
+      return r1;
     case TokenType::T_LSHIFT:
       out_ << "\tmovb\t" << kBregisters[r2] << ", %cl\n";
       out_ << "\tshlq\t%cl, " << kRegisters[r1] << "\n";
@@ -249,9 +249,9 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
     case TokenType::T_LESS_EQUAL:
       out_ << "\tcmpq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
       out_ << "\t" << GetSetInstr(binary->op_->GetType()) << "\t" << kBregisters[r2] << "\n";
-      out_ << "\tmovzbq\t" << kBregisters[r2] << ", " << kRegisters[r2] << "\n";
-      FreeRegister(r1);
-      return r2;
+      out_ << "\tmovzbq\t" << kBregisters[r2] << ", " << kRegisters[r1] << "\n";
+      FreeRegister(r2);
+      return r1;
     default:
       std::cerr << "Invalid operator in binary expression: " << binary->op_ << std::endl;
       exit(1);
@@ -407,16 +407,19 @@ int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   const std::string& name = var_decl->name_->String();
 
   if (var_decl->array_len_ > 0) {
-    out_ << "\t.data\n" << "\t.globl\t" << name << "\n";
-    out_ << name << ":\n";
-    for (int i = 0; i < var_decl->array_len_; i++) {
-      out_ << "\t." << GetAllocType(var_decl->var_type_, var_decl->indirection_) << "\t0\n";
+    if (!var_decl->is_local_) {
+      out_ << "\t.data\n" << "\t.globl\t" << name << "\n";
+      out_ << name << ":\n";
+      for (int i = 0; i < var_decl->array_len_; i++) {
+        out_ << "\t." << GetAllocType(var_decl->var_type_, var_decl->indirection_) << "\t0\n";
+      }
     }
   } else {
     if (!var_decl->is_local_) {
       out_ << "\t.comm\t" << name << "," << size << "," << size << "\n";
     }
 
+    // #FIXME: init for global variables only constant allowed
     if (var_decl->init_ != nullptr) {
       int r = var_decl->init_->Accept(*this);
       out_ << "\tmov" << GetSavePostfix(var_decl->var_type_, var_decl->indirection_) << "\t"
@@ -450,8 +453,10 @@ int CodeGenX86::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
          << GetRegister(preg--, decl->var_type_, decl->indirection_) << ", " << decl->offset_ << "(%rbp)\n";
   }
 
+  curr_func = func_decl;
   return_label_ = GetLabel();
   func_decl->body_->Accept(*this);
+  curr_func = nullptr;
   out_ << "L" << return_label_ << ":\n";
   out_ << "\taddq\t$" << stack_offset << ", %rsp\n";
   out_ << "\tpopq\t%rbp\n";
@@ -498,6 +503,8 @@ int CodeGenX86::Visit(const std::shared_ptr<Index>& index) {
 
 int CodeGenX86::Visit(const std::shared_ptr<Call>& call) {
   int size = call->args_->expr_list_.size(), r;
+  SpillRegs();
+
   for (int i = 0; i < size; i++) {
     if (i < 6) {
       const auto& arg = call->args_->expr_list_[i];
@@ -514,12 +521,10 @@ int CodeGenX86::Visit(const std::shared_ptr<Call>& call) {
   }
 
   out_ << "\tcall\t" << std::static_pointer_cast<Literal>(call->name_)->op_->String() << "\n";
+  if (size > 6)
+    out_ << "\taddq\t$" << (size - 6) * 8 << ", %rsp\n";
 
-  r = NewRegister();
-  for (int i = 0; i < size - 6; i++)
-    out_ << "\tpopq\t" << kRegisters[r] << "\n";
-  FreeRegister(r);
-
+  UnspillRegs();
   if (call->type_ != Type::VOID) {
     r = NewRegister();
     out_ << "\tmovq\t%rax, " << kRegisters[r] << "\n";
@@ -572,6 +577,8 @@ void CodeGenX86::PrintInt(int r) {
     << "\tcall\tprintint\n";
 }
 
+// when all registers are allocated, spill one register on stack
+// when to load it back? -> when it has been freed.
 int CodeGenX86::NewRegister() {
   for (int i = 0; i < REGISTER_NUM; i++) {
     if (regs_status[i]) {
@@ -579,14 +586,22 @@ int CodeGenX86::NewRegister() {
       return i;
     }
   }
-  std::cerr << "Run out of registers." << std::endl; // #TODO: Register spilling
-  exit(1);
+
+  int r = (spilled_reg_ % REGISTER_NUM);
+  spilled_reg_++;
+  Spill(r);
+  return r;
 }
 
 void CodeGenX86::FreeRegister(int reg) {
-  if (reg == NO_RETURN_REGISTER)
-    return;
-  regs_status[reg] = true;
+  if (reg == NO_RETURN_REGISTER) return;
+  if (spilled_reg_ > 0) {
+    spilled_reg_--;
+    reg = (spilled_reg_ % REGISTER_NUM);
+    Unspill(reg);
+  } else {
+    regs_status[reg] = true;
+  }
 }
 
 int CodeGenX86::GetLabel() {
@@ -614,6 +629,21 @@ std::string CodeGenX86::GenLoad(const std::string& name, int offset, bool is_loc
   } else {
     return name + "(%rip)";
   }
+}
+
+std::ostream& CodeGenX86::GenLabel(int label) {
+  out_ << "L" << label << ":\n";
+  return out_;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Label>& label) {
+  GenLabel(label->label_);
+  return 0;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<GoTo>& go_to) {
+  out_ << "\tjmp\tL" << labels_[curr_func->name_->String()][go_to->token_->String()] << "\n";
+  return 0;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Ternary>& ternary) {
@@ -650,15 +680,16 @@ int CodeGenX86::Visit(const std::shared_ptr<Postfix>& postfix) {
         break;
       } else {
         int r2 = NewRegister();
+        out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
         out_ << "\tmov" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->indirection_)
-             << "\t(" << kRegisters[r1] << "), "
-             << GetRegister(r2, postfix->expr_->type_, postfix->expr_->indirection_)
+             << "\t(" << kRegisters[r2] << "), "
+             << GetRegister(r1, postfix->expr_->type_, postfix->expr_->indirection_)
              << "\n";
         out_ << "\tadd"
              << GetSavePostfix(postfix->expr_->type_, postfix->expr_->indirection_)
-             << "\t$1, (" << kRegisters[r1] << ")\n";
-        FreeRegister(r1);
-        return r2;
+             << "\t$1, (" << kRegisters[r2] << ")\n";
+        FreeRegister(r2);
+        return r1;
       }
     }
     case TokenType::T_DEC: {
@@ -670,15 +701,16 @@ int CodeGenX86::Visit(const std::shared_ptr<Postfix>& postfix) {
         break;
       } else {
         int r2 = NewRegister();
+        out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
         out_ << "\tmov" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->indirection_)
-             << "\t(" << kRegisters[r1] << "), "
-             << GetRegister(r2, postfix->expr_->type_, postfix->expr_->indirection_)
+             << "\t(" << kRegisters[r2] << "), "
+             << GetRegister(r1, postfix->expr_->type_, postfix->expr_->indirection_)
              << "\n";
         out_ << "\tsub"
              << GetSavePostfix(postfix->expr_->type_, postfix->expr_->indirection_)
-             << "\t$1, (" << kRegisters[r1] << ")\n";
-        FreeRegister(r1);
-        return r2;
+             << "\t$1, (" << kRegisters[r2] << ")\n";
+        FreeRegister(r2);
+        return r1;
       }
     }
     default: {
@@ -702,6 +734,25 @@ std::string CodeGenX86::GetAllocType(Type type, int ind) {
       exit(1);
     }
   }
+}
+
+void CodeGenX86::SpillRegs() {
+  for (int i = 0; i < REGISTER_NUM; i++)
+    Spill(i);
+}
+
+void CodeGenX86::UnspillRegs() {
+  for (int i = REGISTER_NUM - 1; i >= 0; i--)
+    Unspill(i);
+}
+
+void CodeGenX86::Spill(int r) {
+  out_ << "\tpushq\t" << kRegisters[r] << "\n";
+  //std::cout << "Spill {" << r << "}" << std::endl;
+}
+void CodeGenX86::Unspill(int r) {
+  out_ << "\tpopq\t" << kRegisters[r] << "\n";
+  //std::cout << "Unspill {" << r << "}" << "\n";
 }
 
 } // namespace mcc

@@ -19,7 +19,7 @@ using TokenRef = const std::shared_ptr<Token>&;
 class TypeChecker : public Visitor<Type> {
  public:
   TypeChecker(CodeGenX86& code_gen, ErrorReporter& reporter, SymbolTable& symbol_table)
-    : code_gen_(code_gen), reporter_(reporter), symbol_table_(symbol_table), curr_func(nullptr)
+    : code_gen_(code_gen), reporter_(reporter), symbol_table_(symbol_table), curr_func_(nullptr)
   { }
 
   void TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts);
@@ -43,6 +43,11 @@ class TypeChecker : public Visitor<Type> {
   Type Visit(const std::shared_ptr<Ternary>& ternary) override;
   Type Visit(const std::shared_ptr<Postfix>& postfix) override;
   Type Visit(const std::shared_ptr<Index> &index) override;
+  Type Visit(const std::shared_ptr<Label> &label) override;
+  Type Visit(const std::shared_ptr<GoTo> &go_to) override;
+
+  void NewLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
+  void CheckLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
 
   static bool IsIntegerType(ExprRef expr);
   static bool IsPointer(ExprRef expr);
@@ -69,7 +74,7 @@ class TypeChecker : public Visitor<Type> {
   Type Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
   Type Visit(const std::shared_ptr<Return>& return_stmt) override;
 
-  int GetLocalOffset(Type type, int ind);
+  int GetLocalOffset(Type type, int ind, int len);
   void ResetLocals();
   static int GetTypeSize(Type type);
 
@@ -79,7 +84,7 @@ class TypeChecker : public Visitor<Type> {
   CodeGenX86& code_gen_; // #FIXME: rewrite for higher abstraction using `CodeGen : Visitor<int>` as interface
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;
-  std::shared_ptr<FuncDecl> curr_func;
+  std::shared_ptr<FuncDecl> curr_func_;
 };
 
 } // namespace mcc

@@ -199,12 +199,28 @@ Type Ternary::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Ternary>());
 }
 
-int Index::Accept(Visitor<int> &visitor) {
+int Index::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<Index>());
 }
 
-Type Index::Accept(Visitor<Type> &visitor) {
+Type Index::Accept(Visitor<Type>& visitor) {
   return visitor.Visit(shared_from_base<Index>());
+}
+
+int Label::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<Label>());
+}
+
+Type Label::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<Label>());
+}
+
+int GoTo::Accept(Visitor<int>& visitor) {
+  return visitor.Visit(shared_from_base<GoTo>());
+}
+
+Type GoTo::Accept(Visitor<Type>& visitor) {
+  return visitor.Visit(shared_from_base<GoTo>());
 }
 
 } // namespace mcc
