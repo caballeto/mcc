@@ -9,17 +9,28 @@
 
 namespace mcc {
 
-enum class Type {
-  VOID = 0,
-  CHAR = 1,
-  SHORT = 2,
-  INT = 3,
-  LONG = 4,
-  NONE
+class Type {
+ public:
+  Type()
+    : name(nullptr), type_(TokenType::T_NONE), ind(0), len(0)
+  { }
+
+  bool IsArray() const;
+  bool IsPointer() const;
+  bool IsStruct() const;
+  bool IsUnion() const;
+  bool IsPrimitive() const;
+  bool IsVoid() const;
+
+  Type& operator=(const Type& type);
+
+  std::shared_ptr<Token> name; // name of type (typedef, union, struct)
+  TokenType type_; // type class (char, short, int, long, struct, union)
+  int ind; // indirection level (number of pointers)
+  int len; // length for arrays
 };
 
-std::ostream& operator<<(std::ostream& os, Type type);
-Type TokenToType(TokenType type);
+std::ostream& operator<<(std::ostream& os, const Type& type);
 
 } // namespace mcc
 

@@ -11,6 +11,7 @@
 #include "SymbolTable.h"
 #include "ControlFlowChecker.h"
 #include "ErrorReporter.h"
+#include "TokenType.h"
 
 #define REGISTER_NUM 6
 #define NO_RETURN_REGISTER -1
@@ -25,10 +26,10 @@ class CodeGenX86: public Visitor<int> {
     return_label_ = -1;
     spilled_reg_ = 0;
 
-    type_sizes_[Type::CHAR] = 1;
-    type_sizes_[Type::SHORT] = 2;
-    type_sizes_[Type::INT] = 4;
-    type_sizes_[Type::LONG] = 8;
+    type_sizes_[TokenType::T_CHAR] = 1;
+    type_sizes_[TokenType::T_SHORT] = 2;
+    type_sizes_[TokenType::T_INT] = 4;
+    type_sizes_[TokenType::T_LONG] = 8;
   }
 
   void Generate(const std::vector<std::shared_ptr<Stmt>>& stmts);
@@ -56,6 +57,7 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<Postfix> &postfix) override;
   int Visit(const std::shared_ptr<Label> &label) override;
   int Visit(const std::shared_ptr<GoTo> &go_to) override;
+  int Visit(const std::shared_ptr<Struct> &struct_decl) override;
 
   int GetLabel();
 
@@ -75,18 +77,18 @@ class CodeGenX86: public Visitor<int> {
 
   static std::string GetSetInstr(TokenType type);
 
-  int GetTypeSize(Type type, int ind);
-  static std::string GetAllocType(Type type, int ind);
-  std::string GetSavePostfix(Type type, int ind);
-  std::string GetLoadPostfix(Type type, int ind);
-  std::string GetRegister(int r, Type type, int ind);
+  int GetTypeSize(const Type& type, int ind);
+  static std::string GetAllocType(const Type& type, int ind);
+  std::string GetSavePostfix(const Type& type, int ind);
+  std::string GetLoadPostfix(const Type& type, int ind);
+  std::string GetRegister(int r, const Type& type, int ind);
 
   static std::string GenLoad(const std::string &name, int offset, bool is_local);
   static std::string GenLoad(const std::shared_ptr<Literal> &literal);
   std::ostream& GenLabel(int label);
 
   std::map<std::string, int> strings_;
-  std::map<Type, int> type_sizes_;
+  std::map<TokenType, int> type_sizes_;
   std::stack<std::pair<std::string, std::string>> loop_stack_; // FIXME: move to type checker
   std::unordered_map<std::string, std::unordered_map<std::string, int>> labels_;
 

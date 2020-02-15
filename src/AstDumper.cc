@@ -54,7 +54,7 @@ int AstDumper::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<var-decl>\n";
   out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl->name_->String() << "</name>\n";
-  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << var_decl->indirection_ << "</ind>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << var_decl->var_type_.ind << "</ind>\n";
 
   if (var_decl->init_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<init>\n";
@@ -299,7 +299,7 @@ int AstDumper::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
 
   out_ << std::string(spaces_ + 2, ' ') << "<name>" << func_decl->name_->String() << "</name>\n";
   out_ << std::string(spaces_ + 2, ' ') << "<type>" << func_decl->return_type_ << "</type>\n";
-  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << func_decl->indirection_ << "</ind>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << func_decl->return_type_.ind << "</ind>\n";
 
   if (func_decl->body_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<body>\n";
@@ -352,6 +352,31 @@ int AstDumper::Visit(const std::shared_ptr<GoTo> &go_to) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<goto>"
        << go_to->token_->String() << "</goto>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<Struct> &struct_decl) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<struct>\n";
+
+  if (struct_decl->type_.name != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<name>"
+         << struct_decl->type_.name << "</name>\n";
+  }
+
+  if (struct_decl->var_name_ != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<var-name>"
+         << struct_decl->var_name_->String() << "</var-name>\n";
+  }
+
+  out_ << std::string(spaces_ + 2, ' ') << "<fields>\n";
+  spaces_ += TAB_SIZE;
+  struct_decl->body_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</fields>\n";
+
+  out_ << std::string(spaces_, ' ') << "</struct>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }

@@ -57,14 +57,16 @@ class Parser {
   static bool IsStopToken(TokenType type);
 
   std::shared_ptr<Stmt> Declaration();
-  std::shared_ptr<Stmt> GlobalVarDeclaration(const std::shared_ptr<Token>& type_token, int indirection, std::shared_ptr<Token> name);
+  std::shared_ptr<Stmt> GlobalVarDeclaration(Type type, std::shared_ptr<Token> name);
+  std::shared_ptr<Struct> StructDeclaration(const Type& type);
   std::shared_ptr<Return> ReturnStatement();
 
-  std::shared_ptr<DeclList> ParameterList();
+  std::shared_ptr<DeclList> ParameterList(TokenType delim, TokenType stop);
   Scanner& scanner_;
   ErrorReporter& reporter_;
   std::shared_ptr<Token> token_;
   std::shared_ptr<Token> look_ahead_;
+  Type ParsePrim();
 };
 
 } // namespace mcc

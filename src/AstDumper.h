@@ -40,6 +40,7 @@ class AstDumper : public Visitor<int> {
   int Visit(const std::shared_ptr<Index> &index) override;
   int Visit(const std::shared_ptr<Label> &label) override;
   int Visit(const std::shared_ptr<GoTo> &go_to) override;
+  int Visit(const std::shared_ptr<Struct> &struct_decl) override;
 
   void Flush();
   int Visit(const std::shared_ptr<Call> &call) override;

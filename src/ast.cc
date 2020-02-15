@@ -7,24 +7,20 @@
 
 namespace mcc {
 
-Type Binary::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Binary>());
+void Binary::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Binary>());
 }
 
 int Binary::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Binary>());
 }
 
-Type Literal::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Literal>());
+void Literal::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Literal>());
 }
 
 int Literal::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Literal>());
-}
-
-bool Literal::IsArray() {
-  return is_array;
 }
 
 bool Expr::IsVariable() {
@@ -39,24 +35,24 @@ bool Literal::IsVariable() {
   return !op_->String().empty();
 }
 
-Type Print::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Print>());
+void Print::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Print>());
 }
 
 int Print::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Print>());
 }
 
-Type Assign::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Assign>());
+void Assign::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Assign>());
 }
 
 int Assign::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Assign>());
 }
 
-Type VarDecl::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<VarDecl>());
+void VarDecl::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<VarDecl>());
 }
 
 int VarDecl::Accept(Visitor<int> &visitor) {
@@ -67,52 +63,48 @@ bool VarDecl::IsDeclaration() const {
   return true;
 }
 
-bool VarDecl::IsArray() const {
-  return array_len_ > 0;
-}
-
-Type ExpressionStmt::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<ExpressionStmt>());
+void ExpressionStmt::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<ExpressionStmt>());
 }
 
 int ExpressionStmt::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<ExpressionStmt>());
 }
 
-Type Conditional::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Conditional>());
+void Conditional::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Conditional>());
 }
 
 int Conditional::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Conditional>());
 }
 
-Type Block::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Block>());
+void Block::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Block>());
 }
 
 int Block::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Block>());
 }
 
-Type While::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<While>());
+void While::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<While>());
 }
 
 int While::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<While>());
 }
 
-Type For::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<For>());
+void For::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<For>());
 }
 
 int For::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<For>());
 }
 
-Type DeclList::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<DeclList>());
+void DeclList::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<DeclList>());
 }
 
 int DeclList::Accept(Visitor<int> &visitor) {
@@ -123,27 +115,27 @@ bool DeclList::IsDeclaration() const {
   return true;
 }
 
-Type ExprList::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<ExprList>());
+void ExprList::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<ExprList>());
 }
 
 int ExprList::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<ExprList>());
 }
 
-Type ControlFlow::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<ControlFlow>());
+void ControlFlow::Accept(Visitor<void> &visitor) {
+   visitor.Visit(shared_from_base<ControlFlow>());
 }
 
 int ControlFlow::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<ControlFlow>());
 }
 
-int Unary::Accept(Visitor<int> &visitor) {
-  return visitor.Visit(shared_from_base<Unary>());
+void Unary::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Unary>());
 }
 
-Type Unary::Accept(Visitor<Type> &visitor) {
+int Unary::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Unary>());
 }
 
@@ -151,8 +143,8 @@ bool FuncDecl::IsDeclaration() const {
   return true;
 }
 
-Type FuncDecl::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<FuncDecl>());
+void FuncDecl::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<FuncDecl>());
 }
 
 int FuncDecl::Accept(Visitor<int> &visitor) {
@@ -163,64 +155,72 @@ int Return::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Return>());
 }
 
-Type Return::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Return>());
+void Return::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Return>());
 }
 
 int Call::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Call>());
 }
 
-Type Call::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Call>());
+void Call::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Call>());
 }
 
 int Grouping::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Grouping>());
 }
 
-Type Grouping::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Grouping>());
+void Grouping::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Grouping>());
 }
 
 int Postfix::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Postfix>());
 }
 
-Type Postfix::Accept(Visitor<Type> &visitor) {
-  return visitor.Visit(shared_from_base<Postfix>());
+void Postfix::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Postfix>());
 }
 
 int Ternary::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<Ternary>());
 }
 
-Type Ternary::Accept(Visitor<Type>& visitor) {
-  return visitor.Visit(shared_from_base<Ternary>());
+void Ternary::Accept(Visitor<void>& visitor) {
+  visitor.Visit(shared_from_base<Ternary>());
 }
 
 int Index::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<Index>());
 }
 
-Type Index::Accept(Visitor<Type>& visitor) {
-  return visitor.Visit(shared_from_base<Index>());
+void Index::Accept(Visitor<void>& visitor) {
+  visitor.Visit(shared_from_base<Index>());
 }
 
 int Label::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<Label>());
 }
 
-Type Label::Accept(Visitor<Type>& visitor) {
-  return visitor.Visit(shared_from_base<Label>());
+void Label::Accept(Visitor<void>& visitor) {
+  visitor.Visit(shared_from_base<Label>());
 }
 
 int GoTo::Accept(Visitor<int>& visitor) {
   return visitor.Visit(shared_from_base<GoTo>());
 }
 
-Type GoTo::Accept(Visitor<Type>& visitor) {
-  return visitor.Visit(shared_from_base<GoTo>());
+void GoTo::Accept(Visitor<void>& visitor) {
+  visitor.Visit(shared_from_base<GoTo>());
+}
+
+int Struct::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(shared_from_base<Struct>());
+}
+
+void Struct::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Struct>());
 }
 
 } // namespace mcc

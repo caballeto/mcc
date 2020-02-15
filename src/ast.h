@@ -28,7 +28,7 @@ class Stmt : public std::enable_shared_from_this<Stmt> {
   { }
 
   virtual int Accept(Visitor<int>& visitor) = 0;
-  virtual Type Accept(Visitor<Type>& visitor) = 0;
+  virtual void Accept(Visitor<void>& visitor) = 0;
   virtual bool IsDeclaration() const { return false; }
 
   template <typename T>
@@ -46,7 +46,7 @@ class Block : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::vector<std::shared_ptr<Stmt>> stmts_;
 };
@@ -58,7 +58,7 @@ class Print : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> expr_;
 };
@@ -76,7 +76,7 @@ class Conditional : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> condition_;
   std::shared_ptr<Stmt> then_block_;
@@ -90,7 +90,7 @@ class While : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   bool do_while_;
   std::shared_ptr<Expr> condition_;
@@ -105,7 +105,7 @@ class DeclList : public Stmt {
 
   bool IsDeclaration() const override;
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::vector<std::shared_ptr<VarDecl>> var_decl_list_;
 };
@@ -118,7 +118,7 @@ class ExprList : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::vector<std::shared_ptr<Expr>> expr_list_;
 };
@@ -130,7 +130,7 @@ class Return : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> expr_;
 };
@@ -143,33 +143,48 @@ class ControlFlow : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   bool is_break_;
 };
+
+
+class Struct : public Stmt {
+ public:
+  Struct(std::shared_ptr<Token> token, Type type, std::shared_ptr<DeclList> body, std::shared_ptr<Token> var_name)
+    : Stmt(std::move(token)), type_(std::move(type)), body_(std::move(body)), var_name_(std::move(var_name))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
+
+  Type type_;
+  std::shared_ptr<Token> var_name_;
+  std::shared_ptr<DeclList> body_;
+  int size;
+};
+
 
 class FuncDecl : public Stmt {
  public:
   FuncDecl(
       Type return_type,
-      int indirection,
       std::shared_ptr<Token> name,
       std::shared_ptr<DeclList> signature,
       std::shared_ptr<Block> body)
     : Stmt(name),
-    return_type_(return_type),
-    indirection_(indirection),
+    return_type_(std::move(return_type)),
     name_(std::move(name)),
     signature_(std::move(signature)),
     body_(std::move(body))
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
   bool IsDeclaration() const override;
 
   Type return_type_;
-  int indirection_;
+
   int local_offset_;
   std::shared_ptr<Token> name_;
   std::shared_ptr<DeclList> signature_;
@@ -179,50 +194,42 @@ class FuncDecl : public Stmt {
 class VarDecl : public Stmt {
  public:
   VarDecl(
-      std::shared_ptr<Token> token,
       std::shared_ptr<Token> name,
       std::shared_ptr<Expr> init,
       Type var_type,
-      int indirection,
       bool is_const_init,
       bool is_local)
-  : Stmt(std::move(token)),
+  : Stmt(nullptr),
     name_(std::move(name)),
     init_(std::move(init)),
-    var_type_(var_type),
-    indirection_(indirection),
+    var_type_(std::move(var_type)),
     is_const_init_(is_const_init),
     is_local_(is_local)
   { }
 
   VarDecl(
-      std::shared_ptr<Token> token,
       std::shared_ptr<Token> name,
       Type var_type,
-      int indirection,
-      int array_len,
       bool is_local)
-      : Stmt(std::move(token)),
+      : Stmt(nullptr),
         name_(std::move(name)),
         init_(nullptr),
-        var_type_(var_type),
-        indirection_(indirection),
-        array_len_(array_len),
+        var_type_(std::move(var_type)),
         is_const_init_(false),
         is_local_(is_local)
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   bool IsDeclaration() const override;
   bool IsArray() const;
 
   std::shared_ptr<Token> name_;
   std::shared_ptr<Expr> init_;
+
   Type var_type_;
-  int indirection_;
-  int array_len_;
+
   int offset_;
   bool is_const_init_;
   bool is_local_;
@@ -237,7 +244,7 @@ class For : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Stmt> init_;
   std::shared_ptr<Expr> condition_;
@@ -252,7 +259,7 @@ class ExpressionStmt : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> expr_;
 };
@@ -260,11 +267,14 @@ class ExpressionStmt : public Stmt {
 class Expr : public std::enable_shared_from_this<Expr> {
  public:
   explicit Expr(std::shared_ptr<Token> op)
-    : op_(std::move(op))
+    : op_(std::move(op)), offset_(0)
   { }
 
+  inline TokenType type() { return type_.type_; }
+  inline int ind() { return type_.ind; }
+
   virtual int Accept(Visitor<int>& visitor) = 0;
-  virtual Type Accept(Visitor<Type>& visitor) = 0;
+  virtual void Accept(Visitor<void>& visitor) = 0;
 
   virtual bool IsVariable();
   virtual bool IsLvalue();
@@ -275,8 +285,8 @@ class Expr : public std::enable_shared_from_this<Expr> {
   }
 
   // TODO: rewrite flags as bitfields
-  Type type_ = Type::NONE;
-  int indirection_ = 0;
+  Type type_;
+
   int offset_;
 
   bool is_lvalue_ = false;
@@ -297,7 +307,7 @@ class Index : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> name_;
   std::shared_ptr<Expr> index_;
@@ -310,7 +320,7 @@ class Label : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   int label_{};
 };
@@ -322,7 +332,7 @@ class GoTo : public Stmt {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   int label_;
 };
@@ -334,7 +344,7 @@ class Call : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> name_;
   std::shared_ptr<ExprList> args_;
@@ -347,7 +357,7 @@ class Assign : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> left_;
   std::shared_ptr<Expr> right_;
@@ -367,7 +377,7 @@ class Ternary : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> condition_;
   std::shared_ptr<Expr> then_;
@@ -381,7 +391,7 @@ class Postfix : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> expr_;
 };
@@ -393,7 +403,7 @@ class Grouping : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> expr_;
 };
@@ -405,7 +415,7 @@ class Binary : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> left_;
   std::shared_ptr<Expr> right_;
@@ -419,7 +429,7 @@ class Unary : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   std::shared_ptr<Expr> expr_;
 };
@@ -431,13 +441,9 @@ class Literal : public Expr {
   { }
 
   int Accept(Visitor<int>& visitor) override;
-  Type Accept(Visitor<Type>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
 
   bool IsVariable() override;
-
-  bool IsArray();
-
-  bool is_array;
 };
 
 } // namespace mcc

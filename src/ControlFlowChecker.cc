@@ -101,4 +101,8 @@ int ControlFlowChecker::Visit(const std::shared_ptr<GoTo> &go_to) {
   return 0;
 }
 
+int ControlFlowChecker::Visit(const std::shared_ptr<Struct> &struct_decl) {
+  return 0;
+}
+
 } // namespace mcc

@@ -488,3 +488,11 @@ is to finish the compiler by Day 20.
 - refactoring code
 - switch
 - type casting
+
+## Day 17
+
+Started implementing structs. Wholly rewrote the representation of types.
+Currently, only the declarations of global structs are supported. Tomorrow,
+I will implement the generation of global variables and global unnamed strings first.
+Then I will add local structs, and finally would add two operations for member
+access '.' and '->'. I will add both assignment and just getting the variable.

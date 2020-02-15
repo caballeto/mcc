@@ -24,6 +24,8 @@ Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
   keywords_["continue"] = TokenType::T_CONTINUE;
   keywords_["return"] = TokenType::T_RETURN;
   keywords_["goto"] = TokenType::T_GOTO;
+  keywords_["struct"] = TokenType::T_STRUCT;
+  keywords_["union"] = TokenType::T_UNION;
 
   // types
   keywords_["void"] = TokenType::T_VOID;

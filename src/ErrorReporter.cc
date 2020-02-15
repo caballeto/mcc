@@ -18,19 +18,28 @@ void ErrorReporter::Report(const std::string& message, char c, int line, int cou
 
 void ErrorReporter::Report(const std::string& message, const std::shared_ptr<Token>& token) {
   PrintErrorLine(input_file_, token->GetLine(), token->GetCount());
-
   os_ << message << ", near ";
+  PrintToken(token);
+  errors_++;
+}
+
+void ErrorReporter::Warning(const std::string &message, const std::shared_ptr<Token> &token) {
+  PrintWarningLine(input_file_, token->GetLine(), token->GetCount());
+  os_ << message << ", near ";
+  PrintToken(token);
+}
+
+void ErrorReporter::PrintToken(const std::shared_ptr<Token>& token) {
   if (token->GetType() == TokenType::T_INT_LIT) {
     os_ << "'" << token->Int() << "'";
   } else if (token->GetType() == TokenType::T_IDENTIFIER) {
     os_ << "'" << token->String() << "'";
   } else {
-    os_ << token->GetType();
+    os_ << "'" << token->GetType() << "'";
   }
 
   os_ << ", line " << token->GetLine() << std::endl;
   os_ << std::endl;
-  errors_++;
 }
 
 void ErrorReporter::Report(const std::string& message) {
@@ -39,39 +48,19 @@ void ErrorReporter::Report(const std::string& message) {
   errors_++;
 }
 
-void ErrorReporter::PrintType(std::ostream& os, Type type, int indirection) {
-  os << "'" << type;
-  for (int i = 0; i < indirection; i++)
-    os << '*';
-  os << "'";
-}
-
 std::ostream& operator<<(std::ostream& os, const std::shared_ptr<Expr>& expr) {
-  ErrorReporter::PrintType(os, expr->type_, expr->indirection_);
-  return os;
+  return os << expr->type_;
 }
 
 void ErrorReporter::Error(
     const std::string& message,
-    Type type,
-    int indirection,
+    const Type& type,
     const std::shared_ptr<Expr>& expr,
     const std::shared_ptr<Token>& token) {
   PrintErrorLine(input_file_, token->GetLine(), token->GetCount());
-  os_ << message << "(";
-  PrintType(os_, type, indirection);
+  os_ << message << "(" << type;
   os_ << " and " << expr << ")" << ", near ";
-
-  if (token->GetType() == TokenType::T_INT_LIT) {
-    os_ << "'" << token->Int() << "'";
-  } else if (token->GetType() == TokenType::T_IDENTIFIER) {
-    os_ << "'" << token->String() << "'";
-  } else {
-    os_ << token->GetType();
-  }
-
-  os_ << ", line " << token->GetLine() << std::endl;
-  os_ << std::endl;
+  PrintToken(token);
   errors_++;
 }
 
@@ -122,39 +111,17 @@ void ErrorReporter::PrintMessage(const std::string& message,
                                  const std::shared_ptr<Expr>& e2,
                                  const std::shared_ptr<Token>& token) {
   os_ << message << "(" << e1 << " and " << e2 << ")" << ", near ";
-
-  if (token->GetType() == TokenType::T_INT_LIT) {
-    os_ << "'" << token->Int() << "'";
-  } else if (token->GetType() == TokenType::T_IDENTIFIER) {
-    os_ << "'" << token->String() << "'";
-  } else {
-    os_ << token->GetType();
-  }
-
-  os_ << ", line " << token->GetLine() << std::endl;
-  os_ << std::endl;
+  PrintToken(token);
 }
 
 void ErrorReporter::Warning(const std::string& message,
-                            Type type,
-                            int indirection,
+                            const Type& type,
                             const std::shared_ptr<Expr>& expr,
                             const std::shared_ptr<Token>& token) {
   PrintWarningLine(input_file_, token->GetLine(), token->GetCount());
-  os_ << message << "(";
-  PrintType(os_, type, indirection);
+  os_ << message << "(" << type;
   os_ << " and " << expr << ")" << ", near ";
-
-  if (token->GetType() == TokenType::T_INT_LIT) {
-    os_ << "'" << token->Int() << "'";
-  } else if (token->GetType() == TokenType::T_IDENTIFIER) {
-    os_ << "'" << token->String() << "'";
-  } else {
-    os_ << token->GetType();
-  }
-
-  os_ << ", line " << token->GetLine() << std::endl;
-  os_ << std::endl;
+  PrintToken(token);
 }
 
 } // namespace mcc

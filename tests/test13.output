@@ -1,4 +1,4 @@
-/home/vladyslav/CLionProjects/mcc/tests/test13.input:2:2[0;31m error [0m
-Variable 'x' has unallowable type 'void', near 'void', line 2
+/home/vladyslav/CLionProjects/mcc/tests/test13.input:2:7[0;31m error [0m
+Variable 'x' has unallowable type 'void', near 'x', line 2
 
 Encountered 1 semantic errors. Stopping compilation.

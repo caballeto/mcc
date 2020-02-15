@@ -11,30 +11,44 @@
 
 namespace mcc {
 
-Type TokenToType(TokenType type) {
-  switch (type) {
-    case TokenType::T_VOID: return Type::VOID;
-    case TokenType::T_CHAR: return Type::CHAR;
-    case TokenType::T_SHORT: return Type::SHORT;
-    case TokenType::T_INT: return Type::INT;
-    case TokenType::T_LONG: return Type::LONG;
-    default: {
-      std::cerr << "InternalError: Invalid TokenType in TokenToType() " << type << std::endl;
-      exit(1);
-    }
-  }
+bool Type::IsArray() const {
+  return len > 0;
 }
 
-std::ostream& operator<<(std::ostream& os, Type type) {
-  switch (type) {
-    case Type::VOID: return os << "void";
-    case Type::SHORT: return os << "short";
-    case Type::INT: return os << "int";
-    case Type::LONG: return os << "long";
-    case Type::CHAR: return os << "char";
-    case Type::NONE: return os << "NO TYPE";
-  }
-  return os << "InternalError: uncovered type in switch" << type << std::endl;
+bool Type::IsPointer() const {
+  return ind > 0;
+}
+
+bool Type::IsStruct() const {
+  return type_ == TokenType::T_STRUCT;
+}
+
+bool Type::IsPrimitive() const {
+  return !IsArray() && !IsPointer() && !IsStruct() && !IsUnion(); // #TODO: add support for typedef
+}
+
+bool Type::IsUnion() const {
+  return type_ == TokenType::T_UNION;
+}
+
+bool Type::IsVoid() const {
+  return type_ == TokenType::T_VOID;
+}
+
+Type& Type::operator=(const Type& type) {
+  if (&type == this) return *this;
+  type_ = type.type_;
+  ind = type.ind;
+  len = type.len;
+  return *this;
+}
+
+std::ostream& operator<<(std::ostream& os, const Type& type) {
+  os << "'" << type.type_;
+  for (int i = 0; i < type.ind; i++)
+    os << '*';
+  os << "'";
+  return os;
 }
 
 } // namespace mcc

@@ -16,7 +16,7 @@ namespace mcc {
 using ExprRef = const std::shared_ptr<Expr>&;
 using TokenRef = const std::shared_ptr<Token>&;
 
-class TypeChecker : public Visitor<Type> {
+class TypeChecker : public Visitor<void> {
  public:
   TypeChecker(CodeGenX86& code_gen, ErrorReporter& reporter, SymbolTable& symbol_table)
     : code_gen_(code_gen), reporter_(reporter), symbol_table_(symbol_table), curr_func_(nullptr)
@@ -24,27 +24,30 @@ class TypeChecker : public Visitor<Type> {
 
   void TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts);
 
-  Type Visit(const std::shared_ptr<Unary>& unary) override;
-  Type Visit(const std::shared_ptr<Binary>& binary) override;
-  Type Visit(const std::shared_ptr<Literal>& literal) override;
-  Type Visit(const std::shared_ptr<Assign>& assign) override;
-  Type Visit(const std::shared_ptr<VarDecl>& decl) override;
-  Type Visit(const std::shared_ptr<Print>& print) override;
-  Type Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) override;
-  Type Visit(const std::shared_ptr<Conditional>& cond_stmt) override;
-  Type Visit(const std::shared_ptr<Block>& block_stmt) override;
-  Type Visit(const std::shared_ptr<While>& while_stmt) override;
-  Type Visit(const std::shared_ptr<For>& for_stmt) override;
-  Type Visit(const std::shared_ptr<DeclList>& decl_list) override;
-  Type Visit(const std::shared_ptr<ExprList>& expr_list) override;
-  Type Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
-  Type Visit(const std::shared_ptr<Call>& call) override;
-  Type Visit(const std::shared_ptr<Grouping>& grouping) override;
-  Type Visit(const std::shared_ptr<Ternary>& ternary) override;
-  Type Visit(const std::shared_ptr<Postfix>& postfix) override;
-  Type Visit(const std::shared_ptr<Index> &index) override;
-  Type Visit(const std::shared_ptr<Label> &label) override;
-  Type Visit(const std::shared_ptr<GoTo> &go_to) override;
+  void Visit(const std::shared_ptr<Unary>& unary) override;
+  void Visit(const std::shared_ptr<Binary>& binary) override;
+  void Visit(const std::shared_ptr<Literal>& literal) override;
+  void Visit(const std::shared_ptr<Assign>& assign) override;
+  void Visit(const std::shared_ptr<VarDecl>& decl) override;
+  void Visit(const std::shared_ptr<Print>& print) override;
+  void Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) override;
+  void Visit(const std::shared_ptr<Conditional>& cond_stmt) override;
+  void Visit(const std::shared_ptr<Block>& block_stmt) override;
+  void Visit(const std::shared_ptr<While>& while_stmt) override;
+  void Visit(const std::shared_ptr<For>& for_stmt) override;
+  void Visit(const std::shared_ptr<DeclList>& decl_list) override;
+  void Visit(const std::shared_ptr<ExprList>& expr_list) override;
+  void Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
+  void Visit(const std::shared_ptr<Call>& call) override;
+  void Visit(const std::shared_ptr<Grouping>& grouping) override;
+  void Visit(const std::shared_ptr<Ternary>& ternary) override;
+  void Visit(const std::shared_ptr<Postfix>& postfix) override;
+  void Visit(const std::shared_ptr<Index> &index) override;
+  void Visit(const std::shared_ptr<Label> &label) override;
+  void Visit(const std::shared_ptr<GoTo> &go_to) override;
+  void Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
+  void Visit(const std::shared_ptr<Return>& return_stmt) override;
+  void Visit(const std::shared_ptr<Struct> &decl) override;
 
   void NewLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
   void CheckLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
@@ -53,30 +56,29 @@ class TypeChecker : public Visitor<Type> {
   static bool IsPointer(ExprRef expr);
   static bool IsComparison(TokenType type);
 
-  Type Promote(ExprRef e1, ExprRef e2);
-  Type PromoteToLeft(ExprRef e1, ExprRef e2);
-  Type MatchTypes(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary);
+  Type& PromotePrim(ExprRef e1, ExprRef e2);
+  Type& PromoteToLeft(ExprRef e1, ExprRef e2);
 
-  Type MatchPointers(const std::shared_ptr<Expr>& e1,
-                     const std::shared_ptr<Expr>& e2,
-                     bool to_left,
-                     const std::shared_ptr<Expr>& binary);
-  Type MatchPrimitives(const std::shared_ptr<Expr>& e1,
+  bool MatchTypes(ExprRef e1, ExprRef e2, bool to_left, ExprRef expr);
+
+  bool MatchPointers(const std::shared_ptr<Expr>& e1,
+                          const std::shared_ptr<Expr>& e2,
+                          bool to_left,
+                          const std::shared_ptr<Expr>& binary);
+  bool MatchPrimitives(const std::shared_ptr<Expr>& e1,
+                            const std::shared_ptr<Expr>& e2,
+                            bool to_left,
+                            const std::shared_ptr<Expr> &binary);
+  bool MatchMixed(const std::shared_ptr<Expr>& e1,
                        const std::shared_ptr<Expr>& e2,
                        bool to_left,
-                       const std::shared_ptr<Expr> &binary);
-  Type MatchMixed(const std::shared_ptr<Expr>& e1,
-                  const std::shared_ptr<Expr>& e2,
-                  bool to_left,
-                  const std::shared_ptr<Expr>& binary);
+                       const std::shared_ptr<Expr>& binary);
 
-  bool MatchTypeInit(Type type, int indirection, const std::shared_ptr<Expr>& init);
-  Type Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
-  Type Visit(const std::shared_ptr<Return>& return_stmt) override;
+  bool MatchTypeInit(const Type& type, const std::shared_ptr<Expr>& init);
 
-  int GetLocalOffset(Type type, int ind, int len);
+  int GetLocalOffset(const Type& type, int len);
   void ResetLocals();
-  static int GetTypeSize(Type type);
+  static int GetTypeSize(const Type& type);
 
   int local_offset_ = 0;
   bool gen_params_ = false; // hack to implement param generation
@@ -85,6 +87,8 @@ class TypeChecker : public Visitor<Type> {
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;
   std::shared_ptr<FuncDecl> curr_func_;
+  static void FreeEntries(Entry *entry);
+  static int GetOffset(const Type &type, int len, int offset);
 };
 
 } // namespace mcc

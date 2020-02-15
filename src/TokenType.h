@@ -66,8 +66,11 @@ enum class TokenType {
   T_CONTINUE,
   T_RETURN,
   T_GOTO,
+  T_STRUCT,
+  T_UNION,
 
   // types
+  T_NONE,
   T_VOID = 100,
   T_CHAR = 101,
   T_SHORT = 102,

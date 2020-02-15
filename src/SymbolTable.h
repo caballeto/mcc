@@ -14,12 +14,11 @@
 namespace mcc {
 
 struct Entry {
-  Type type;
-  int indirection;
-  int array_len;
+  Type* type;
   bool is_local;
   int offset;
   FuncDecl* func;
+  Entry* next;
 };
 
 // #FIXME: redesign a better (faster, simpler) symbol table
@@ -33,9 +32,11 @@ class SymbolTable {
 
   void Put(const std::shared_ptr<FuncDecl>& func_decl);
 
-  void PutLocal(const std::string& name, Type type, int ind, int len, int offset);
+  void Put(const std::string &name, Type& type, Entry *fields);
 
-  void PutGlobal(const std::string& name, Type type, int ind, int len, FuncDecl* func);
+  void PutLocal(const std::string& name, Type* type, int offset);
+
+  void PutGlobal(const std::string& name, Type* type, FuncDecl* func);
 
   void NewScope();
 
