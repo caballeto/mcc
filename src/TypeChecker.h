@@ -80,6 +80,9 @@ class TypeChecker : public Visitor<void> {
   void ResetLocals();
   static int GetTypeSize(const Type& type);
 
+  static void FreeEntries(Entry *entry);
+  static int GetOffset(const Type &type, int len, int offset);
+
   int local_offset_ = 0;
   bool gen_params_ = false; // hack to implement param generation
 
@@ -87,8 +90,6 @@ class TypeChecker : public Visitor<void> {
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;
   std::shared_ptr<FuncDecl> curr_func_;
-  static void FreeEntries(Entry *entry);
-  static int GetOffset(const Type &type, int len, int offset);
 };
 
 } // namespace mcc

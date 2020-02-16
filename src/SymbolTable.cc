@@ -26,22 +26,22 @@ SymbolTable::SymbolTable() {
   NewScope();
 }
 
-void SymbolTable::Put(const std::string& name, Type& type, Entry *fields) {
-  scopes_.front()[name] = {&type, false, 0, nullptr, fields};
+void SymbolTable::Put(const std::string& name, Type* type, Entry *fields, bool is_struct) {
+  scopes_.front()[name] = {type, false, is_struct, 0, nullptr, fields};
 }
 
 void SymbolTable::Put(const std::shared_ptr<FuncDecl>& func_decl) {
   PutGlobal(func_decl->name_->String(),
       &func_decl->return_type_,
-      func_decl.get());
+      func_decl.get(), false);
 }
 
 void SymbolTable::PutLocal(const std::string& name, Type* type, int offset) {
-  scopes_.back()[name] = {type, true, offset, nullptr, nullptr};
+  scopes_.back()[name] = {type, true, false, offset, nullptr, nullptr};
 }
 
-void SymbolTable::PutGlobal(const std::string& name, Type* type, FuncDecl* func) {
-  scopes_.front()[name] = {type, false, 0, func, nullptr};
+void SymbolTable::PutGlobal(const std::string& name, Type* type, FuncDecl* func, bool is_struct) {
+  scopes_.front()[name] = {type, false, is_struct, 0, func, nullptr};
 }
 
 void SymbolTable::NewScope() {
@@ -54,6 +54,10 @@ void SymbolTable::EndScope() {
 
 bool SymbolTable::Contains(const std::string& name) {
   return Get(name) != nullptr;
+}
+
+std::unordered_map<std::string, Entry>& SymbolTable::GetGlobalScope() {
+  return scopes_.front();
 }
 
 } // namespace mcc

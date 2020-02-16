@@ -16,6 +16,7 @@ namespace mcc {
 struct Entry {
   Type* type;
   bool is_local;
+  bool is_struct;
   int offset;
   FuncDecl* func;
   Entry* next;
@@ -32,17 +33,19 @@ class SymbolTable {
 
   void Put(const std::shared_ptr<FuncDecl>& func_decl);
 
-  void Put(const std::string &name, Type& type, Entry *fields);
+  void Put(const std::string &name, Type* type, Entry *fields, bool is_struct);
 
   void PutLocal(const std::string& name, Type* type, int offset);
 
-  void PutGlobal(const std::string& name, Type* type, FuncDecl* func);
+  void PutGlobal(const std::string& name, Type* type, FuncDecl* func, bool is_struct);
 
   void NewScope();
 
   void EndScope();
 
   bool Contains(const std::string& name);
+
+  std::unordered_map<std::string, Entry>& GetGlobalScope();
 
  private:
   std::vector<std::unordered_map<std::string, Entry>> scopes_;

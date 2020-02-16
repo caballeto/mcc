@@ -19,7 +19,7 @@ bool Type::IsPointer() const {
   return ind > 0;
 }
 
-bool Type::IsStruct() const {
+bool Type::IsStruct() const { // ambiguous, can be both Struct var and Struct Declaration
   return type_ == TokenType::T_STRUCT;
 }
 

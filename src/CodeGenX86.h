@@ -61,15 +61,12 @@ class CodeGenX86: public Visitor<int> {
 
   int GetLabel();
 
-  void GenGlobalString(const std::string& s);
+  void GenGlobalString(const std::string& s, int label);
 
   void SpillRegs();
   void UnspillRegs();
   void Spill(int r);
   void Unspill(int r);
-
-  void Preamble();
-  void Postamble();
 
   int NewRegister();
   void FreeRegister(int reg);
@@ -113,6 +110,14 @@ class CodeGenX86: public Visitor<int> {
                                                "%r9w", "%r8w", "%cx", "%dx", "%si", "%di"};
 
   bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true};
+  void GenGlobalStrings();
+  void GenGlobals();
+  int GetStructSize(Entry *next);
+  void GenData();
+  void GenGlob(const std::string &name);
+  void GenJump(int label);
+  void GenLabel(const std::string &name);
+  void GenText();
 };
 
 } // namespace mcc

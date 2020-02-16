@@ -19,13 +19,13 @@ int CodeGenX86::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
   FreeRegister(r);
   out_ << "\tje\t" << "L" << l_start << "\n";
   cond_stmt->then_block_->Accept(*this);
-  out_ << "\tjmp\t" << "L" << l_end << "\n";
-  out_ << "L" << l_start << ":\n";
+  GenJump(l_end);
+  GenLabel(l_start);
 
   if (cond_stmt->else_block_ != nullptr)
     cond_stmt->else_block_->Accept(*this);
 
-  out_ << "L" << l_end << ":\n";
+  GenLabel(l_end);
   return NO_RETURN_REGISTER;
 }
 
@@ -41,14 +41,14 @@ int CodeGenX86::Visit(const std::shared_ptr<While>& while_stmt) {
   }
 
   if (!while_stmt->do_while_)
-    out_ << "\tjmp\t" << "L" << l_condition << "\n";
+    GenJump(l_condition);
 
-  out_ << "L" << l_body << ":\n";
+  GenLabel(l_body);
   while_stmt->loop_block_->Accept(*this);
 
   // generate condition label if there is break/continue or it is a while stmt
   if (has_control_flow_stmts || !while_stmt->do_while_)
-    out_ << "L" << l_condition << ":\n";
+    GenLabel(l_condition);
 
   int r = while_stmt->condition_->Accept(*this);
   out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
@@ -57,7 +57,7 @@ int CodeGenX86::Visit(const std::shared_ptr<While>& while_stmt) {
 
   // generate end label and pop break/continue labels from stack
   if (has_control_flow_stmts) {
-    out_ << "L" << l_end << ":\n";
+    GenLabel(l_end);
     loop_stack_.pop();
   }
 
@@ -76,15 +76,15 @@ int CodeGenX86::Visit(const std::shared_ptr<For>& for_stmt) {
     loop_stack_.push({"L" + std::to_string(l_end), "L" + std::to_string(l_update)});
   }
 
-  out_ << "\tjmp\t" << "L" << l_condition << "\n";
-  out_ << "L" << l_body << ":\n";
+  GenJump(l_condition);
+  GenLabel(l_body);
   for_stmt->loop_block_->Accept(*this);
 
   if (has_control_flow_stmts)
-    out_ << "L" << l_update << ":\n";
+    GenLabel(l_update);
 
   for_stmt->update_->Accept(*this);
-  out_ << "L" << l_condition << ":\n";
+  GenLabel(l_condition);
 
   if (for_stmt->condition_ != nullptr) {
     int r = for_stmt->condition_->Accept(*this);
@@ -92,12 +92,12 @@ int CodeGenX86::Visit(const std::shared_ptr<For>& for_stmt) {
     FreeRegister(r);
     out_ << "\tjne\t" << "L" << l_body << "\n";
   } else {
-    out_ << "\tjmp\t" << "L" << l_body << "\n";
+    GenJump(l_body);
   }
 
   // generate end label and pop break/continue labels from stack
   if (has_control_flow_stmts) {
-    out_ << "L" << l_end << ":\n";
+    GenLabel(l_end);
     loop_stack_.pop();
   }
 
@@ -406,49 +406,28 @@ int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   int size = GetTypeSize(var_decl->var_type_, var_decl->var_type_.ind);
   const std::string& name = var_decl->name_->String();
 
-  if (var_decl->var_type_.IsArray()) {
-    if (!var_decl->is_local_) {
-      out_ << "\t.data\n" << "\t.globl\t" << name << "\n";
-      out_ << name << ":\n";
-      for (int i = 0; i < var_decl->var_type_.len; i++) {
-        out_ << "\t." << GetAllocType(var_decl->var_type_, var_decl->var_type_.ind) << "\t0\n";
-      }
-    }
-  } else {
-    if (!var_decl->is_local_) {
-      out_ << "\t.comm\t" << name << "," << size << "," << size << "\n";
-    }
-
-    // #FIXME: init for global variables only constant allowed
-    if (var_decl->init_ != nullptr) {
-      int r = var_decl->init_->Accept(*this);
-      out_ << "\tmov" << GetSavePostfix(var_decl->var_type_, var_decl->var_type_.ind) << "\t"
-           << GetRegister(r, var_decl->var_type_, var_decl->var_type_.ind)
-           << ", " << GenLoad(name, var_decl->offset_, var_decl->is_local_) << "\n";
-      FreeRegister(r);
-    }
+  if (var_decl->is_local_ && !var_decl->var_type_.IsArray() && var_decl->init_ != nullptr) {
+    int r = var_decl->init_->Accept(*this);
+    out_ << "\tmov" << GetSavePostfix(var_decl->var_type_, var_decl->var_type_.ind) << "\t"
+         << GetRegister(r, var_decl->var_type_, var_decl->var_type_.ind)
+         << ", " << GenLoad(name, var_decl->offset_, var_decl->is_local_) << "\n";
+    FreeRegister(r);
   }
 
   return NO_RETURN_REGISTER;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Struct> &struct_decl) {
-  if (struct_decl->var_name_ != nullptr) {
-    out_ << "\t.data\n";
-    out_ << "\t.globl\t" << struct_decl->var_name_->String() << "\n";
-    out_ << struct_decl->var_name_->String() << ":\n";
-    for (int i = 0; i < struct_decl->size; i++) {
-      out_ << "\t.byte\t0\n";
-    }
-  }
   return 0;
 }
 
 // #TODO: add local variables and parameter code generation
 int CodeGenX86::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   if (func_decl->body_ == nullptr) return NO_RETURN_REGISTER;
-  out_ << "\t.text\n";
-  out_ << "\t.globl\t" << func_decl->name_->String() << "\n";
+  GenText();
+  GenGlob(func_decl->name_->String());
+
+  // prologue
   out_ << "\t.type\t" << func_decl->name_->String() << ", @function\n";
   out_ << func_decl->name_->String() << ":\n";
   out_ << "\tpushq\t%rbp\n";
@@ -456,30 +435,34 @@ int CodeGenX86::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   int stack_offset = (func_decl->local_offset_ + 15) & ~15;
   out_ << "\tsubq\t$" << stack_offset << ", %rsp\n";
 
+  // parameters
   int size = func_decl->signature_->var_decl_list_.size();
   int preg = kRegisters.size() - 1;
-
   for (int i = 0; i < std::min(size, 6); i++) {
     const auto& decl = func_decl->signature_->var_decl_list_[i];
     out_ << "\tmov" << GetSavePostfix(decl->var_type_, decl->var_type_.ind) << "\t"
          << GetRegister(preg--, decl->var_type_, decl->var_type_.ind) << ", " << decl->offset_ << "(%rbp)\n";
   }
 
+  // body
   curr_func = func_decl;
   return_label_ = GetLabel();
   func_decl->body_->Accept(*this);
   curr_func = nullptr;
-  out_ << "L" << return_label_ << ":\n";
+
+  // epilogue
+  GenLabel(return_label_);
   out_ << "\taddq\t$" << stack_offset << ", %rsp\n";
   out_ << "\tpopq\t%rbp\n";
   out_ << "\tret\n";
+
   return NO_RETURN_REGISTER;
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Return>& return_stmt) {
   int r = return_stmt->expr_->Accept(*this);
   out_ << "\tmovq\t" << kRegisters[r] << ", %rax\n"; // #FIXME: add typed move?
-  out_ << "\tjmp\tL" << return_label_ << "\n";
+  GenJump(return_label_);
   FreeRegister(r);
   return NO_RETURN_REGISTER;
 }
@@ -571,17 +554,11 @@ std::string CodeGenX86::GetSetInstr(TokenType type) {
   }
 }
 
-void CodeGenX86::Preamble() {
-  out_ << "\t.text\n";
-}
-
-void CodeGenX86::Postamble() { }
-
 void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
-  Preamble();
+  GenGlobalStrings();
+  GenGlobals();
   for (const auto& stmt : stmts)
     stmt->Accept(*this);
-  Postamble();
 }
 
 void CodeGenX86::PrintInt(int r) {
@@ -620,15 +597,76 @@ int CodeGenX86::GetLabel() {
   return label_++;
 }
 
-void CodeGenX86::GenGlobalString(const std::string& s) {
-  if (strings_.count(s) == 0) {
-    int label = GetLabel();
-    out_ << "L" << label << ":\n";
-    for (char c : s)
-      out_ << "\t.byte\t" << (int) c << "\n";
-    out_ << "\t.byte\t0\n";
-    strings_[s] = label;
+int CodeGenX86::GetStructSize(Entry* next) {
+  if (next == nullptr) return 0;
+  while (next->next != nullptr) {
+    next = next->next;
   }
+  return std::abs(next->offset) + GetTypeSize(*next->type, next->type->ind);
+}
+
+void CodeGenX86::GenText() {
+  out_ << "\t.text\n";
+}
+
+void CodeGenX86::GenData() {
+  out_ << "\t.data\n";
+}
+
+void CodeGenX86::GenGlob(const std::string& name) {
+  out_ << "\t.globl\t" << name << "\n";
+}
+
+void CodeGenX86::GenJump(int label) {
+  out_ << "\tjmp\tL" << label << "\n";
+}
+
+void CodeGenX86::GenLabel(const std::string& name) {
+  out_ << name << ":\n";
+}
+
+void CodeGenX86::GenGlobals() {
+  std::unordered_map<std::string, Entry>& global = symbol_table_.GetGlobalScope();
+  for (const auto& pair : global) {
+    if (pair.second.func != nullptr) continue;
+    const std::string& name = pair.first;
+    const Entry& entry = pair.second;
+    if (entry.type->IsArray()) {
+      GenData();
+      GenGlob(name);
+      GenLabel(name);
+      for (int i = 0; i < entry.type->len; i++) {
+        out_ << "\t." << GetAllocType(*entry.type, entry.type->ind) << "\t0\n";
+      }
+    } else if (entry.type->IsPointer() || entry.type->IsPrimitive()) {
+      int size = GetTypeSize(*entry.type, entry.type->ind);
+      out_ << "\t.comm\t" << name << "," << size << "," << size << "\n";
+    } else if (entry.type->IsStruct() && !entry.is_struct) { // struct variable
+      GenData();
+      GenGlob(name);
+      GenLabel(name);
+      int size = GetStructSize(entry.next);
+      for (int i = 0; i < size; i++) {
+        out_ << "\t.byte\t0\n";
+      }
+    }
+  }
+}
+
+void CodeGenX86::GenGlobalStrings() {
+  GenData();
+  for (const auto& pair : strings_) {
+    int label = GetLabel();
+    strings_[pair.first] = label;
+    GenGlobalString(pair.first, label);
+  }
+}
+
+void CodeGenX86::GenGlobalString(const std::string& s, int label) {
+  GenLabel(label);
+  for (char c : s)
+    out_ << "\t.byte\t" << (int) c << "\n";
+  out_ << "\t.byte\t0\n";
 }
 
 std::string CodeGenX86::GenLoad(const std::shared_ptr<Literal>& literal) {
@@ -654,7 +692,7 @@ int CodeGenX86::Visit(const std::shared_ptr<Label>& label) {
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<GoTo>& go_to) {
-  out_ << "\tjmp\tL" << labels_[curr_func->name_->String()][go_to->token_->String()] << "\n";
+  GenJump(labels_[curr_func->name_->String()][go_to->token_->String()]);
   return 0;
 }
 
@@ -669,13 +707,13 @@ int CodeGenX86::Visit(const std::shared_ptr<Ternary>& ternary) {
   out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r] << "\n";
   FreeRegister(r1);
 
-  out_ << "\tjmp\t" << "L" << l_end << "\n";
-  out_ << "L" << l_start << ":\n";
+  GenJump(l_end);
+  GenLabel(l_start);
   int r2 = ternary->else_->Accept(*this);
   out_ << "\tmovq\t" << kRegisters[r2] << ", " << kRegisters[r] << "\n";
   FreeRegister(r2);
 
-  out_ << "L" << l_end << ":\n";
+  GenLabel(l_end);
   return r;
 }
 

@@ -266,7 +266,7 @@ void TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
   } else if (literal->op_->GetType() == TokenType::T_STR_LIT) {
     literal->type_.type_ = TokenType::T_CHAR;
     literal->type_.ind = 1;
-    code_gen_.GenGlobalString(literal->op_->String()); // generate global string
+    code_gen_.strings_[literal->op_->String()] = -1;
   } else { // integer
     int val = literal->op_->Int();
     literal->type_.type_ = (val <= 255 && val >= -256) ? TokenType::T_CHAR : TokenType::T_INT;
@@ -405,13 +405,14 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
     }
 
     offsets[name] = offset;
-    offset = GetOffset(var_decl->var_type_, len, offset);
-
-    *field = {&var_decl->var_type_, false, offset, nullptr, nullptr};
+    *field = {&var_decl->var_type_, false, false, offset, nullptr, nullptr};
     fields->next = field;
     fields = fields->next;
+
+    offset = GetOffset(var_decl->var_type_, len, offset);
   }
 
+  fields->next = nullptr;
   fields = head;
   head = head->next;
   free(fields);
@@ -426,12 +427,12 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
       return;
     }
 
-    symbol_table_.Put(name, decl->type_, head);
+    symbol_table_.Put(name, &decl->type_, head, true);
   }
 
   if (decl->var_name_ != nullptr) {
-    symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr);
-    symbol_table_.Get(decl->var_name_->String())->next = fields;
+    symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr, false);
+    symbol_table_.Get(decl->var_name_->String())->next = head;
   }
 }
 
@@ -478,7 +479,7 @@ void TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     decl->offset_ = offset;
     symbol_table_.PutLocal(decl->name_->String(), &decl->var_type_, offset);
   } else {
-    symbol_table_.PutGlobal(decl->name_->String(), &decl->var_type_, nullptr);
+    symbol_table_.PutGlobal(decl->name_->String(), &decl->var_type_, nullptr, false);
   }
 
   if (decl->init_ != nullptr) { // #TODO: reconsider const initializer and code gen for them
