@@ -58,6 +58,7 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<Label> &label) override;
   int Visit(const std::shared_ptr<GoTo> &go_to) override;
   int Visit(const std::shared_ptr<Struct> &struct_decl) override;
+  int Visit(const std::shared_ptr<Access> &access) override;
 
   int GetLabel();
 
@@ -84,6 +85,17 @@ class CodeGenX86: public Visitor<int> {
   static std::string GenLoad(const std::shared_ptr<Literal> &literal);
   std::ostream& GenLabel(int label);
 
+  void GenGlobalStrings();
+  void GenGlobals();
+  int GetStructSize(Entry *next);
+  void GenData();
+  void GenGlob(const std::string &name);
+  void GenJump(int label);
+  void GenLabel(const std::string &name);
+  void GenText();
+  int GetStructSize(const std::string &name);
+
+  // vars
   std::map<std::string, int> strings_;
   std::map<TokenType, int> type_sizes_;
   std::stack<std::pair<std::string, std::string>> loop_stack_; // FIXME: move to type checker
@@ -110,14 +122,6 @@ class CodeGenX86: public Visitor<int> {
                                                "%r9w", "%r8w", "%cx", "%dx", "%si", "%di"};
 
   bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true};
-  void GenGlobalStrings();
-  void GenGlobals();
-  int GetStructSize(Entry *next);
-  void GenData();
-  void GenGlob(const std::string &name);
-  void GenJump(int label);
-  void GenLabel(const std::string &name);
-  void GenText();
 };
 
 } // namespace mcc

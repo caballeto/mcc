@@ -496,3 +496,8 @@ Currently, only the declarations of global structs are supported. Tomorrow,
 I will implement the generation of global variables and global unnamed strings first.
 Then I will add local structs, and finally would add two operations for member
 access '.' and '->'. I will add both assignment and just getting the variable.
+
+## Day 18
+
+Implemented the general structure, but failed to correctly write the structure offsets.
+So, the values are being rewritten, hence I need to debug it and fix the offset problems.

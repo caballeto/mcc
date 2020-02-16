@@ -198,6 +198,33 @@ void TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
   }
 }
 
+void TypeChecker::Visit(const std::shared_ptr<Access>& access) {
+  access->name_->Accept(*this);
+
+  if (!access->name_->type_.IsStruct()) {
+    reporter_.Report("Only struct fields can be accessed via '.' or '->' operator", access->op_);
+    return;
+  }
+
+  if (!access->field_->IsVariable()) {
+    reporter_.Report("Only string fields are supported", access->field_->op_);
+    return;
+  }
+
+  access->is_lvalue_ = true;
+  const std::shared_ptr<Literal>& field = std::static_pointer_cast<Literal>(access->field_);
+  Entry* field_ = symbol_table_.GetField(access->name_->type_.name->String(), field->op_->String());
+
+  if (field_ == nullptr) {
+    reporter_.Report("Undefined field", field->op_);
+    return;
+  }
+
+  access->type_ = *field_->type;
+  field->type_ = *field_->type;
+  field->offset_ = field_->offset; // annotate node with offset value
+}
+
 void TypeChecker::Visit(const std::shared_ptr<Binary>& binary) {
   binary->left_->is_const_ = binary->is_const_;
   binary->right_->is_const_ = binary->is_const_;
@@ -334,6 +361,7 @@ void TypeChecker::Visit(const std::shared_ptr<While>& while_stmt) {
 }
 
 void TypeChecker::Visit(const std::shared_ptr<For>& for_stmt) {
+  symbol_table_.NewScope();
   for_stmt->init_->Accept(*this);
 
   if (for_stmt->condition_ != nullptr) {
@@ -347,6 +375,7 @@ void TypeChecker::Visit(const std::shared_ptr<For>& for_stmt) {
 
   for_stmt->loop_block_->Accept(*this);
   for_stmt->update_->Accept(*this);
+  symbol_table_.EndScope();
 }
 
 void TypeChecker::Visit(const std::shared_ptr<DeclList>& decl_list) {
@@ -388,7 +417,6 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
     return;
   }
 
-  // #TODO: rewrite twith std::shared_ptr<T>
   // create a linked list of field declarations and validate them
   std::unordered_map<std::string, int> offsets;
   Entry *fields = new Entry, *head = fields;
@@ -405,7 +433,7 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
     }
 
     offsets[name] = offset;
-    *field = {&var_decl->var_type_, false, false, offset, nullptr, nullptr};
+    *field = {&var_decl->var_type_, false, false, offset, nullptr, nullptr, name};
     fields->next = field;
     fields = fields->next;
 
@@ -413,26 +441,30 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
   }
 
   fields->next = nullptr;
+  decl->size = (head == fields) ? 0 : std::abs(offset) + GetTypeSize(*fields->type);
   fields = head;
   head = head->next;
   free(fields);
 
-  decl->size = std::abs(offset);
+  std::string name;
 
-  if (decl->type_.name != nullptr) {
-    const std::string& name = decl->type_.name->String();
-
-    if (symbol_table_.Contains(name)) {
-      reporter_.Report("Struct has already been declared", decl->type_.name);
-      return;
-    }
-
-    symbol_table_.Put(name, &decl->type_, head, true);
+  if (decl->type_.name == nullptr) {
+    name = "__unnamed__" + std::to_string(unnamed++);
+    decl->type_.name = std::make_shared<Token>();
+    decl->type_.name->SetString(name);
+  } else {
+    name = decl->type_.name->String();
   }
+
+  if (symbol_table_.ContainsType(name)) {
+    reporter_.Report("Struct has already been declared", decl->type_.name);
+    return;
+  }
+
+  symbol_table_.PutType(name, decl->size, head);
 
   if (decl->var_name_ != nullptr) {
     symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr, false);
-    symbol_table_.Get(decl->var_name_->String())->next = head;
   }
 }
 
@@ -480,6 +512,13 @@ void TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     symbol_table_.PutLocal(decl->name_->String(), &decl->var_type_, offset);
   } else {
     symbol_table_.PutGlobal(decl->name_->String(), &decl->var_type_, nullptr, false);
+    if (decl->var_type_.IsStruct()) {
+      const std::string& st_name = decl->var_type_.name->String();
+      if (!symbol_table_.ContainsType(st_name)) {
+        reporter_.Report("Struct '" + decl->var_type_.name->String() + "' has not been declared", decl->var_type_.name);
+        return;
+      }
+    }
   }
 
   if (decl->init_ != nullptr) { // #TODO: reconsider const initializer and code gen for them
@@ -498,7 +537,10 @@ void TypeChecker::Visit(const std::shared_ptr<Call>& call) {
   call->type_ = call->name_->type_;
 
   const std::shared_ptr<Literal>& literal = std::static_pointer_cast<Literal>(call->name_);
-  FuncDecl* func = symbol_table_.Get(literal->op_->String())->func;
+  Entry* descr = symbol_table_.Get(literal->op_->String());
+  if (descr == nullptr) return;
+
+  FuncDecl* func = descr->func;
 
   if (call->args_->expr_list_.size() != func->signature_->var_decl_list_.size()) {
     reporter_.Report("Number of arguments does not correspond to declared number of parameters", literal->op_);
@@ -632,6 +674,7 @@ int TypeChecker::GetLocalOffset(const Type& type, int len) {
 }
 
 int TypeChecker::GetTypeSize(const Type& type) {
+  if (type.IsStruct()) return symbol_table_.GetType(type.name->String())->size;
   switch (type.type_) {
     case TokenType::T_CHAR: return 1;
     case TokenType::T_SHORT: return 2;
@@ -643,6 +686,7 @@ int TypeChecker::GetTypeSize(const Type& type) {
     }
   }
 }
+
 void TypeChecker::ResetLocals() {
   local_offset_ = 0;
 }

@@ -117,6 +117,8 @@ int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary) {
       return 14;
     case TokenType::T_LPAREN:
     case TokenType::T_LBRACKET:
+    case TokenType::T_DOT:
+    case TokenType::T_ARROW:
       return 15;
     default:
       throw ParseException("Expected operator", op);

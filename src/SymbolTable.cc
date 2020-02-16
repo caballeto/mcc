@@ -3,6 +3,7 @@
 //
 
 #include "SymbolTable.h"
+#include "ast.h"
 
 namespace mcc {
 
@@ -57,7 +58,32 @@ bool SymbolTable::Contains(const std::string& name) {
 }
 
 std::unordered_map<std::string, Entry>& SymbolTable::GetGlobalScope() {
-  return scopes_.front();
+  return scopes_[0];
+}
+
+void SymbolTable::PutType(const std::string& name, int size, Entry *next) {
+  types_[name] = {size, next};
+}
+
+TypeEntry* SymbolTable::GetType(const std::string& name) {
+  if (!ContainsType(name)) return nullptr;
+  return &types_[name];
+}
+
+bool SymbolTable::ContainsType(const std::string& name) const {
+  return types_.count(name) != 0;
+}
+
+Entry* SymbolTable::GetField(const std::string& name, const std::string& field) {
+  Entry* fields = types_[name].next;
+  while (fields != nullptr) {
+    if (fields->name == field) {
+      return fields;
+    }
+    fields = fields->next;
+  }
+
+  return nullptr;
 }
 
 } // namespace mcc

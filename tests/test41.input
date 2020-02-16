@@ -1,0 +1,25 @@
+void printint(long x);
+void printchar(long x);
+
+struct Book {
+  char c;
+  int length;
+  char* author;
+};
+
+int main() {
+  struct Book s1;
+
+  s1.c = 100;
+  s1.length = 25;
+  s1.author = "string\n";
+
+  printint(s1.c);
+  printint(s1.length);
+
+  for (char* str = s1.author; *str != 0; str++) {
+    printchar(*str);
+  }
+
+  return 0;
+}

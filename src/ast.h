@@ -10,6 +10,7 @@
 #include "common.h"
 #include "Token.h"
 #include "Type.h"
+#include "SymbolTable.h"
 
 namespace mcc {
 
@@ -298,6 +299,8 @@ class Expr : public std::enable_shared_from_this<Expr> {
   bool return_ptr_ = false;
 
   std::shared_ptr<Token> op_;
+
+  Entry *struct_ptr = nullptr; // pointer to a struct, used for exprs such as book.description.title = "str"
 };
 
 class Index : public Expr {
@@ -311,6 +314,19 @@ class Index : public Expr {
 
   std::shared_ptr<Expr> name_;
   std::shared_ptr<Expr> index_;
+};
+
+class Access : public Expr {
+ public:
+  Access(std::shared_ptr<Token> op, std::shared_ptr<Expr> name, std::shared_ptr<Expr> field)
+    : Expr(std::move(op)), name_(std::move(name)), field_(std::move(field))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
+
+  std::shared_ptr<Expr> name_;
+  std::shared_ptr<Expr> field_;
 };
 
 class Label : public Stmt {

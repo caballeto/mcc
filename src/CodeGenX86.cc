@@ -111,6 +111,21 @@ int CodeGenX86::Visit(const std::shared_ptr<Block>& block_stmt) {
   return NO_RETURN_REGISTER;
 }
 
+// book.name = "LOTR";
+int CodeGenX86::Visit(const std::shared_ptr<Access>& access) {
+  access->name_->return_ptr_ = true;
+  int r = access->name_->Accept(*this);
+
+  const std::shared_ptr<Literal>& lit = std::static_pointer_cast<Literal>(access->field_);
+  out_ << "\taddq\t$" << lit->offset_ << ", " << kRegisters[r] << "\n";
+  if (!access->return_ptr_) {
+    out_ << "\tmov" << GetLoadPostfix(lit->type_, lit->type_.ind)
+         << "\t" << "(" << kRegisters[r] << ")" << ", " << kRegisters[r] << "\n";
+  }
+
+  return r;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
   int r = unary->expr_->Accept(*this);
 
@@ -262,8 +277,8 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
 int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   int r = NewRegister();
 
-  // array
-  if (literal->type_.IsArray()) {
+  // array || struct
+  if (literal->type_.IsArray() || literal->type_.IsStruct()) {
     out_ << "\tleaq\t" << GenLoad(literal) << ", " << kRegisters[r] << "\n";
     return r;
   }
@@ -403,7 +418,6 @@ std::string CodeGenX86::GetRegister(int r, const Type& type, int ind) {
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
-  int size = GetTypeSize(var_decl->var_type_, var_decl->var_type_.ind);
   const std::string& name = var_decl->name_->String();
 
   if (var_decl->is_local_ && !var_decl->var_type_.IsArray() && var_decl->init_ != nullptr) {
@@ -597,6 +611,10 @@ int CodeGenX86::GetLabel() {
   return label_++;
 }
 
+int CodeGenX86::GetStructSize(const std::string& name) {
+  return symbol_table_.GetType(name)->size;
+}
+
 int CodeGenX86::GetStructSize(Entry* next) {
   if (next == nullptr) return 0;
   while (next->next != nullptr) {
@@ -645,7 +663,7 @@ void CodeGenX86::GenGlobals() {
       GenData();
       GenGlob(name);
       GenLabel(name);
-      int size = GetStructSize(entry.next);
+      int size = GetStructSize(entry.type->name->String());
       for (int i = 0; i < size; i++) {
         out_ << "\t.byte\t0\n";
       }

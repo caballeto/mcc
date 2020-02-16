@@ -191,7 +191,7 @@ std::shared_ptr<For> Parser::ForStatement() {
   Consume(TokenType::T_LPAREN, "Expected '(' after 'for'");
 
   std::shared_ptr<Stmt> init_list;
-  if (Check(TokenType::T_INT)) {
+  if (CheckType()) {
     init_list = DeclarationList();
   } else {
     init_list = ExpressionList();
@@ -321,38 +321,44 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
   while (precedence < GetPrecedence(curr_op, false)) {
     switch (curr_op->GetType()) {
       case TokenType::T_LPAREN: {
-        std::shared_ptr<Token> op = Consume(TokenType::T_LPAREN);
+        Next();
         std::shared_ptr<ExprList> args = ExpressionList();
         Consume(TokenType::T_RPAREN, "')' expected after call");
-        left = std::make_shared<Call>(op, left, args);
+        left = std::make_shared<Call>(curr_op, left, args);
         break;
       }
       case TokenType::T_LBRACKET: {
-        std::shared_ptr<Token> op = Consume(TokenType::T_LBRACKET);
+        Next();
         std::shared_ptr<Expr> index = Expression(0);
         Consume(TokenType::T_RBRACKET, "']' expected after array indexing operation");
-        left = std::make_shared<Index>(op, left, index);
+        left = std::make_shared<Index>(curr_op, left, index);
         break;
       }
       case TokenType::T_INC:
       case TokenType::T_DEC: {
-        std::shared_ptr<Token> op = Peek();
         Next();
-        left = std::make_shared<Postfix>(op, left);
+        left = std::make_shared<Postfix>(curr_op, left);
         break;
       }
       case TokenType::T_QUESTION: {
-        std::shared_ptr<Token> op = Consume(TokenType::T_QUESTION);
+        Next();
         std::shared_ptr<Expr> then_branch = Expression(0);
         Consume(TokenType::T_COLON, "':' expected after '?'");
-        std::shared_ptr<Expr> else_branch = Expression(GetPrecedence(op, false) - 1);
-        left = std::make_shared<Ternary>(op, left, then_branch, else_branch);
+        std::shared_ptr<Expr> else_branch = Expression(GetPrecedence(curr_op, false) - 1);
+        left = std::make_shared<Ternary>(curr_op, left, then_branch, else_branch);
         break;
       }
       case TokenType::T_ASSIGN: {
-        std::shared_ptr<Token> op = Consume(TokenType::T_ASSIGN);
+        Next();
         right = Expression(GetPrecedence(curr_op, false) - 1);
-        left = std::make_shared<Assign>(std::move(op), left, right);
+        left = std::make_shared<Assign>(std::move(curr_op), left, right);
+        break;
+      }
+      case TokenType::T_ARROW:
+      case TokenType::T_DOT: {
+        Next();
+        right = Expression(GetPrecedence(curr_op, false));
+        left = std::make_shared<Access>(std::move(curr_op), left, right);
         break;
       }
       default: {
@@ -430,6 +436,19 @@ bool Parser::IsStopToken(TokenType type) {
       || type == TokenType::T_RBRACE
       || type == TokenType::T_COLON
       || type == TokenType::T_RBRACKET;
+}
+
+bool Parser::CheckType() {
+  switch (Peek()->GetType()) {
+    case TokenType::T_CHAR:
+    case TokenType::T_SHORT:
+    case TokenType::T_INT:
+    case TokenType::T_LONG:
+    case TokenType::T_VOID:
+    case TokenType::T_STRUCT:
+      return true;
+  }
+  return false;
 }
 
 Type Parser::ParsePrim() {

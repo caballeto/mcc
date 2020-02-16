@@ -40,6 +40,7 @@ Type& Type::operator=(const Type& type) {
   type_ = type.type_;
   ind = type.ind;
   len = type.len;
+  name = type.name;
   return *this;
 }
 

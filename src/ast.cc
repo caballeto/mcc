@@ -223,4 +223,12 @@ void Struct::Accept(Visitor<void> &visitor) {
   visitor.Visit(shared_from_base<Struct>());
 }
 
+int Access::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(shared_from_base<Access>());
+}
+
+void Access::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Access>());
+}
+
 } // namespace mcc

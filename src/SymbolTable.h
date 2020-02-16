@@ -7,11 +7,12 @@
 
 #include "common.h"
 #include "Type.h"
-#include "ast.h"
 
 #define ENTRY_LIMIT 1024
 
 namespace mcc {
+
+class FuncDecl;
 
 struct Entry {
   Type* type;
@@ -20,12 +21,26 @@ struct Entry {
   int offset;
   FuncDecl* func;
   Entry* next;
+  std::string name;
+};
+
+struct TypeEntry {
+  int size;
+  Entry *next;
 };
 
 // #FIXME: redesign a better (faster, simpler) symbol table
 class SymbolTable {
  public:
   SymbolTable();
+
+  Entry* GetField(const std::string& name, const std::string& field);
+
+  bool ContainsType(const std::string& name) const;
+
+  void PutType(const std::string& name, int size, Entry *next);
+
+  TypeEntry* GetType(const std::string& name);
 
   Entry* Get(const std::string& name);
 
@@ -49,6 +64,8 @@ class SymbolTable {
 
  private:
   std::vector<std::unordered_map<std::string, Entry>> scopes_;
+
+  std::unordered_map<std::string, TypeEntry> types_;
 };
 
 } // namespace mcc

@@ -362,7 +362,7 @@ int AstDumper::Visit(const std::shared_ptr<Struct> &struct_decl) {
 
   if (struct_decl->type_.name != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<name>"
-         << struct_decl->type_.name << "</name>\n";
+         << struct_decl->type_.name->String() << "</name>\n";
   }
 
   if (struct_decl->var_name_ != nullptr) {
@@ -377,6 +377,27 @@ int AstDumper::Visit(const std::shared_ptr<Struct> &struct_decl) {
   out_ << std::string(spaces_ + 2, ' ') << "</fields>\n";
 
   out_ << std::string(spaces_, ' ') << "</struct>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<Access> &access) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<access op=" << access->op_->String() << ">" << "\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<name>\n";
+  spaces_ += TAB_SIZE;
+  access->name_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</name>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<field>\n";
+  spaces_ += TAB_SIZE;
+  access->field_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</field>\n";
+
+  out_ << std::string(spaces_, ' ') << "</access>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }

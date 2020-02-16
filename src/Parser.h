@@ -67,6 +67,7 @@ class Parser {
   std::shared_ptr<Token> token_;
   std::shared_ptr<Token> look_ahead_;
   Type ParsePrim();
+  bool CheckType();
 };
 
 } // namespace mcc
