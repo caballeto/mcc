@@ -49,6 +49,7 @@ class TypeChecker : public Visitor<void> {
   void Visit(const std::shared_ptr<Return>& return_stmt) override;
   void Visit(const std::shared_ptr<Struct> &decl) override;
   void Visit(const std::shared_ptr<Access> &access) override;
+  void Visit(const std::shared_ptr<Union> &decl) override;
 
   void NewLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
   void CheckLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
@@ -82,7 +83,8 @@ class TypeChecker : public Visitor<void> {
   int GetTypeSize(const Type& type);
 
   static void FreeEntries(Entry *entry);
-  int GetOffset(const Type &type, int len, int offset);
+  int GetOffset(const Type &type, int len);
+  void RevertOffsets(Entry *fields, int size);
 
   int unnamed = 0;
   int local_offset_ = 0;

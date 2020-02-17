@@ -231,4 +231,11 @@ void Access::Accept(Visitor<void> &visitor) {
   visitor.Visit(shared_from_base<Access>());
 }
 
+int Union::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(shared_from_base<Union>());;
+}
+
+void Union::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Union>());
+}
 } // namespace mcc

@@ -59,6 +59,7 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<GoTo> &go_to) override;
   int Visit(const std::shared_ptr<Struct> &struct_decl) override;
   int Visit(const std::shared_ptr<Access> &access) override;
+  int Visit(const std::shared_ptr<Union> &union_decl) override;
 
   int GetLabel();
 
@@ -93,7 +94,7 @@ class CodeGenX86: public Visitor<int> {
   void GenJump(int label);
   void GenLabel(const std::string &name);
   void GenText();
-  int GetStructSize(const std::string &name);
+  int GenCompositeSize(const std::string &name);
 
   // vars
   std::map<std::string, int> strings_;

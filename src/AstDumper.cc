@@ -402,4 +402,29 @@ int AstDumper::Visit(const std::shared_ptr<Access> &access) {
   return 0;
 }
 
+int AstDumper::Visit(const std::shared_ptr<Union> &union_decl) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<union>\n";
+
+  if (union_decl->type_.name != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<name>"
+         << union_decl->type_.name->String() << "</name>\n";
+  }
+
+  if (union_decl->var_name_ != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<var-name>"
+         << union_decl->var_name_->String() << "</var-name>\n";
+  }
+
+  out_ << std::string(spaces_ + 2, ' ') << "<fields>\n";
+  spaces_ += TAB_SIZE;
+  union_decl->body_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</fields>\n";
+
+  out_ << std::string(spaces_, ' ') << "</union>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
 } // namespace mcc

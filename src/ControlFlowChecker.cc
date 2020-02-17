@@ -109,4 +109,8 @@ int ControlFlowChecker::Visit(const std::shared_ptr<Access> &access) {
   return 0;
 }
 
+int ControlFlowChecker::Visit(const std::shared_ptr<Union> &union_decl) {
+  return 0;
+}
+
 } // namespace mcc

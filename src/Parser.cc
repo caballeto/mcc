@@ -67,7 +67,9 @@ std::shared_ptr<Stmt> Parser::Declaration() {
   Type type = ParsePrim();
 
   if (Check(TokenType::T_LBRACE)) { // struct declaration
-    return StructDeclaration(type);
+    if (type.type_ == TokenType::T_STRUCT)
+      return StructDeclaration(type);
+    return UnionDeclaration(type);
   }
 
   int indirection = 0;
@@ -91,6 +93,15 @@ std::shared_ptr<Stmt> Parser::Declaration() {
   }
 }
 
+std::shared_ptr<Union> Parser::UnionDeclaration(const Type &type) {
+  std::shared_ptr<Token> token = Consume(TokenType::T_LBRACE);
+  std::shared_ptr<DeclList> decl_list = ParameterList(TokenType::T_SEMICOLON, TokenType::T_RBRACE);
+  Consume(TokenType::T_RBRACE, "'}' expected after union declaration");
+  std::shared_ptr<Token> var_name = Check(TokenType::T_IDENTIFIER) ? Consume(TokenType::T_IDENTIFIER) : nullptr;
+  Consume(TokenType::T_SEMICOLON, "';' expected after union declaration");
+  return std::make_shared<Union>(token, type, decl_list, std::move(var_name));
+}
+
 std::shared_ptr<Struct> Parser::StructDeclaration(const Type& type) {
   std::shared_ptr<Token> token = Consume(TokenType::T_LBRACE);
   std::shared_ptr<DeclList> decl_list = ParameterList(TokenType::T_SEMICOLON, TokenType::T_RBRACE);
@@ -105,6 +116,7 @@ std::shared_ptr<Struct> Parser::StructDeclaration(const Type& type) {
 std::shared_ptr<Stmt> Parser::Statement() {
   switch (Peek()->GetType()) {
     case TokenType::T_PRINT:    return PrintStatement();
+    case TokenType::T_UNION:
     case TokenType::T_STRUCT:
     case TokenType::T_VOID:
     case TokenType::T_CHAR:
@@ -236,6 +248,11 @@ std::shared_ptr<DeclList> Parser::ParameterList(TokenType delim, TokenType stop)
     while (Match(TokenType::T_STAR)) indirection++;
     type.ind = indirection;
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
+    if (Match(TokenType::T_LBRACKET)) {
+      std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
+      Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
+      type.len = len->Int();
+    }
     var_decl_list.push_back(std::make_shared<VarDecl>(name, nullptr, std::move(type), false, true));
   } while (Match(delim));
 
@@ -446,6 +463,7 @@ bool Parser::CheckType() {
     case TokenType::T_LONG:
     case TokenType::T_VOID:
     case TokenType::T_STRUCT:
+    case TokenType::T_UNION:
       return true;
   }
   return false;
@@ -463,12 +481,12 @@ Type Parser::ParsePrim() {
       type.type_ = Peek()->GetType();
       Next();
       break;
+    case TokenType::T_UNION:
     case TokenType::T_STRUCT:
-      type.type_ = TokenType::T_STRUCT;
+      type.type_ = Peek()->GetType();
       Next();
-      if (Check(TokenType::T_IDENTIFIER)) {
+      if (Check(TokenType::T_IDENTIFIER))
         type.name = Consume(TokenType::T_IDENTIFIER);
-      }
       break;
     default: {
       throw ParseException("Could not parse type", Peek());

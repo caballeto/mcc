@@ -1,0 +1,25 @@
+/home/vladyslav/CLionProjects/mcc/tests/test43.input:19:6[0;31m error [0m
+Struct variable expected, but got pointer, near '.', line 19
+
+/home/vladyslav/CLionProjects/mcc/tests/test43.input:27:18[0;31m error [0m
+Pointer to struct expected, near '->', line 27
+
+/home/vladyslav/CLionProjects/mcc/tests/test43.input:32:12[0;31m error [0m
+Variable 'what' has not been declared, near 'what', line 32
+
+/home/vladyslav/CLionProjects/mcc/tests/test43.input:32:16[0;31m error [0m
+Only struct/union fields can be accessed via '.' or '->' operator, near '.', line 32
+
+/home/vladyslav/CLionProjects/mcc/tests/test43.input:32:17[0;31m error [0m
+Undefined field, near 'length', line 32
+
+/home/vladyslav/CLionProjects/mcc/tests/test43.input:32:16[0;31m error [0m
+Declared type of parameter does not correspond to inferred argument type('long' and 'NO TYPE'), near '.', line 32
+
+/home/vladyslav/CLionProjects/mcc/tests/test43.input:33:17[0;31m error [0m
+Undefined field, near 'jack', line 33
+
+/home/vladyslav/CLionProjects/mcc/tests/test43.input:33:16[0;31m error [0m
+Declared type of parameter does not correspond to inferred argument type('char*' and 'NO TYPE'), near '.', line 33
+
+Encountered 8 semantic errors. Stopping compilation.

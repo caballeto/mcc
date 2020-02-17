@@ -152,8 +152,23 @@ class ControlFlow : public Stmt {
 
 class Struct : public Stmt {
  public:
-  Struct(std::shared_ptr<Token> token, Type type, std::shared_ptr<DeclList> body, std::shared_ptr<Token> var_name)
-    : Stmt(std::move(token)), type_(std::move(type)), body_(std::move(body)), var_name_(std::move(var_name))
+  Struct(std::shared_ptr<Token> token, const Type& type, std::shared_ptr<DeclList> body, std::shared_ptr<Token> var_name)
+    : Stmt(std::move(token)), type_(type), body_(std::move(body)), var_name_(std::move(var_name))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
+
+  Type type_;
+  std::shared_ptr<Token> var_name_;
+  std::shared_ptr<DeclList> body_;
+  int size;
+};
+
+class Union : public Stmt {
+ public:
+  Union(std::shared_ptr<Token> token, const Type& type, std::shared_ptr<DeclList> body, std::shared_ptr<Token> var_name)
+  : Stmt(std::move(token)), type_(type), body_(std::move(body)), var_name_(std::move(var_name))
   { }
 
   int Accept(Visitor<int>& visitor) override;
@@ -299,8 +314,6 @@ class Expr : public std::enable_shared_from_this<Expr> {
   bool return_ptr_ = false;
 
   std::shared_ptr<Token> op_;
-
-  Entry *struct_ptr = nullptr; // pointer to a struct, used for exprs such as book.description.title = "str"
 };
 
 class Index : public Expr {

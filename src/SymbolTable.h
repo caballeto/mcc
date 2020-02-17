@@ -17,7 +17,6 @@ class FuncDecl;
 struct Entry {
   Type* type;
   bool is_local;
-  bool is_struct;
   int offset;
   FuncDecl* func;
   Entry* next;
@@ -34,7 +33,7 @@ class SymbolTable {
  public:
   SymbolTable();
 
-  Entry* GetField(const std::string& name, const std::string& field);
+  Entry* GetField(const Type& type, const std::string& field);
 
   bool ContainsType(const std::string& name) const;
 
@@ -48,11 +47,11 @@ class SymbolTable {
 
   void Put(const std::shared_ptr<FuncDecl>& func_decl);
 
-  void Put(const std::string &name, Type* type, Entry *fields, bool is_struct);
+  void Put(const std::string &name, Type* type, Entry *fields);
 
   void PutLocal(const std::string& name, Type* type, int offset);
 
-  void PutGlobal(const std::string& name, Type* type, FuncDecl* func, bool is_struct);
+  void PutGlobal(const std::string& name, Type* type, FuncDecl* func);
 
   void NewScope();
 

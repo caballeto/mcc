@@ -30,6 +30,7 @@ bool TypeChecker::IsIntegerType(ExprRef expr) {
 
 // #TODO: assign of structs
 bool TypeChecker::MatchTypeInit(const Type& type, ExprRef init) {
+  if (init->type_.type_ == TokenType::T_NONE) return false;
   if (!type.IsPointer()) {
     return IsPointer(init) ? true : (int) type.type_ >= (int) init->type_.type_;
   } else {
@@ -199,21 +200,28 @@ void TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
 }
 
 void TypeChecker::Visit(const std::shared_ptr<Access>& access) {
+  access->name_->return_ptr_ = true;
   access->name_->Accept(*this);
 
-  if (!access->name_->type_.IsStruct()) {
-    reporter_.Report("Only struct fields can be accessed via '.' or '->' operator", access->op_);
-    return;
+  if (!access->name_->type_.IsStruct() && !access->name_->type_.IsUnion()) {
+    reporter_.Report("Only struct/union fields can be accessed via '.' or '->' operator", access->op_);
+  }
+
+  if (access->op_->GetType() == TokenType::T_DOT && access->name_->type_.ind != 0) {
+    reporter_.Report("Struct variable expected, but got pointer", access->op_);
+  }
+
+  if (access->op_->GetType() == TokenType::T_ARROW && access->name_->type_.ind != 1) {
+    reporter_.Report("Pointer to struct expected", access->op_);
   }
 
   if (!access->field_->IsVariable()) {
     reporter_.Report("Only string fields are supported", access->field_->op_);
-    return;
   }
 
   access->is_lvalue_ = true;
   const std::shared_ptr<Literal>& field = std::static_pointer_cast<Literal>(access->field_);
-  Entry* field_ = symbol_table_.GetField(access->name_->type_.name->String(), field->op_->String());
+  Entry* field_ = symbol_table_.GetField(access->name_->type_, field->op_->String());
 
   if (field_ == nullptr) {
     reporter_.Report("Undefined field", field->op_);
@@ -408,6 +416,72 @@ void TypeChecker::Visit(const std::shared_ptr<Return>& return_stmt) {
   }
 }
 
+void TypeChecker::RevertOffsets(Entry *fields, int size) {
+  while (fields != nullptr) {
+    fields->offset += size;
+    fields = fields->next;
+  }
+}
+
+void TypeChecker::Visit(const std::shared_ptr<Union>& decl) {
+  // 1. unnamed union `union { int x; };`
+  // 2. named union `union Book { int length; char* title; };`
+  // 3. named union with var decl `union Book { int length; char* title; } union;
+  if (decl->type_.name == nullptr && decl->var_name_ == nullptr) {
+    reporter_.Warning("Unnamed union declarations are not supported", decl->token_);
+    return;
+  }
+
+  // create a linked list of field declarations and validate them
+  std::unordered_map<std::string, int> offsets;
+  Entry *fields = new Entry, *head = fields;
+  int offset = 0;
+  for (const auto& var_decl : decl->body_->var_decl_list_) {
+    auto *field = new Entry;
+    const std::string& name = var_decl->name_->String();
+    int len = var_decl->var_type_.len; // #FIXME: arrays in unions (array indexing is broken)
+
+    if (offsets.count(name) != 0) {
+      reporter_.Report("Redefinition of field in struct", var_decl->name_);
+      FreeEntries(head);
+      return;
+    }
+
+    offset = std::min(GetOffset(var_decl->var_type_, len), offset); // find max offset (min, as offsets are negative)
+    offsets[name] = offset;
+    *field = {&var_decl->var_type_, false, 0, nullptr, nullptr, name};
+    fields->next = field;
+    fields = fields->next;
+  }
+
+  fields->next = nullptr;
+  decl->size = (head == fields) ? 0 : std::abs(offset);
+  fields = head;
+  head = head->next;
+  free(fields);
+
+  std::string name;
+
+  if (decl->type_.name == nullptr) {
+    name = "__unnamed_union__" + std::to_string(unnamed++);
+    decl->type_.name = std::make_shared<Token>();
+    decl->type_.name->SetString(name);
+  } else {
+    name = decl->type_.name->String();
+  }
+
+  if (symbol_table_.ContainsType(name)) {
+    reporter_.Report("Union has already been declared", decl->type_.name);
+    return;
+  }
+
+  symbol_table_.PutType(name, decl->size, head);
+
+  if (decl->var_name_ != nullptr) {
+    symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr);
+  }
+}
+
 void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
   // 1. unnamed struct `struct { int x; };`
   // 2. named struct `struct Book { int length; char* title; };`
@@ -432,24 +506,25 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
       return;
     }
 
+    offset += GetOffset(var_decl->var_type_, len);
     offsets[name] = offset;
-    *field = {&var_decl->var_type_, false, false, offset, nullptr, nullptr, name};
+    *field = {&var_decl->var_type_, false, offset, nullptr, nullptr, name};
     fields->next = field;
     fields = fields->next;
-
-    offset = GetOffset(var_decl->var_type_, len, offset);
   }
 
   fields->next = nullptr;
-  decl->size = (head == fields) ? 0 : std::abs(offset) + GetTypeSize(*fields->type);
+  decl->size = (head == fields) ? 0 : std::abs(offset);
   fields = head;
   head = head->next;
   free(fields);
 
+  RevertOffsets(head, decl->size); // offset shows the last address, revert fields offsets to be positive
+
   std::string name;
 
   if (decl->type_.name == nullptr) {
-    name = "__unnamed__" + std::to_string(unnamed++);
+    name = "__unnamed_struct__" + std::to_string(unnamed++);
     decl->type_.name = std::make_shared<Token>();
     decl->type_.name->SetString(name);
   } else {
@@ -464,7 +539,7 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
   symbol_table_.PutType(name, decl->size, head);
 
   if (decl->var_name_ != nullptr) {
-    symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr, false);
+    symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr);
   }
 }
 
@@ -511,11 +586,11 @@ void TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     decl->offset_ = offset;
     symbol_table_.PutLocal(decl->name_->String(), &decl->var_type_, offset);
   } else {
-    symbol_table_.PutGlobal(decl->name_->String(), &decl->var_type_, nullptr, false);
-    if (decl->var_type_.IsStruct()) {
+    symbol_table_.PutGlobal(decl->name_->String(), &decl->var_type_, nullptr);
+    if (decl->var_type_.IsStruct() || decl->var_type_.IsUnion()) {
       const std::string& st_name = decl->var_type_.name->String();
       if (!symbol_table_.ContainsType(st_name)) {
-        reporter_.Report("Struct '" + decl->var_type_.name->String() + "' has not been declared", decl->var_type_.name);
+        reporter_.Report("Composite (union/struct) '" + decl->var_type_.name->String() + "' has not been declared", decl->var_type_.name);
         return;
       }
     }
@@ -570,9 +645,9 @@ void TypeChecker::Visit(const std::shared_ptr<Index>& index) {
     return;
   }
 
-  index->type_.type_ = index->name_->type_.type_;
+  index->type_= index->name_->type_;
   index->type_.len = 0;
-  index->type_.ind = std::max(index->name_->type_.ind - 1, 0); // FIXME: for pointers
+  //index->type_.ind = std::max(index->name_->type_.ind - 1, 0); // FIXME: for pointers
 }
 
 void TypeChecker::Visit(const std::shared_ptr<Grouping>& grouping) {
@@ -660,11 +735,10 @@ void TypeChecker::FreeEntries(Entry *entry) {
   }
 }
 
-int TypeChecker::GetOffset(const Type& type, int len, int offset) {
+int TypeChecker::GetOffset(const Type& type, int len) {
   len = len == 0 ? 1 : len;
-  if (type.IsPointer()) return offset -= len * 8;
-  offset -= len * GetTypeSize(type);
-  return offset;
+  if (type.IsPointer()) return - len * 8;
+  return - len * GetTypeSize(type);
 }
 
 int TypeChecker::GetLocalOffset(const Type& type, int len) {
@@ -674,7 +748,7 @@ int TypeChecker::GetLocalOffset(const Type& type, int len) {
 }
 
 int TypeChecker::GetTypeSize(const Type& type) {
-  if (type.IsStruct()) return symbol_table_.GetType(type.name->String())->size;
+  if (type.IsStruct() || type.IsUnion()) return symbol_table_.GetType(type.name->String())->size;
   switch (type.type_) {
     case TokenType::T_CHAR: return 1;
     case TokenType::T_SHORT: return 2;
@@ -686,7 +760,6 @@ int TypeChecker::GetTypeSize(const Type& type) {
     }
   }
 }
-
 void TypeChecker::ResetLocals() {
   local_offset_ = 0;
 }

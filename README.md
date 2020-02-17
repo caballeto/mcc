@@ -501,3 +501,17 @@ access '.' and '->'. I will add both assignment and just getting the variable.
 
 Implemented the general structure, but failed to correctly write the structure offsets.
 So, the values are being rewritten, hence I need to debug it and fix the offset problems.
+
+## Day 19
+
+Huh, I feel like I am making some progress. Today I have fixed the implementation of structs
+and added unions. I have also fixed several bugs with arrays in structs/unions. In my implementation
+unions and structs are almost identical, the difference only is in how much memory is allocated for them.
+So, yeah, this part was tough, and I am sure that there are many hidden bugs in implementation, as
+I have tested on straightforward examples. 
+
+Following, I am going to work on adding `enum`, `switch` and conditional operators.
+
+*Bug fix:*
+
+- [**test 30**] fix index operation with pointer types `int* ptr = &array; ptr[2] = 10;`

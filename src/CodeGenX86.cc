@@ -273,19 +273,25 @@ int CodeGenX86::Visit(const std::shared_ptr<Binary>& binary) {
   }
 }
 
-// #FIXME: Create separate AST node for identifier?
 int CodeGenX86::Visit(const std::shared_ptr<Literal>& literal) {
   int r = NewRegister();
 
-  // array || struct
-  if (literal->type_.IsArray() || literal->type_.IsStruct()) {
+  // order does matter below
+  // arrays
+  if (literal->type_.IsArray()) {
     out_ << "\tleaq\t" << GenLoad(literal) << ", " << kRegisters[r] << "\n";
     return r;
   }
 
-  // pointer
+  // pointers
   if (literal->type_.ind != 0 && literal->op_->GetType() != TokenType::T_STR_LIT) {
     out_ << "\tmovq\t" << GenLoad(literal) << ", " << kRegisters[r] << "\n";
+    return r;
+  }
+
+  // structs
+  if (literal->type_.IsStruct() || literal->type_.IsUnion()) {
+    out_ << "\tleaq\t" << GenLoad(literal) << ", " << kRegisters[r] << "\n";
     return r;
   }
 
@@ -431,6 +437,10 @@ int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   return NO_RETURN_REGISTER;
 }
 
+int CodeGenX86::Visit(const std::shared_ptr<Union> &union_decl) {
+  return 0;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<Struct> &struct_decl) {
   return 0;
 }
@@ -494,16 +504,18 @@ int CodeGenX86::Visit(const std::shared_ptr<Grouping>& grouping) {
 // array[2] = 15;
 // print array[2];
 int CodeGenX86::Visit(const std::shared_ptr<Index>& index) {
+  index->name_->return_ptr_ = true;
+
   int r1 = index->name_->Accept(*this);
   int r2 = index->index_->Accept(*this);
 
   // scale the index
-  out_ << "\timulq\t$" << type_sizes_[index->name_->type_.type_] << ", " << kRegisters[r2] << "\n";
+  out_ << "\timulq\t$" << GetTypeSize(index->name_->type_, index->name_->type_.ind) << ", " << kRegisters[r2] << "\n";
   out_ << "\taddq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
   FreeRegister(r2);
 
   if (!index->return_ptr_) {
-    out_ << "\tmov" << GetLoadPostfix(index->name_->type_, index->name_->type_.ind - 1) // #FIXME: check if name type is type + *
+    out_ << "\tmov" << GetLoadPostfix(index->name_->type_, index->name_->type_.ind) // #FIXME: check if name type is type + *
          << "\t" << "(" << kRegisters[r1] << ")" << ", " << kRegisters[r1] << "\n";
   }
 
@@ -611,7 +623,7 @@ int CodeGenX86::GetLabel() {
   return label_++;
 }
 
-int CodeGenX86::GetStructSize(const std::string& name) {
+int CodeGenX86::GenCompositeSize(const std::string& name) {
   return symbol_table_.GetType(name)->size;
 }
 
@@ -659,11 +671,11 @@ void CodeGenX86::GenGlobals() {
     } else if (entry.type->IsPointer() || entry.type->IsPrimitive()) {
       int size = GetTypeSize(*entry.type, entry.type->ind);
       out_ << "\t.comm\t" << name << "," << size << "," << size << "\n";
-    } else if (entry.type->IsStruct() && !entry.is_struct) { // struct variable
+    } else if (entry.type->IsStruct() || entry.type->IsUnion()) { // struct variable
       GenData();
       GenGlob(name);
       GenLabel(name);
-      int size = GetStructSize(entry.type->name->String());
+      int size = GenCompositeSize(entry.type->name->String());
       for (int i = 0; i < size; i++) {
         out_ << "\t.byte\t0\n";
       }
@@ -817,7 +829,6 @@ void CodeGenX86::UnspillRegs() {
 void CodeGenX86::Spill(int r) {
   out_ << "\tpushq\t" << kRegisters[r] << "\n";
 }
-
 void CodeGenX86::Unspill(int r) {
   out_ << "\tpopq\t" << kRegisters[r] << "\n";
 }

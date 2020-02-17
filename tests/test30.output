@@ -1,4 +1,3 @@
-10
-20
-30
-40
+/home/vladyslav/CLionProjects/mcc/tests/test30.input:9:10[36m warning [0m
+Assignment with pointer/integer without a cast('int*' and 'char'), near '=', line 9
+
