@@ -238,4 +238,13 @@ int Union::Accept(Visitor<int> &visitor) {
 void Union::Accept(Visitor<void> &visitor) {
   visitor.Visit(shared_from_base<Union>());
 }
+
+int Enum::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(shared_from_base<Enum>());;
+}
+
+void Enum::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Enum>());
+}
+
 } // namespace mcc

@@ -180,6 +180,19 @@ class Union : public Stmt {
   int size;
 };
 
+class Enum : public Stmt {
+ public:
+  Enum(std::shared_ptr<Token> token, const Type& type, std::shared_ptr<Token> var_name, std::vector<std::shared_ptr<Literal>> values)
+    : Stmt(std::move(token)), type_(type), var_name_(std::move(var_name)), values_(std::move(values))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
+
+  Type type_;
+  std::shared_ptr<Token> var_name_;
+  std::vector<std::shared_ptr<Literal>> values_;
+};
 
 class FuncDecl : public Stmt {
  public:

@@ -437,6 +437,10 @@ int CodeGenX86::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   return NO_RETURN_REGISTER;
 }
 
+int CodeGenX86::Visit(const std::shared_ptr<Enum> &enum_decl) {
+  return 0;
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<Union> &union_decl) {
   return 0;
 }
@@ -661,7 +665,7 @@ void CodeGenX86::GenLabel(const std::string& name) {
 void CodeGenX86::GenGlobals() {
   std::unordered_map<std::string, Entry>& global = symbol_table_.GetGlobalScope();
   for (const auto& pair : global) {
-    if (pair.second.func != nullptr) continue;
+    if (pair.second.func != nullptr || pair.second.type->type_ == TokenType::T_ENUM) continue;
     const std::string& name = pair.first;
     const Entry& entry = pair.second;
     if (entry.type->IsArray()) {
@@ -828,10 +832,10 @@ void CodeGenX86::UnspillRegs() {
   for (int i = REGISTER_NUM - 1; i >= 0; i--)
     Unspill(i);
 }
-
 void CodeGenX86::Spill(int r) {
   out_ << "\tpushq\t" << kRegisters[r] << "\n";
 }
+
 void CodeGenX86::Unspill(int r) {
   out_ << "\tpopq\t" << kRegisters[r] << "\n";
 }

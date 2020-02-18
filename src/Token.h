@@ -45,7 +45,7 @@ class Token {
     return int_value_;
   }
 
-  inline void SetType(const TokenType& token_type) {
+  inline void SetType(TokenType token_type) {
     token_type_ = token_type;
   }
 

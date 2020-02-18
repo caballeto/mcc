@@ -69,7 +69,10 @@ std::shared_ptr<Stmt> Parser::Declaration() {
   if (Check(TokenType::T_LBRACE)) { // struct declaration
     if (type.type_ == TokenType::T_STRUCT)
       return StructDeclaration(type);
-    return UnionDeclaration(type);
+    else if (type.type_ == TokenType::T_UNION)
+      return UnionDeclaration(type);
+    else
+      return EnumDeclaration(type);
   }
 
   int indirection = 0;
@@ -93,7 +96,30 @@ std::shared_ptr<Stmt> Parser::Declaration() {
   }
 }
 
-std::shared_ptr<Union> Parser::UnionDeclaration(const Type &type) {
+std::shared_ptr<Enum> Parser::EnumDeclaration(const Type& type) {
+  std::shared_ptr<Token> token = Consume(TokenType::T_LBRACE);
+  std::vector<std::shared_ptr<Literal>> values;
+  int val = 0;
+  if (!Check(TokenType::T_RBRACE)) {
+    do {
+      std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER, "Identifier expected in enum");
+      if (Match(TokenType::T_ASSIGN)) {
+        std::shared_ptr<Token> enum_val = Consume(TokenType::T_INT_LIT, "Integer constant expected as enum value");
+        val = enum_val->Int();
+      }
+
+      name->SetInt(val++);
+      values.push_back(std::make_shared<Literal>(std::move(name)));
+    } while (Match(TokenType::T_COMMA));
+  }
+
+  Consume(TokenType::T_RBRACE, "'}' expected after union declaration");
+  std::shared_ptr<Token> var_name = Check(TokenType::T_IDENTIFIER) ? Consume(TokenType::T_IDENTIFIER) : nullptr;
+  Consume(TokenType::T_SEMICOLON, "';' expected after union declaration");
+  return std::make_shared<Enum>(token, type, var_name, std::move(values));
+}
+
+std::shared_ptr<Union> Parser::UnionDeclaration(const Type& type) {
   std::shared_ptr<Token> token = Consume(TokenType::T_LBRACE);
   std::shared_ptr<DeclList> decl_list = ParameterList(TokenType::T_SEMICOLON, TokenType::T_RBRACE, false);
   Consume(TokenType::T_RBRACE, "'}' expected after union declaration");
@@ -116,6 +142,7 @@ std::shared_ptr<Struct> Parser::StructDeclaration(const Type& type) {
 std::shared_ptr<Stmt> Parser::Statement() {
   switch (Peek()->GetType()) {
     case TokenType::T_PRINT:    return PrintStatement();
+    case TokenType::T_ENUM:
     case TokenType::T_UNION:
     case TokenType::T_STRUCT:
     case TokenType::T_VOID:
@@ -464,6 +491,7 @@ bool Parser::CheckType() {
     case TokenType::T_VOID:
     case TokenType::T_STRUCT:
     case TokenType::T_UNION:
+    case TokenType::T_ENUM:
       return true;
   }
   return false;
@@ -481,6 +509,7 @@ Type Parser::ParsePrim() {
       type.type_ = Peek()->GetType();
       Next();
       break;
+    case TokenType::T_ENUM:
     case TokenType::T_UNION:
     case TokenType::T_STRUCT:
       type.type_ = Peek()->GetType();

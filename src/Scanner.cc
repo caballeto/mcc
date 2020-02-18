@@ -26,6 +26,8 @@ Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
   keywords_["goto"] = TokenType::T_GOTO;
   keywords_["struct"] = TokenType::T_STRUCT;
   keywords_["union"] = TokenType::T_UNION;
+  keywords_["enum"] = TokenType::T_ENUM;
+  keywords_["typedef"] = TokenType::T_TYPEDEF;
 
   // types
   keywords_["void"] = TokenType::T_VOID;

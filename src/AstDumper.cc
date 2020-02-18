@@ -427,4 +427,34 @@ int AstDumper::Visit(const std::shared_ptr<Union> &union_decl) {
   return 0;
 }
 
+int AstDumper::Visit(const std::shared_ptr<Enum> &enum_decl) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<union>\n";
+
+  if (enum_decl->type_.name != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<name>"
+         << enum_decl->type_.name->String() << "</name>\n";
+  }
+
+  if (enum_decl->var_name_ != nullptr) {
+    out_ << std::string(spaces_ + 2, ' ') << "<var-name>"
+         << enum_decl->var_name_->String() << "</var-name>\n";
+  }
+
+  out_ << std::string(spaces_ + 2, ' ') << "<fields>\n";
+  spaces_ += TAB_SIZE;
+  for (const auto& val : enum_decl->values_) {
+    out_ << std::string(spaces_ + 2, ' ') << "<enum-val='"
+         << val->op_->Int() << "'>"
+         << val->op_->String() << "</enum-val>\n";
+  }
+
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</fields>\n";
+
+  out_ << std::string(spaces_, ' ') << "</union>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
 } // namespace mcc

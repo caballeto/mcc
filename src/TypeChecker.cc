@@ -128,7 +128,7 @@ Type& TypeChecker::PromoteToLeft(ExprRef e1, ExprRef e2) {
   int t1 = (int) e1->type_.type_, t2 = (int) e2->type_.type_;
 
   if (t1 < t2) {
-    reporter_.Error("Could not cast right expression", e1, e2, e1->op_);
+    reporter_.Error("Could not cast right expression ", e1, e2, e1->op_);
     e1->type_.type_ = TokenType::T_NONE;
     return e1->type_;
   }
@@ -264,17 +264,24 @@ void TypeChecker::TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts) {
 
 void TypeChecker::Visit(const std::shared_ptr<Literal>& literal) {
   if (literal->op_->GetType() == TokenType::T_IDENTIFIER) {
-    if (literal->is_const_) {
-      reporter_.Report("Variables initializers '"
-          + literal->op_->String() + "' must be constant", literal->op_);
-      return;
-    }
-
     Entry* var = symbol_table_.Get(literal->op_->String());
 
     if (var == nullptr) {
-      reporter_.Report("Variable '"
-          + literal->op_->String() + "' has not been declared", literal->op_);
+      reporter_.Report("Variable '" + literal->op_->String() + "' has not been declared", literal->op_);
+      return;
+    }
+
+    // enum
+    if (var->type->type_ == TokenType::T_ENUM) {
+      literal->type_.type_ = TokenType::T_INT;
+      literal->op_->SetType(TokenType::T_INT_LIT);
+      literal->op_->SetString("");
+      literal->op_->SetInt(var->offset); // enum value is stored in offset
+      return;
+    }
+
+    if (literal->is_const_) {
+      reporter_.Report("Variables initializers '" + literal->op_->String() + "' must be constant", literal->op_);
       return;
     }
 
@@ -423,10 +430,38 @@ void TypeChecker::RevertOffsets(Entry *fields, int size) {
   }
 }
 
+void TypeChecker::Visit(const std::shared_ptr<Enum>& decl) {
+  if (decl->type_.name != nullptr) {
+    if (symbol_table_.ContainsType(decl->type_.name->String())) {
+      reporter_.Report("Type has already been defined", decl->type_.name);
+      return;
+    } else {
+      symbol_table_.PutType(decl->type_.name->String(), 0, nullptr);
+    }
+  }
+
+  for (const auto& enum_val : decl->values_) {
+    if (symbol_table_.Contains(enum_val->op_->String())) {
+      reporter_.Report("Enumerator symbol redefinition", enum_val->op_);
+      return;
+    }
+
+    enum_val->type_.type_ = TokenType::T_ENUM;
+    symbol_table_.PutLocal(enum_val->op_->String(), &enum_val->type_, enum_val->op_->Int()); // enum decls are global only
+  }
+
+  if (decl->var_name_ != nullptr && symbol_table_.Contains(decl->var_name_->String())) {
+    reporter_.Report("Variable '" + decl->var_name_->String() + "' has already been defined", decl->var_name_);
+    return;
+  }
+
+  if (decl->var_name_ != nullptr) {
+    decl->type_.type_ = TokenType::T_INT;
+    symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr);
+  }
+}
+
 void TypeChecker::Visit(const std::shared_ptr<Union>& decl) {
-  // 1. unnamed union `union { int x; };`
-  // 2. named union `union Book { int length; char* title; };`
-  // 3. named union with var decl `union Book { int length; char* title; } union;
   if (decl->type_.name == nullptr && decl->var_name_ == nullptr) {
     reporter_.Warning("Unnamed union declarations are not supported", decl->token_);
     return;
@@ -476,6 +511,11 @@ void TypeChecker::Visit(const std::shared_ptr<Union>& decl) {
   }
 
   symbol_table_.PutType(name, decl->size, head);
+
+  if (decl->var_name_ != nullptr && symbol_table_.Contains(decl->var_name_->String())) {
+    reporter_.Report("Variable '" + decl->var_name_->String() + "' has already been defined", decl->var_name_);
+    return;
+  }
 
   if (decl->var_name_ != nullptr) {
     symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr);
@@ -538,6 +578,11 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
 
   symbol_table_.PutType(name, decl->size, head);
 
+  if (decl->var_name_ != nullptr && symbol_table_.Contains(decl->var_name_->String())) {
+    reporter_.Report("Variable '" + decl->var_name_->String() + "' has already been defined", decl->var_name_);
+    return;
+  }
+
   if (decl->var_name_ != nullptr) {
     symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr);
   }
@@ -580,6 +625,10 @@ void TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     return;
   }
 
+  if (decl->var_type_.type_ == TokenType::T_ENUM) {
+    decl->var_type_.type_ = TokenType::T_INT;
+  }
+
   if (decl->is_local_) {
     int len = decl->var_type_.len == 0 ? 1 : decl->var_type_.len;
     int offset = GetLocalOffset(decl->var_type_, len);
@@ -590,7 +639,7 @@ void TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     if (decl->var_type_.IsStruct() || decl->var_type_.IsUnion()) {
       const std::string& st_name = decl->var_type_.name->String();
       if (!symbol_table_.ContainsType(st_name)) {
-        reporter_.Report("Composite (union/struct) '" + decl->var_type_.name->String() + "' has not been declared", decl->var_type_.name);
+        reporter_.Report("Composite (union/struct/enum) '" + decl->var_type_.name->String() + "' has not been declared", decl->var_type_.name);
         return;
       }
     }
@@ -746,7 +795,6 @@ int TypeChecker::GetLocalOffset(const Type& type, int len) {
   local_offset_ += len * (GetTypeSize(type) > 4 ? GetTypeSize(type) : 4);
   return - local_offset_;
 }
-
 int TypeChecker::GetTypeSize(const Type& type) {
   if (type.IsStruct() || type.IsUnion()) return symbol_table_.GetType(type.name->String())->size;
   switch (type.type_) {

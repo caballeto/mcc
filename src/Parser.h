@@ -60,6 +60,7 @@ class Parser {
   std::shared_ptr<Stmt> GlobalVarDeclaration(Type type, std::shared_ptr<Token> name);
   std::shared_ptr<Struct> StructDeclaration(const Type& type);
   std::shared_ptr<Union> UnionDeclaration(const Type& type);
+  std::shared_ptr<Enum> EnumDeclaration(const Type& type);
   std::shared_ptr<Return> ReturnStatement();
 
   std::shared_ptr<DeclList> ParameterList(TokenType delim, TokenType stop, bool is_param);

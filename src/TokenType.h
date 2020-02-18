@@ -68,6 +68,8 @@ enum class TokenType {
   T_GOTO,
   T_STRUCT,
   T_UNION,
+  T_ENUM,
+  T_TYPEDEF,
 
   // types
   T_NONE,

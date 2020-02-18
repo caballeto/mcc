@@ -1,4 +1,4 @@
 /home/vladyslav/CLionProjects/mcc/tests/test16.input:8:2[0;31m error [0m
-Could not cast right expression('int' and 'long'), near 'x', line 8
+Could not cast right expression ('int' and 'long'), near 'x', line 8
 
 Encountered 1 semantic errors. Stopping compilation.

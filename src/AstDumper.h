@@ -42,6 +42,7 @@ class AstDumper : public Visitor<int> {
   int Visit(const std::shared_ptr<GoTo> &go_to) override;
   int Visit(const std::shared_ptr<Struct> &struct_decl) override;
   int Visit(const std::shared_ptr<Union> &union_decl) override;
+  int Visit(const std::shared_ptr<Enum> &enum_decl) override;
 
   void Flush();
   int Visit(const std::shared_ptr<Call> &call) override;
