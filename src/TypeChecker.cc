@@ -627,7 +627,7 @@ void TypeChecker::Visit(const std::shared_ptr<Call>& call) {
     const auto& param = func->signature_->var_decl_list_[i];
     arg->Accept(*this);
     if (!MatchTypeInit(param->var_type_, arg)) {
-      reporter_.Error("Declared type of parameter does not correspond to inferred argument type",
+      reporter_.Error("Declared type of parameter does not correspond to inferred argument type ",
                       param->var_type_, arg, arg->op_);
     }
   }
@@ -646,8 +646,8 @@ void TypeChecker::Visit(const std::shared_ptr<Index>& index) {
   }
 
   index->type_= index->name_->type_;
+  index->type_.ind += index->name_->type_.IsArray() ? 0 : -1; // fix for pointer indexing
   index->type_.len = 0;
-  //index->type_.ind = std::max(index->name_->type_.ind - 1, 0); // FIXME: for pointers
 }
 
 void TypeChecker::Visit(const std::shared_ptr<Grouping>& grouping) {

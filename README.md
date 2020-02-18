@@ -515,3 +515,14 @@ Following, I am going to work on adding `enum`, `switch` and conditional operato
 *Bug fix:*
 
 - [**test 30**] fix index operation with pointer types `int* ptr = &array; ptr[2] = 10;`
+
+## Day 20
+
+- fixed bug with index operation on pointers
+- fixed bug with parsing arrays in parameter list (not allowed)
+- moved main running code into `Compiler` class, will rewrite it when
+  CLI functionality will be added
+
+- [ ] enums
+- [ ] conditions
+- [ ] switch

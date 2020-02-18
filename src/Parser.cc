@@ -78,7 +78,7 @@ std::shared_ptr<Stmt> Parser::Declaration() {
   std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER, "Identifier expected in global declaration");
 
   if (Match(TokenType::T_LPAREN)) { // function
-    std::shared_ptr<DeclList> signature = ParameterList(TokenType::T_COMMA, TokenType::T_RPAREN);
+    std::shared_ptr<DeclList> signature = ParameterList(TokenType::T_COMMA, TokenType::T_RPAREN, true);
     Consume(TokenType::T_RPAREN, "')' expected after function declaration");
     std::shared_ptr<Block> block = nullptr;
     if (Check(TokenType::T_LBRACE)) {
@@ -95,7 +95,7 @@ std::shared_ptr<Stmt> Parser::Declaration() {
 
 std::shared_ptr<Union> Parser::UnionDeclaration(const Type &type) {
   std::shared_ptr<Token> token = Consume(TokenType::T_LBRACE);
-  std::shared_ptr<DeclList> decl_list = ParameterList(TokenType::T_SEMICOLON, TokenType::T_RBRACE);
+  std::shared_ptr<DeclList> decl_list = ParameterList(TokenType::T_SEMICOLON, TokenType::T_RBRACE, false);
   Consume(TokenType::T_RBRACE, "'}' expected after union declaration");
   std::shared_ptr<Token> var_name = Check(TokenType::T_IDENTIFIER) ? Consume(TokenType::T_IDENTIFIER) : nullptr;
   Consume(TokenType::T_SEMICOLON, "';' expected after union declaration");
@@ -104,7 +104,7 @@ std::shared_ptr<Union> Parser::UnionDeclaration(const Type &type) {
 
 std::shared_ptr<Struct> Parser::StructDeclaration(const Type& type) {
   std::shared_ptr<Token> token = Consume(TokenType::T_LBRACE);
-  std::shared_ptr<DeclList> decl_list = ParameterList(TokenType::T_SEMICOLON, TokenType::T_RBRACE);
+  std::shared_ptr<DeclList> decl_list = ParameterList(TokenType::T_SEMICOLON, TokenType::T_RBRACE, false);
   Consume(TokenType::T_RBRACE, "'}' expected after struct declaration");
   std::shared_ptr<Token> var_name = Check(TokenType::T_IDENTIFIER) ? Consume(TokenType::T_IDENTIFIER) : nullptr;
   Consume(TokenType::T_SEMICOLON, "';' expected after struct declaration");
@@ -237,7 +237,7 @@ std::shared_ptr<While> Parser::WhileStatement() {
   return std::make_shared<While>(while_token, condition, loop_block, false);
 }
 
-std::shared_ptr<DeclList> Parser::ParameterList(TokenType delim, TokenType stop) {
+std::shared_ptr<DeclList> Parser::ParameterList(TokenType delim, TokenType stop, bool is_param) {
   std::shared_ptr<Token> token = Peek();
   std::vector<std::shared_ptr<VarDecl>> var_decl_list;
 
@@ -248,7 +248,7 @@ std::shared_ptr<DeclList> Parser::ParameterList(TokenType delim, TokenType stop)
     while (Match(TokenType::T_STAR)) indirection++;
     type.ind = indirection;
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
-    if (Match(TokenType::T_LBRACKET)) {
+    if (!is_param && Match(TokenType::T_LBRACKET)) {
       std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
       Consume(TokenType::T_RBRACKET, "Expected ']' after array length declaration");
       type.len = len->Int();

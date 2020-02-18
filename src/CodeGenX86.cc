@@ -510,12 +510,15 @@ int CodeGenX86::Visit(const std::shared_ptr<Index>& index) {
   int r2 = index->index_->Accept(*this);
 
   // scale the index
-  out_ << "\timulq\t$" << GetTypeSize(index->name_->type_, index->name_->type_.ind) << ", " << kRegisters[r2] << "\n";
+  int ind = index->name_->type_.ind;
+  ind += index->name_->type_.IsArray() ? 0 : -1; // fix for pointers
+
+  out_ << "\timulq\t$" << GetTypeSize(index->name_->type_, ind) << ", " << kRegisters[r2] << "\n";
   out_ << "\taddq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
   FreeRegister(r2);
 
   if (!index->return_ptr_) {
-    out_ << "\tmov" << GetLoadPostfix(index->name_->type_, index->name_->type_.ind) // #FIXME: check if name type is type + *
+    out_ << "\tmov" << GetLoadPostfix(index->name_->type_, ind) // #FIXME: check if name type is type + *
          << "\t" << "(" << kRegisters[r1] << ")" << ", " << kRegisters[r1] << "\n";
   }
 
