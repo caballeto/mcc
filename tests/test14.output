@@ -1,16 +1,16 @@
-/home/vladyslav/CLionProjects/mcc/tests/test14.input:4:20[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test14.c:4:20[0;31m error [0m
 Variable 'x' has already been declared, near 'x', line 4
 
-/home/vladyslav/CLionProjects/mcc/tests/test14.input:6:7[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test14.c:6:7[0;31m error [0m
 Variable 'z' has unallowable type 'void', near 'z', line 6
 
-/home/vladyslav/CLionProjects/mcc/tests/test14.input:8:10[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test14.c:8:10[0;31m error [0m
 Variable 'm' has already been declared, near 'm', line 8
 
-/home/vladyslav/CLionProjects/mcc/tests/test14.input:10:11[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test14.c:10:11[0;31m error [0m
 Variable 'z' has not been declared, near 'z', line 10
 
-/home/vladyslav/CLionProjects/mcc/tests/test14.input:10:11[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test14.c:10:11[0;31m error [0m
 Declared type of parameter does not correspond to inferred argument type ('long' and 'NO TYPE'), near 'z', line 10
 
 Encountered 5 semantic errors. Stopping compilation.

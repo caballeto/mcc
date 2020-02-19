@@ -1,4 +1,4 @@
-/home/vladyslav/CLionProjects/mcc/tests/test1.input:18:23[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test1.c:18:23[0;31m error [0m
 Variable 'k' has not been declared, near 'k', line 18
 
 Encountered 1 semantic errors. Stopping compilation.

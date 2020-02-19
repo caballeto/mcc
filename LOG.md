@@ -524,15 +524,20 @@ Following, I am going to work on adding `enum`, `switch` and conditional operato
   CLI functionality will be added
 
 - [X] enums
-- [ ] switch
+
+## Day 21
+
+Implemented switches and runtime flags.
+
+- [X] switch
+- [X] runtime flags
 
 **Next**
 
-- [ ] runtime flags
 - [ ] preprocessor
+- [ ] extern
 - [ ] typedef
 - [ ] type casts
 - [ ] sizeof
-- [ ] extern
 - [ ] static
 - [ ] conditions & const init & refactoring

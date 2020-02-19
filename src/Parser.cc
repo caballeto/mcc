@@ -150,6 +150,7 @@ std::shared_ptr<Stmt> Parser::Statement() {
     case TokenType::T_INT:
     case TokenType::T_SHORT:
     case TokenType::T_LONG:     return DeclarationList();
+    case TokenType::T_SWITCH:   return SwitchStatement();
     case TokenType::T_IF:       return IfStatement();
     case TokenType::T_WHILE:    return WhileStatement();
     case TokenType::T_DO:       return DoWhileStatement();
@@ -224,10 +225,48 @@ std::shared_ptr<While> Parser::DoWhileStatement() {
   return std::make_shared<While>(do_token, condition, loop_block, true);
 }
 
+std::shared_ptr<Switch> Parser::SwitchStatement() {
+  std::shared_ptr<Token> token = Consume(TokenType::T_SWITCH);
+  Consume(TokenType::T_LPAREN, "Expected '(' after 'switch' statement");
+  std::shared_ptr<Expr> expr = Expression(0);
+  Consume(TokenType::T_RPAREN, "Expected closing ')' after 'switch' statement");
+  Consume(TokenType::T_LBRACE, "Expected '{' after 'switch'");
+  std::vector<std::pair<std::shared_ptr<Expr>, std::shared_ptr<Stmt>>> cases;
+
+  std::unordered_set<int> case_vals;
+  std::shared_ptr<Expr> val = nullptr;
+  bool had_default = false;
+
+  while (true) {
+    val = nullptr;
+    if (Match(TokenType::T_CASE)) {
+      val = Primary();
+      if (!val->IsIntConstant())
+        throw ParseException("Int constant expected after 'case'", val->op_);
+      if (case_vals.count(val->op_->Int()) != 0)
+        throw ParseException("Repeteable 'case' value", val->op_);
+      case_vals.insert(val->op_->Int());
+    } else if (Match(TokenType::T_DEFAULT)) {
+      if (had_default)
+        throw ParseException("Repeteable 'default' case in 'switch'", Peek());
+      had_default = true;
+    } else {
+      break;
+    }
+
+    Consume(TokenType::T_COLON, "Expected ':' after switch branch");
+    std::shared_ptr<Stmt> stmt = Statement(); // FIXME: add multiline statements without braces '{' '}'
+    cases.push_back(std::make_pair<std::shared_ptr<Expr>, std::shared_ptr<Stmt>>(std::move(val), std::move(stmt)));
+  }
+
+  Consume(TokenType::T_RBRACE, "'}' expected after switch statement");
+  return std::make_shared<Switch>(token, expr, std::move(cases));
+}
+
 // #FIXME: make condition expression optional by adding break/continue
 std::shared_ptr<For> Parser::ForStatement() {
   std::shared_ptr<Token> for_token = Consume(TokenType::T_FOR);
-  Consume(TokenType::T_LPAREN, "Expected '(' after 'for'");
+  Consume(TokenType::T_LPAREN, "Expected '(' after 'for' statement");
 
   std::shared_ptr<Stmt> init_list;
   if (CheckType()) {
@@ -617,7 +656,6 @@ std::shared_ptr<Token> Parser::Consume(TokenType type) {
     throw ParseException("", Peek());
   }
 }
-
 std::shared_ptr<Token> Parser::Consume(TokenType type, const std::string& message) {
   if (Check(type)) {
     std::shared_ptr<Token> token = Peek();

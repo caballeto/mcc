@@ -28,6 +28,9 @@ Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
   keywords_["union"] = TokenType::T_UNION;
   keywords_["enum"] = TokenType::T_ENUM;
   keywords_["typedef"] = TokenType::T_TYPEDEF;
+  keywords_["switch"] = TokenType::T_SWITCH;
+  keywords_["case"] = TokenType::T_CASE;
+  keywords_["default"] = TokenType::T_DEFAULT;
 
   // types
   keywords_["void"] = TokenType::T_VOID;

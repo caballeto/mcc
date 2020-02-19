@@ -104,6 +104,53 @@ int CodeGenX86::Visit(const std::shared_ptr<For>& for_stmt) {
   return NO_RETURN_REGISTER;
 }
 
+// 1. generate switch expr
+// 2. load result into jump register
+// 3. generate jump table
+// 4. jump to jump selector code
+// 5. labels and cases
+// 6. end label
+
+int CodeGenX86::Visit(const std::shared_ptr<Switch>& switch_stmt) {
+  int l_reg_load = GetLabel(), l_jump_table = GetLabel(), l_end = GetLabel(), label, l_default = -1;
+  std::vector<std::pair<int, int>> case_labels;
+  int r = switch_stmt->expr_->Accept(*this);
+  GenJump(l_reg_load);
+
+  loop_stack_.push({"L" + std::to_string(l_end), ""});
+  for (const auto& pair : switch_stmt->cases_) {
+    label = GetLabel();
+    GenLabel(label);
+    if (pair.first == nullptr)
+      l_default = label;
+    else
+      case_labels.emplace_back(pair.first->op_->Int(), label);
+    pair.second->Accept(*this);
+  }
+
+  loop_stack_.pop();
+  GenJump(l_end);
+  GenJumpTable(l_jump_table, case_labels, l_default == -1 ? l_end : l_default);
+  GenJumpToTable(r, l_jump_table, l_reg_load);
+  GenLabel(l_end);
+  return 0;
+}
+
+void CodeGenX86::GenJumpTable(int l_jump_table, const std::vector<std::pair<int, int>>& case_labels, int l_default) {
+  GenLabel(l_jump_table);
+  out_ << "\t.quad\t" << case_labels.size() << "\n";
+  for (const auto& pair : case_labels)
+    out_ << "\t.quad\t" << pair.first << ", L" << pair.second << "\n";
+  out_ << "\t.quad\tL" << l_default << "\n";
+}
+
+void CodeGenX86::GenJumpToTable(int r, int l_jump_table, int l_reg_load) {
+  GenLabel(l_reg_load);
+  out_ << "\tmovq\t" << kRegisters[r] << ", %rax\n";
+  out_ << "\tleaq\tL" << l_jump_table << "(%rip), %rdx\n";
+  out_ << "\tjmp\tswitch\n";
+}
+
 int CodeGenX86::Visit(const std::shared_ptr<Block>& block_stmt) {
   for (const auto& stmt : block_stmt->stmts_) {
     stmt->Accept(*this);
@@ -588,6 +635,7 @@ std::string CodeGenX86::GetSetInstr(TokenType type) {
 }
 
 void CodeGenX86::Generate(const std::vector<std::shared_ptr<Stmt>>& stmts) {
+  Preamble();
   GenGlobalStrings();
   GenGlobals();
   for (const auto& stmt : stmts)
@@ -827,17 +875,41 @@ void CodeGenX86::SpillRegs() {
   for (int i = 0; i < REGISTER_NUM; i++)
     Spill(i);
 }
-
 void CodeGenX86::UnspillRegs() {
   for (int i = REGISTER_NUM - 1; i >= 0; i--)
     Unspill(i);
 }
+
 void CodeGenX86::Spill(int r) {
   out_ << "\tpushq\t" << kRegisters[r] << "\n";
 }
 
 void CodeGenX86::Unspill(int r) {
   out_ << "\tpopq\t" << kRegisters[r] << "\n";
+}
+
+void CodeGenX86::Preamble() {
+  GenText();
+  out_ << "switch:\n"
+       << "\tpushq\t%rsi\n"
+       << "\tmovq\t%rdx,%rsi\n"
+       << "\tmovq\t%rax,%rbx\n"
+       << "\tcld\n"
+       << "\tlodsq\n"
+       << "\tmovq\t%rax,%rcx\n"
+       << "next:\n"
+       << "\tlodsq\n"
+       << "\tmovq\t%rax,%rdx\n"
+       << "\tlodsq\n"
+       << "\tcmpq\t%rdx,%rbx\n"
+       << "\tjnz\tno\n"
+       << "\tpopq\t%rsi\n"
+       << "\tjmp\t*%rax\n"
+       << "no:\n"
+       << "\tloop\tnext\n"
+       << "\tlodsq\n"
+       << "\tpopq\t%rsi\n"
+       << "\tjmp\t*%rax\n";
 }
 
 } // namespace mcc

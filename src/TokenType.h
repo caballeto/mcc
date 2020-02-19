@@ -70,8 +70,11 @@ enum class TokenType {
   T_UNION,
   T_ENUM,
   T_TYPEDEF,
+  T_SWITCH,
+  T_CASE,
+  T_DEFAULT,
 
-  // types
+  // type
   T_NONE,
   T_VOID = 100,
   T_CHAR = 101,

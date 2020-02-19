@@ -1,7 +1,7 @@
-/home/vladyslav/CLionProjects/mcc/tests/test31.input:4:8[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test31.c:4:8[0;31m error [0m
 Increment or decrement operations are invalid for arrays, near '++', line 4
 
-/home/vladyslav/CLionProjects/mcc/tests/test31.input:5:8[0;31m error [0m
+/home/vladyslav/CLionProjects/mcc/tests/test31.c:5:8[0;31m error [0m
 Increment or decrement operations are invalid for arrays, near '--', line 5
 
 Encountered 2 semantic errors. Stopping compilation.

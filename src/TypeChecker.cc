@@ -12,10 +12,6 @@ namespace mcc {
 // Implement type checking for new types (short, int, long, void)
 // Implement code generation for new types
 
-// for tomorrow : big refactoring
-// parser synchronization on errors
-// error reporter to print tokens, line number, character counts
-// support for pointers of different types
 // testing routines + tests with gtest
 
 bool TypeChecker::IsPointer(ExprRef expr) {
@@ -373,6 +369,23 @@ void TypeChecker::Visit(const std::shared_ptr<While>& while_stmt) {
   }
 
   while_stmt->loop_block_->Accept(*this);
+}
+
+// for tomorrow : big refactoring
+// parser synchronization on errors
+// error reporter to print tokens, line number, character counts
+// support for pointers of different types
+void TypeChecker::Visit(const std::shared_ptr<Switch>& switch_stmt) {
+  switch_stmt->expr_->Accept(*this);
+
+  if (!IsIntegerType(switch_stmt->expr_)) {
+    reporter_.Report("Used not-scalar where scalar is required", switch_stmt->token_);
+    return;
+  }
+
+  for (const auto& pair : switch_stmt->cases_) {
+    pair.second->Accept(*this); // check switch branches
+  }
 }
 
 void TypeChecker::Visit(const std::shared_ptr<For>& for_stmt) {
@@ -789,7 +802,6 @@ int TypeChecker::GetOffset(const Type& type, int len) {
   if (type.IsPointer()) return - len * 8;
   return - len * GetTypeSize(type);
 }
-
 int TypeChecker::GetLocalOffset(const Type& type, int len) {
   if (type.IsPointer()) return - (local_offset_ += 8 * len);
   local_offset_ += len * (GetTypeSize(type) > 4 ? GetTypeSize(type) : 4);

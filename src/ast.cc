@@ -23,6 +23,14 @@ int Literal::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Literal>());
 }
 
+bool Expr::IsCompileConstant() {
+  return false;
+}
+
+bool Expr::IsIntConstant() {
+  return false;
+}
+
 bool Expr::IsVariable() {
   return false;
 }
@@ -33,6 +41,14 @@ bool Expr::IsLvalue() {
 
 bool Literal::IsVariable() {
   return !op_->String().empty();
+}
+
+bool Literal::IsIntConstant() {
+  return op_->GetType() == TokenType::T_INT_LIT;
+}
+
+bool Literal::IsCompileConstant() {
+  return op_->GetType() == TokenType::T_INT_LIT || op_->GetType() == TokenType::T_STR_LIT;
 }
 
 void Print::Accept(Visitor<void> &visitor) {
@@ -245,6 +261,14 @@ int Enum::Accept(Visitor<int> &visitor) {
 
 void Enum::Accept(Visitor<void> &visitor) {
   visitor.Visit(shared_from_base<Enum>());
+}
+
+int Switch::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(shared_from_base<Switch>());
+}
+
+void Switch::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Switch>());
 }
 
 } // namespace mcc

@@ -61,10 +61,13 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<Access> &access) override;
   int Visit(const std::shared_ptr<Union> &union_decl) override;
   int Visit(const std::shared_ptr<Enum> &enum_decl) override;
+  int Visit(const std::shared_ptr<Switch> &switch_stmt) override;
 
   int GetLabel();
 
   void GenGlobalString(const std::string& s, int label);
+
+  void Preamble();
 
   void SpillRegs();
   void UnspillRegs();
@@ -95,6 +98,8 @@ class CodeGenX86: public Visitor<int> {
   void GenJump(int label);
   void GenLabel(const std::string &name);
   void GenText();
+  void GenJumpTable(int l_jump_table, const std::vector<std::pair<int, int>> &case_labels, int l_default);
+  void GenJumpToTable(int r, int l_jump_table, int l_reg_load);
   int GenCompositeSize(const std::string &name);
 
   // vars

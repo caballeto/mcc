@@ -12,8 +12,9 @@ namespace mcc {
 
 class AstDumper : public Visitor<int> {
  public:
-  explicit AstDumper(const std::string& file_name)
-    : out_(std::ofstream(file_name, std::ios::out)), spaces_(-TAB_SIZE)
+
+  explicit AstDumper(std::ostream& os)
+    : out_(os), spaces_(-TAB_SIZE)
   { }
 
   void Dump(const std::vector<std::shared_ptr<Stmt>>& stmts);
@@ -43,12 +44,13 @@ class AstDumper : public Visitor<int> {
   int Visit(const std::shared_ptr<Struct> &struct_decl) override;
   int Visit(const std::shared_ptr<Union> &union_decl) override;
   int Visit(const std::shared_ptr<Enum> &enum_decl) override;
+  int Visit(const std::shared_ptr<Switch> &switch_stmt) override;
 
   void Flush();
   int Visit(const std::shared_ptr<Call> &call) override;
   int Visit(const std::shared_ptr<Access> &access) override;
 
-  std::ofstream out_;
+  std::ostream& out_;
   int spaces_;
 };
 

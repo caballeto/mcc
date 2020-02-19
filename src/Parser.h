@@ -44,6 +44,7 @@ class Parser {
   std::shared_ptr<For> ForStatement();
   std::shared_ptr<While> DoWhileStatement();
   std::shared_ptr<Conditional> IfStatement();
+  std::shared_ptr<Switch> SwitchStatement();
   std::shared_ptr<Print> PrintStatement();
   std::shared_ptr<ControlFlow> BreakStatement();
   std::shared_ptr<ControlFlow> ContinueStatement();

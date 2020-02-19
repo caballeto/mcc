@@ -117,4 +117,8 @@ int ControlFlowChecker::Visit(const std::shared_ptr<Enum> &enum_decl) {
   return 0;
 }
 
+int ControlFlowChecker::Visit(const std::shared_ptr<Switch> &switch_stmt) {
+  return 0;
+}
+
 } // namespace mcc

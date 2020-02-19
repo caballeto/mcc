@@ -24,7 +24,13 @@ namespace mcc {
 // #FIXME: rewrite when will add multiple file compilation
 class Compiler {
  public:
-  static int Compile(const std::string& input_file, const std::string& assembly_file, const std::string& dump);
+  static int Compile(const std::string& input_file, const std::string& assembly_file);
+
+  static bool fDumpAst;
+  static bool fKeepAsm;
+  static bool fAssemble;
+  static bool fVerbose;
+  static bool fLink;
 };
 
 } // namespace mcc

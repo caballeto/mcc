@@ -457,4 +457,39 @@ int AstDumper::Visit(const std::shared_ptr<Enum> &enum_decl) {
   return 0;
 }
 
+int AstDumper::Visit(const std::shared_ptr<Switch> &switch_stmt) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<switch>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<expr>\n";
+  spaces_ += TAB_SIZE;
+  switch_stmt->expr_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</expr>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<cases>\n";
+  spaces_ += TAB_SIZE;
+
+  for (const auto& pair : switch_stmt->cases_) { // default case ?
+    out_ << std::string(spaces_ + 2, ' ');
+    if (pair.first != nullptr)
+      out_ << "<case-val='" << pair.first->op_->Int() << "'/>\n";
+    else
+      out_ << "<default/>\n";
+
+    out_ << std::string(spaces_ + 2, ' ') << "<case-body>\n";
+    spaces_ += TAB_SIZE;
+    pair.second->Accept(*this);
+    spaces_ -= TAB_SIZE;
+    out_ << std::string(spaces_ + 2, ' ') << "<case-body>\n";
+  }
+
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</cases>\n";
+
+  out_ << std::string(spaces_, ' ') << "</switch>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
 } // namespace mcc

@@ -40,6 +40,19 @@ class Stmt : public std::enable_shared_from_this<Stmt> {
   std::shared_ptr<Token> token_;
 };
 
+class Switch : public Stmt {
+ public:
+  Switch(std::shared_ptr<Token> token, std::shared_ptr<Expr> expr, std::vector<std::pair<std::shared_ptr<Expr>, std::shared_ptr<Stmt>>> cases)
+    : Stmt(std::move(token)), expr_(std::move(expr)), cases_(std::move(cases))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
+
+  std::shared_ptr<Expr> expr_; // switch expr
+  std::vector<std::pair<std::shared_ptr<Expr>, std::shared_ptr<Stmt>>> cases_; // case & default branches
+};
+
 class Block : public Stmt {
  public:
   Block(std::shared_ptr<Token> token, std::vector<std::shared_ptr<Stmt>> stmts)
@@ -307,6 +320,8 @@ class Expr : public std::enable_shared_from_this<Expr> {
 
   virtual bool IsVariable();
   virtual bool IsLvalue();
+  virtual bool IsIntConstant(); // check if integer compile-time constant
+  virtual bool IsCompileConstant(); // check if compile-time constant (int, string)
 
   template <typename T>
   std::shared_ptr<T> shared_from_base() {
@@ -485,6 +500,8 @@ class Literal : public Expr {
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
+  bool IsIntConstant() override;
+  bool IsCompileConstant() override;
   bool IsVariable() override;
 };
 
