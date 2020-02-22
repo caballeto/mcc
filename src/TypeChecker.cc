@@ -31,7 +31,7 @@ bool TypeChecker::MatchTypeInit(const Type& type, ExprRef init) {
     return IsPointer(init) ? true : (int) type.type_ >= (int) init->type_.type_;
   } else {
     if (type.type_ != init->type()|| type.ind != init->ind())
-      reporter_.Warning("Assign of different type to pointer without a cast", type, init, init->op_);
+      reporter_.Warning("Assign of different type to pointer without a cast ", type, init, init->op_);
     return true;
   }
 }
@@ -93,7 +93,7 @@ bool TypeChecker::MatchPrimitives(ExprRef e1, ExprRef e2, bool to_left, ExprRef 
 bool TypeChecker::MatchMixed(ExprRef e1, ExprRef e2, bool to_left, ExprRef binary) {
   if (binary->op_->GetType() == TokenType::T_ASSIGN) { // assign
     binary->type_ = e1->type_;
-    reporter_.Warning("Assignment with pointer/integer without a cast", e1, e2, binary->op_);
+    reporter_.Warning("Assignment with pointer/integer without a cast ", e1, e2, binary->op_);
   } else if (IsComparison(binary->op_->GetType())) { // comparison
     binary->type_.type_ = TokenType::T_INT;
     binary->type_.ind = 0;
@@ -139,7 +139,9 @@ Type& TypeChecker::PromotePrim(ExprRef e1, ExprRef e2) {
 
 // #FIXME: code gen of conditions with '!'
 void TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
-  unary->expr_->is_const_ = unary->is_const_;
+  if (unary->expr_ != nullptr) {
+    unary->expr_->is_const_ = unary->is_const_;
+  }
 
   switch (unary->op_->GetType()) {
     case TokenType::T_PLUS:
@@ -149,6 +151,24 @@ void TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
       unary->expr_->Accept(*this);
       unary->type_ = unary->expr_->type_;
       return;
+    }
+    case TokenType::T_SIZEOF: {
+      // GetOffset gets type of value
+      if (unary->expr_ == nullptr) {
+        int size = GetSizeOf(unary->type_);
+        unary->op_->SetInt(size);
+      } else {
+        unary->expr_->Accept(*this);
+        int size = GetSizeOf(unary->expr_->type_);
+        unary->op_->SetInt(size);
+      }
+
+      unary->type_.name = nullptr;
+      unary->type_.type_ = TokenType::T_INT;
+      unary->type_.ind = 0;
+      unary->type_.len = 0;
+      unary->expr_ = nullptr;
+      break;
     }
     case TokenType::T_INC:
     case TokenType::T_DEC:
@@ -177,8 +197,15 @@ void TypeChecker::Visit(const std::shared_ptr<Unary>& unary) {
     case TokenType::T_STAR: {
       unary->expr_->Accept(*this);
 
+      // dereferencing not a pointer
       if (!IsPointer(unary->expr_)) {
         reporter_.Report("Expression to '*' must be a pointer", unary->op_);
+        return;
+      }
+
+      // dereferencing void pointer
+      if (unary->expr_->type_.IsVoid()) {
+        reporter_.Report("Dereferencing 'void' pointer is invalid", unary->op_);
         return;
       }
 
@@ -475,6 +502,25 @@ void TypeChecker::Visit(const std::shared_ptr<Enum>& decl) {
   }
 }
 
+void TypeChecker::Visit(const std::shared_ptr<TypeCast>& type_cast) {
+  type_cast->expr_->Accept(*this);
+  if (type_cast->type_.type_ == TokenType::T_IDENTIFIER)
+    TypedefChange(type_cast->type_);
+  if (type_cast->type_.IsPrimitive() || type_cast->type_.IsPointer()) {
+    if (!type_cast->expr_->type_.IsPrimitive() && !type_cast->expr_->type_.IsPointer())
+      reporter_.Report("Casting expression of non-scalar type", type_cast->expr_->op_);
+  } else {
+    reporter_.Report("Casting to non-scalar type requested", type_cast->op_);
+  }
+
+  // warning: cast to struct from primitive type
+  if (type_cast->type_.IsPointer()
+      && (type_cast->type_.IsStruct() ||  type_cast->type_.IsUnion())
+      && type_cast->expr_->type_.IsPrimitive()) {
+    reporter_.Warning("Casting to composite pointer from primitive type ", type_cast->type_, type_cast->expr_, type_cast->op_);
+  }
+}
+
 void TypeChecker::Visit(const std::shared_ptr<Typedef>& typedef_stmt) {
   const std::string& name = typedef_stmt->name_->String();
 
@@ -497,6 +543,8 @@ void TypeChecker::Visit(const std::shared_ptr<Typedef>& typedef_stmt) {
       symbol_table_.PutType(name, &stmt->type_, stmt->fields_);
     }
   } else {
+    if (typedef_stmt->type_.type_ == TokenType::T_IDENTIFIER)
+      TypedefChange(typedef_stmt->type_); // recursive typedef
     symbol_table_.PutType(name, &typedef_stmt->type_, nullptr);
   }
 }
@@ -651,7 +699,7 @@ void TypeChecker::TypedefChange(Type& type) {
     type.type_ = entry->type->type_;
     type.ind += entry->type->ind;
     type.name = entry->type->name;
-    type.len = entry->type->len;
+    // type.len += entry->type->len; #TODO: typedef for arrays
   }
 }
 
@@ -700,6 +748,11 @@ void TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
     return;
   }
 
+  // check extern in local var declarations
+  if (decl->is_local_ && decl->var_type_.storage == S_EXTERN) {
+    reporter_.Report("'extern' in local declarations is not supported", decl->token_);
+  }
+
   // typedef
   if (decl->var_type_.type_ == TokenType::T_IDENTIFIER) {
     TypedefChange(decl->var_type_);
@@ -712,7 +765,7 @@ void TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
 
   if (decl->var_type_.IsStruct() || decl->var_type_.IsUnion()) {
     if (!symbol_table_.ContainsType(decl->var_type_.name->String())) {
-      reporter_.Report("Undefined type", decl->var_type_.name);
+      reporter_.Report("undefined type", decl->var_type_.name);
       return;;
     } else {
       TypeEntry *entry = symbol_table_.GetType(decl->var_type_.name->String());
@@ -876,6 +929,16 @@ void TypeChecker::FreeEntries(Entry *entry) {
     Entry *curr = entry;
     entry = entry->next;
     free(curr);
+  }
+}
+
+int TypeChecker::GetSizeOf(const Type& type) {
+  if (type.IsArray()) {
+    return type.len * (type.ind > 1 ? 8 : GetTypeSize(type));
+  } else if (type.IsPointer()) {
+    return 8;
+  } else {
+    return GetTypeSize(type);
   }
 }
 

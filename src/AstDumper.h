@@ -46,6 +46,7 @@ class AstDumper : public Visitor<int> {
   int Visit(const std::shared_ptr<Enum> &enum_decl) override;
   int Visit(const std::shared_ptr<Switch> &switch_stmt) override;
   int Visit(const std::shared_ptr<Typedef> &typedef_stmt) override;
+  int Visit(const std::shared_ptr<TypeCast> &type_cast) override;
 
   void Flush();
   int Visit(const std::shared_ptr<Call> &call) override;

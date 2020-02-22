@@ -13,6 +13,7 @@
 #include "ErrorReporter.h"
 #include "TokenType.h"
 
+#define REGISTER_ARR_LENGTH 10
 #define REGISTER_NUM 6
 #define NO_RETURN_REGISTER -1
 
@@ -26,6 +27,7 @@ class CodeGenX86: public Visitor<int> {
     return_label_ = -1;
     spilled_reg_ = 0;
 
+    type_sizes_[TokenType::T_VOID] = 1; // for void pointers
     type_sizes_[TokenType::T_CHAR] = 1;
     type_sizes_[TokenType::T_SHORT] = 2;
     type_sizes_[TokenType::T_INT] = 4;
@@ -63,6 +65,7 @@ class CodeGenX86: public Visitor<int> {
   int Visit(const std::shared_ptr<Enum> &enum_decl) override;
   int Visit(const std::shared_ptr<Switch> &switch_stmt) override;
   int Visit(const std::shared_ptr<Typedef> &typedef_stmt) override;
+  int Visit(const std::shared_ptr<TypeCast> &type_cast) override;
 
   int GetLabel();
 
@@ -120,14 +123,14 @@ class CodeGenX86: public Visitor<int> {
   SymbolTable& symbol_table_;
   ErrorReporter& reporter_;
 
-  const std::vector<std::string> kRegisters = {"%r10", "%r11", "%r12", "%r13",
-                                               "%r9", "%r8", "%rcx", "%rdx", "%rsi", "%rdi"};
-  const std::vector<std::string> kDregisters = {"%r10d", "%r11d", "%r12d", "%r13d",
-                                               "%r9d", "%r8d", "%ecx", "%edx", "%esi", "%edi"};
-  const std::vector<std::string> kBregisters = {"%r10b", "%r11b", "%r12b", "%r13b",
-                                               "%r9b", "%r8b", "%cl", "%dl", "%sil", "%dil"};
-  const std::vector<std::string> kWregisters = {"%r10w", "%r11w", "%r12w", "%r13w",
-                                               "%r9w", "%r8w", "%cx", "%dx", "%si", "%di"};
+  const std::string kRegisters[10] = {"%r10", "%r11", "%r12", "%r13",
+                                "%r9", "%r8", "%rcx", "%rdx", "%rsi", "%rdi"};
+  const std::string kDregisters[10] = {"%r10d", "%r11d", "%r12d", "%r13d",
+                                       "%r9d", "%r8d", "%ecx", "%edx", "%esi", "%edi"};
+  const std::string kBregisters[10] = {"%r10b", "%r11b", "%r12b", "%r13b",
+                                       "%r9b", "%r8b", "%cl", "%dl", "%sil", "%dil"};
+  const std::string kWregisters[10] = {"%r10w", "%r11w", "%r12w", "%r13w",
+                                       "%r9w", "%r8w", "%cx", "%dx", "%si", "%di"};
 
   bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true};
 };

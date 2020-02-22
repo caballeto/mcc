@@ -125,4 +125,8 @@ int ControlFlowChecker::Visit(const std::shared_ptr<Typedef> &typedef_stmt) {
   return 0;
 }
 
+int ControlFlowChecker::Visit(const std::shared_ptr<TypeCast> &type_cast) {
+  return 0;
+}
+
 } // namespace mcc

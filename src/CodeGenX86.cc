@@ -174,7 +174,11 @@ int CodeGenX86::Visit(const std::shared_ptr<Access>& access) {
 }
 
 int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
-  int r = unary->expr_->Accept(*this);
+  int r;
+
+  if (unary->expr_ != nullptr) {
+    r = unary->expr_->Accept(*this);
+  }
 
   switch (unary->op_->GetType()) {
     case TokenType::T_PLUS: break;
@@ -206,6 +210,12 @@ int CodeGenX86::Visit(const std::shared_ptr<Unary>& unary) {
              << "\n";
       }
       break;
+    }
+    case TokenType::T_SIZEOF: {
+
+      r = NewRegister();
+      out_ << "\tmovq\t$" << unary->op_->Int() << ", " << kRegisters[r] << "\n";
+      return r;
     }
     case TokenType::T_DEC: {
       if (unary->expr_->IsVariable()) {
@@ -496,11 +506,14 @@ int CodeGenX86::Visit(const std::shared_ptr<Struct> &struct_decl) {
   return 0;
 }
 
-// #TODO: add local variables and parameter code generation
 int CodeGenX86::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   if (func_decl->body_ == nullptr) return NO_RETURN_REGISTER;
   GenText();
-  GenGlob(func_decl->name_->String());
+
+  // glob marker (for non-static functions)
+  if (func_decl->return_type_.storage != S_STATIC) {
+    GenGlob(func_decl->name_->String());
+  }
 
   // prologue
   out_ << "\t.type\t" << func_decl->name_->String() << ", @function\n";
@@ -512,7 +525,7 @@ int CodeGenX86::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
 
   // parameters
   int size = func_decl->signature_->var_decl_list_.size();
-  int preg = kRegisters.size() - 1;
+  int preg = REGISTER_ARR_LENGTH - 1;
   for (int i = 0; i < std::min(size, 6); i++) {
     const auto& decl = func_decl->signature_->var_decl_list_[i];
     out_ << "\tmov" << GetSavePostfix(decl->var_type_, decl->var_type_.ind) << "\t"
@@ -585,7 +598,7 @@ int CodeGenX86::Visit(const std::shared_ptr<Call>& call) {
       const auto& arg = call->args_->expr_list_[i];
       r = arg->Accept(*this);
       out_ << "\tmovq" << "\t" << kRegisters[r] << ", "
-           << kRegisters[kRegisters.size() - i - 1] << "\n";
+           << kRegisters[REGISTER_ARR_LENGTH - i - 1] << "\n";
     } else {
       const auto& arg = call->args_->expr_list_[size - i + 5]; // push in reverse order
       r = arg->Accept(*this);
@@ -618,6 +631,102 @@ int CodeGenX86::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   const auto& labels = loop_stack_.top();
   out_ << "\tjmp\t" << (flow_stmt->is_break_ ? labels.first : labels.second) << "\n";
   return NO_RETURN_REGISTER;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Typedef> &typedef_stmt) {
+  return 0;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<TypeCast> &type_cast) {
+  int r = type_cast->expr_->Accept(*this);
+  return r;
+}
+
+
+int CodeGenX86::Visit(const std::shared_ptr<Label>& label) {
+  GenLabel(label->label_);
+  return 0;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<GoTo>& go_to) {
+  GenJump(labels_[curr_func->name_->String()][go_to->token_->String()]);
+  return 0;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Ternary>& ternary) {
+  int r = ternary->condition_->Accept(*this);
+  int l_start = GetLabel(), l_end = GetLabel();
+
+  out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
+
+  out_ << "\tje\t" << "L" << l_start << "\n";
+  int r1 = ternary->then_->Accept(*this);
+  out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r] << "\n";
+  FreeRegister(r1);
+
+  GenJump(l_end);
+  GenLabel(l_start);
+  int r2 = ternary->else_->Accept(*this);
+  out_ << "\tmovq\t" << kRegisters[r2] << ", " << kRegisters[r] << "\n";
+  FreeRegister(r2);
+
+  GenLabel(l_end);
+  return r;
+}
+
+int CodeGenX86::Visit(const std::shared_ptr<Postfix>& postfix) {
+  int r1 = postfix->expr_->Accept(*this);
+
+  switch (postfix->op_->GetType()) {
+    case TokenType::T_INC: {
+      if (postfix->expr_->IsVariable()) {
+        const std::shared_ptr<Literal>& lit = std::static_pointer_cast<Literal>(postfix->expr_);
+        out_ << "\tadd" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
+             << "\t$" << (postfix->to_scale_ ? type_sizes_[postfix->expr_->type_.type_] : 1)
+             << ", " << GenLoad(lit) << "\n";
+        break;
+      } else {
+        int r2 = NewRegister();
+        out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
+        out_ << "\tmov" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
+             << "\t(" << kRegisters[r2] << "), "
+             << GetRegister(r1, postfix->expr_->type_, postfix->expr_->type_.ind)
+             << "\n";
+        out_ << "\tadd"
+             << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
+             << "\t$1, (" << kRegisters[r2] << ")\n";
+        FreeRegister(r2);
+        return r1;
+      }
+    }
+    case TokenType::T_DEC: {
+      if (postfix->expr_->IsVariable()) {
+        const std::shared_ptr<Literal>& lit = std::static_pointer_cast<Literal>(postfix->expr_);
+        out_ << "\tsub" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
+             << "\t$" << (postfix->to_scale_ ? type_sizes_[postfix->expr_->type_.type_] : 1)
+             << ", " << GenLoad(lit) << "\n";
+        break;
+      } else {
+        int r2 = NewRegister();
+        out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
+        out_ << "\tmov" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
+             << "\t(" << kRegisters[r2] << "), "
+             << GetRegister(r1, postfix->expr_->type_, postfix->expr_->type_.ind)
+             << "\n";
+        out_ << "\tsub"
+             << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
+             << "\t$1, (" << kRegisters[r2] << ")\n";
+        FreeRegister(r2);
+        return r1;
+      }
+    }
+    default: {
+      std::cerr << "Invalid operator in postfix expression." << std::endl;
+      exit(1);
+    }
+  }
+
+  return r1;
 }
 
 std::string CodeGenX86::GetSetInstr(TokenType type) {
@@ -713,22 +822,25 @@ void CodeGenX86::GenLabel(const std::string& name) {
 void CodeGenX86::GenGlobals() {
   std::unordered_map<std::string, Entry>& global = symbol_table_.GetGlobalScope();
   for (const auto& pair : global) {
-    if (pair.second.func != nullptr || pair.second.type->type_ == TokenType::T_ENUM) continue;
+    if (pair.second.func != nullptr || pair.second.type->type_ == TokenType::T_ENUM || pair.second.type->storage == S_EXTERN)
+      continue;
     const std::string& name = pair.first;
     const Entry& entry = pair.second;
     if (entry.type->IsArray()) {
       GenData();
-      GenGlob(name);
+      if (entry.type->storage != S_STATIC) GenGlob(name);
       GenLabel(name);
       for (int i = 0; i < entry.type->len; i++) {
         out_ << "\t." << GetAllocType(*entry.type, entry.type->ind) << "\t0\n";
       }
     } else if (entry.type->IsPointer() || entry.type->IsPrimitive()) {
+      if (entry.type->storage == S_STATIC)
+        out_ << "\t.local\t" << name << "\n";
       int size = GetTypeSize(*entry.type, entry.type->ind);
       out_ << "\t.comm\t" << name << "," << size << "," << size << "\n";
     } else if (entry.type->IsStruct() || entry.type->IsUnion()) { // struct variable
       GenData();
-      GenGlob(name);
+      if (entry.type->storage != S_STATIC) GenGlob(name);
       GenLabel(name);
       int size = GenCompositeSize(entry.type->name->String());
       for (int i = 0; i < size; i++) {
@@ -769,92 +881,6 @@ std::string CodeGenX86::GenLoad(const std::string& name, int offset, bool is_loc
 std::ostream& CodeGenX86::GenLabel(int label) {
   out_ << "L" << label << ":\n";
   return out_;
-}
-
-int CodeGenX86::Visit(const std::shared_ptr<Label>& label) {
-  GenLabel(label->label_);
-  return 0;
-}
-
-int CodeGenX86::Visit(const std::shared_ptr<GoTo>& go_to) {
-  GenJump(labels_[curr_func->name_->String()][go_to->token_->String()]);
-  return 0;
-}
-
-int CodeGenX86::Visit(const std::shared_ptr<Ternary>& ternary) {
-  int r = ternary->condition_->Accept(*this);
-  int l_start = GetLabel(), l_end = GetLabel();
-
-  out_ << "\tcmpq\t$0, " << kRegisters[r] << "\n";
-
-  out_ << "\tje\t" << "L" << l_start << "\n";
-  int r1 = ternary->then_->Accept(*this);
-  out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r] << "\n";
-  FreeRegister(r1);
-
-  GenJump(l_end);
-  GenLabel(l_start);
-  int r2 = ternary->else_->Accept(*this);
-  out_ << "\tmovq\t" << kRegisters[r2] << ", " << kRegisters[r] << "\n";
-  FreeRegister(r2);
-
-  GenLabel(l_end);
-  return r;
-}
-
-int CodeGenX86::Visit(const std::shared_ptr<Postfix>& postfix) {
-  int r1 = postfix->expr_->Accept(*this);
-
-  switch (postfix->op_->GetType()) {
-    case TokenType::T_INC: {
-      if (postfix->expr_->IsVariable()) {
-        const std::shared_ptr<Literal>& lit = std::static_pointer_cast<Literal>(postfix->expr_);
-        out_ << "\tadd" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
-             << "\t$" << (postfix->to_scale_ ? type_sizes_[postfix->expr_->type_.type_] : 1)
-             << ", " << GenLoad(lit) << "\n";
-        break;
-      } else {
-        int r2 = NewRegister();
-        out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-        out_ << "\tmov" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
-             << "\t(" << kRegisters[r2] << "), "
-             << GetRegister(r1, postfix->expr_->type_, postfix->expr_->type_.ind)
-             << "\n";
-        out_ << "\tadd"
-             << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
-             << "\t$1, (" << kRegisters[r2] << ")\n";
-        FreeRegister(r2);
-        return r1;
-      }
-    }
-    case TokenType::T_DEC: {
-      if (postfix->expr_->IsVariable()) {
-        const std::shared_ptr<Literal>& lit = std::static_pointer_cast<Literal>(postfix->expr_);
-        out_ << "\tsub" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
-             << "\t$" << (postfix->to_scale_ ? type_sizes_[postfix->expr_->type_.type_] : 1)
-             << ", " << GenLoad(lit) << "\n";
-        break;
-      } else {
-        int r2 = NewRegister();
-        out_ << "\tmovq\t" << kRegisters[r1] << ", " << kRegisters[r2] << "\n";
-        out_ << "\tmov" << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
-             << "\t(" << kRegisters[r2] << "), "
-             << GetRegister(r1, postfix->expr_->type_, postfix->expr_->type_.ind)
-             << "\n";
-        out_ << "\tsub"
-             << GetSavePostfix(postfix->expr_->type_, postfix->expr_->type_.ind)
-             << "\t$1, (" << kRegisters[r2] << ")\n";
-        FreeRegister(r2);
-        return r1;
-      }
-    }
-    default: {
-      std::cerr << "Invalid operator in postfix expression." << std::endl;
-      exit(1);
-    }
-  }
-
-  return r1;
 }
 
 std::string CodeGenX86::GetAllocType(const Type& type, int ind) {
@@ -910,10 +936,6 @@ void CodeGenX86::Preamble() {
        << "\tlodsq\n"
        << "\tpopq\t%rsi\n"
        << "\tjmp\t*%rax\n";
-}
-
-int CodeGenX86::Visit(const std::shared_ptr<Typedef> &typedef_stmt) {
-  return 0;
 }
 
 } // namespace mcc

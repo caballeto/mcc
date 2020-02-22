@@ -286,7 +286,11 @@ int AstDumper::Visit(const std::shared_ptr<Postfix>& postfix) {
 int AstDumper::Visit(const std::shared_ptr<Unary>& unary) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<unary op='" << unary->op_->GetType() << "'>" << "\n";
-  unary->expr_->Accept(*this);
+  if (unary->expr_ != nullptr) {
+    unary->expr_->Accept(*this);
+  } else {
+    out_ << std::string(spaces_ + 2, ' ') << "<type>" << unary->type_ << "</type>" << "\n";
+  }
   out_ << std::string(spaces_, ' ') << "</unary>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;
@@ -500,6 +504,22 @@ int AstDumper::Visit(const std::shared_ptr<Typedef>& typedef_stmt) {
   out_ << std::string(spaces_ + 2, ' ') << "<name>"
        << typedef_stmt->name_->String() << "</name>\n";
   out_ << std::string(spaces_, ' ') << "<typedef>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(const std::shared_ptr<TypeCast> &type_cast) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<typecast>\n";
+  out_ << std::string(spaces_, ' ') << "<type>" << type_cast->type_ << "</type>\n";
+
+  out_ << std::string(spaces_ + 2, ' ') << "<expr>";
+  spaces_ += TAB_SIZE;
+  type_cast->expr_->Accept(*this);
+  spaces_ -= TAB_SIZE;
+  out_ << std::string(spaces_ + 2, ' ') << "</expr>";
+
+  out_ << std::string(spaces_, ' ') << "<typecast>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }

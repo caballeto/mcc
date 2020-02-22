@@ -1,0 +1,13 @@
+/home/vladyslav/CLionProjects/mcc/tests/test54.c:12:3[0;31m error [0m
+Dereferencing 'void' pointer is invalid, near '*', line 12
+
+/home/vladyslav/CLionProjects/mcc/tests/test54.c:14:19[0;31m error [0m
+Casting expression of non-scalar type, near 'book', line 14
+
+/home/vladyslav/CLionProjects/mcc/tests/test54.c:15:21[0;31m error [0m
+Casting expression of non-scalar type, near 'book', line 15
+
+/home/vladyslav/CLionProjects/mcc/tests/test54.c:15:13[36m warning [0m
+Assign of different type to pointer without a cast ('long*' and 'struct*'), near '(', line 15
+
+Encountered 3 semantic errors. Stopping compilation.

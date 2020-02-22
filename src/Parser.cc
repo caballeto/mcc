@@ -41,9 +41,7 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(Type type, std::shared_ptr<To
 
   if (!Check(TokenType::T_SEMICOLON)) {
     do {
-      int ind = 0;
-      while (Match(TokenType::T_STAR)) ind++;
-      type.ind = ind;
+      ParsePtr(type);
       name = Consume(TokenType::T_IDENTIFIER, "Expected identifier after type declaration");
       if (Match(TokenType::T_LBRACKET)) {
         std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
@@ -81,9 +79,7 @@ std::shared_ptr<Stmt> Parser::Declaration() {
     }
   }
 
-  int indirection = 0;
-  while (Match(TokenType::T_STAR)) indirection++;
-  type.ind = indirection;
+  ParsePtr(type);
   std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER, "Identifier expected in global declaration");
 
   if (Match(TokenType::T_LPAREN)) { // function
@@ -91,6 +87,7 @@ std::shared_ptr<Stmt> Parser::Declaration() {
     Consume(TokenType::T_RPAREN, "')' expected after function declaration");
     std::shared_ptr<Block> block = nullptr;
     if (Check(TokenType::T_LBRACE)) {
+      if (type.storage == S_EXTERN) throw ParseException("Function definition of function marked 'extern'", name);
       block = BlockStatement();
     } else {
       Consume(TokenType::T_SEMICOLON, "';' expected after function prototype");
@@ -136,9 +133,7 @@ std::shared_ptr<Typedef> Parser::TypedefDeclaration() {
       throw ParseException("Only struct/unions supported as typedef for now", typedef_token);
     }
   } else {
-    int ind = 0;
-    while (Match(TokenType::T_STAR)) ind++;
-    type.ind = ind;
+    ParsePtr(type);
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER, "Typedef name expected after type in 'typedef'");
     Consume(TokenType::T_SEMICOLON, "';' expected after 'typedef'");
     symbol_table_.PutType(name->String(), nullptr, nullptr);
@@ -188,7 +183,6 @@ std::shared_ptr<Struct> Parser::StructDeclaration(const Type& type) {
 }
 
 // #FIXME: global elements could only have CONSTANT inits (add type check + fix parser)
-// #FIXME: local variables could use themselves in their own inits (will be written to some mem (e. g. addq $1, -4(%rbp))
 std::shared_ptr<Stmt> Parser::Statement() {
   switch (Peek()->GetType()) {
     case TokenType::T_PRINT:    return PrintStatement();
@@ -211,15 +205,9 @@ std::shared_ptr<Stmt> Parser::Statement() {
     case TokenType::T_INT:
     case TokenType::T_SHORT:
     case TokenType::T_LONG:
-    case TokenType::T_IDENTIFIER: {
-      if (Peek()->GetType() == TokenType::T_IDENTIFIER) {
-        if (symbol_table_.ContainsType(Peek()->String())) {
-          return DeclarationList();
-        }
-      } else {
+    case TokenType::T_IDENTIFIER:
+      if (IsType())
         return DeclarationList();
-      }
-    }
     default:
       if (Check(TokenType::T_IDENTIFIER) && PeekNext()->GetType() == TokenType::T_COLON) {
         std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER);
@@ -323,7 +311,6 @@ std::shared_ptr<Switch> Parser::SwitchStatement() {
   return std::make_shared<Switch>(token, expr, std::move(cases));
 }
 
-// #FIXME: make condition expression optional by adding break/continue
 std::shared_ptr<For> Parser::ForStatement() {
   std::shared_ptr<Token> for_token = Consume(TokenType::T_FOR);
   Consume(TokenType::T_LPAREN, "Expected '(' after 'for' statement");
@@ -370,9 +357,7 @@ std::shared_ptr<DeclList> Parser::ParameterList(TokenType delim, TokenType stop,
   do {
     if (Check(stop)) break;
     Type type = ParsePrim();
-    int indirection = 0;
-    while (Match(TokenType::T_STAR)) indirection++;
-    type.ind = indirection;
+    ParsePtr(type);
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
     if (!is_param && Match(TokenType::T_LBRACKET)) {
       std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
@@ -391,9 +376,7 @@ std::shared_ptr<DeclList> Parser::DeclarationList() {
   Type type = ParsePrim();
 
   do {
-    int ind = 0;
-    while (Match(TokenType::T_STAR)) ind++;
-    type.ind = ind;
+    ParsePtr(type);
     std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER,"Expected identifier after type declaration");
     if (Match(TokenType::T_LBRACKET)) {
       std::shared_ptr<Token> len = Consume(TokenType::T_INT_LIT, "Expected integer length > 0");
@@ -549,9 +532,37 @@ std::shared_ptr<Expr> Parser::Primary() {
     case TokenType::T_LPAREN: {
       std::shared_ptr<Token> paren = Peek();
       Next();
-      std::shared_ptr<Expr> expr = Expression(0);
-      Consume(TokenType::T_RPAREN, "')' expected after grouping expression");
-      return std::make_shared<Grouping>(paren, expr);
+      if (IsType()) {
+        Type type = ParsePrim();
+        ParsePtr(type);
+        Consume(TokenType::T_RPAREN, "')' expected after cast");
+        std::shared_ptr<Expr> expr = Expression(15); // #FIXME: hard constant precedence
+        auto cast_expr = std::make_shared<TypeCast>(paren, expr);
+        cast_expr->type_ = type;
+        return cast_expr;
+      } else {
+        std::shared_ptr<Expr> expr = Expression(0);
+        Consume(TokenType::T_RPAREN, "')' expected after grouping expression");
+        return std::make_shared<Grouping>(paren, expr);
+      }
+    }
+    case TokenType::T_SIZEOF: {
+      std::shared_ptr<Token> op = Peek();
+      std::shared_ptr<Unary> unary;
+      Next();
+      Consume(TokenType::T_LPAREN, "'(' expected after sizeof operator");
+      if (IsType()) {
+        Type type = ParsePrim();
+        ParsePtr(type);
+        unary = std::make_shared<Unary>(op, nullptr);
+        unary->type_ = type;
+      } else {
+        std::shared_ptr<Expr> expr = Expression(0);
+        unary = std::make_shared<Unary>(op, expr);
+      }
+
+      Consume(TokenType::T_RPAREN, "')' expected after sizeof operator");
+      return unary;
     }
     case TokenType::T_INC:
     case TokenType::T_DEC:
@@ -569,6 +580,25 @@ std::shared_ptr<Expr> Parser::Primary() {
     default:
       throw ParseException("Expected identifier or literal", Peek());
   }
+}
+
+bool Parser::IsType() {
+  switch (Peek()->GetType()) {
+    case TokenType::T_CHAR:
+    case TokenType::T_SHORT:
+    case TokenType::T_INT:
+    case TokenType::T_LONG:
+    case TokenType::T_VOID:
+    case TokenType::T_ENUM:
+    case TokenType::T_UNION:
+    case TokenType::T_STRUCT:
+      return true;
+    case TokenType::T_IDENTIFIER:
+      if (symbol_table_.ContainsType(Peek()->String()))
+        return true;
+  }
+
+  return false;
 }
 
 bool Parser::IsStopToken(TokenType type) {
@@ -596,8 +626,26 @@ bool Parser::CheckType() {
   return false;
 }
 
+void Parser::ParsePtr(Type& type) {
+  int ind = 0;
+  while (Match(TokenType::T_STAR)) ind++;
+  type.ind = ind;
+}
+
 Type Parser::ParsePrim() {
   Type type;
+
+  if (Peek()->GetType() == TokenType::T_STATIC) {
+    type.storage = S_STATIC;
+    Next();
+  }
+
+  if (Peek()->GetType() == TokenType::T_EXTERN) {
+    if (type.storage != S_NONE)
+      throw ParseException("Multiple storage class specifiers", Peek());
+    type.storage = S_EXTERN;
+    Next();
+  }
 
   switch (Peek()->GetType()) {
     case TokenType::T_CHAR:
@@ -619,7 +667,7 @@ Type Parser::ParsePrim() {
     case TokenType::T_IDENTIFIER:
       if (symbol_table_.ContainsType(Peek()->String())) {
         type.type_ = TokenType::T_IDENTIFIER;
-        type.name = Peek(); // #TODO: check if needed
+        type.name = Peek();
         Next();
         break;
       }

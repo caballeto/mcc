@@ -73,6 +73,10 @@ enum class TokenType {
   T_SWITCH,
   T_CASE,
   T_DEFAULT,
+  T_SIZEOF,
+  T_EXTERN,
+  T_STATIC,
+  T_TAG,
 
   // type
   T_NONE,

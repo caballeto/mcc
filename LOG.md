@@ -565,11 +565,23 @@ name -> &Type
 
 ### **Results**
 
-- [x] typedef with primitives, union, struct
-  (no enums, arrays, recursive typedefs)
-- [ ] type casts
-- [ ] sizeof
+- [x] typedef with primitives, union, struct, recursive typedef
+  (no enums, arrays)
+- [x] type casts
+- [x] sizeof
+- [x] extern
+- [x] static
 - [ ] preprocessor
-- [ ] extern
-- [ ] static
 
+**Fix**
+
+- [x] fix sizeof incorrect behaviour with array
+
+**Next**
+
+- preprocessor
+- global variable init & fold optimization
+- conditional expression, &&, ||
+- more assign operators (+=, -=, %+, etc.)
+- refactoring
+- test on some bigger programs

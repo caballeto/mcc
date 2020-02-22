@@ -62,10 +62,14 @@ class Parser {
   std::shared_ptr<Struct> StructDeclaration(const Type& type);
   std::shared_ptr<Union> UnionDeclaration(const Type& type);
   std::shared_ptr<Enum> EnumDeclaration(const Type& type);
+  std::shared_ptr<Typedef> TypedefDeclaration();
   std::shared_ptr<Return> ReturnStatement();
 
   Type ParsePrim();
   bool CheckType();
+
+  bool IsType();
+  void ParsePtr(Type &type);
 
   std::shared_ptr<DeclList> ParameterList(TokenType delim, TokenType stop, bool is_param);
 
@@ -74,7 +78,6 @@ class Parser {
   SymbolTable& symbol_table_;
   std::shared_ptr<Token> token_;
   std::shared_ptr<Token> look_ahead_;
-  std::shared_ptr<Typedef> TypedefDeclaration();
 };
 
 } // namespace mcc

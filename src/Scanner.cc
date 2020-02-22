@@ -31,6 +31,9 @@ Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
   keywords_["switch"] = TokenType::T_SWITCH;
   keywords_["case"] = TokenType::T_CASE;
   keywords_["default"] = TokenType::T_DEFAULT;
+  keywords_["sizeof"] = TokenType::T_SIZEOF;
+  keywords_["extern"] = TokenType::T_EXTERN;
+  keywords_["static"] = TokenType::T_STATIC;
 
   // types
   keywords_["void"] = TokenType::T_VOID;
@@ -68,6 +71,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
         Putback(c);
       }
       break;
+    case '#':break; // #TODO: preproc
     case '*':
       token->SetType(TokenType::T_STAR);
       break;
@@ -140,7 +144,7 @@ std::shared_ptr<Token> Scanner::GetToken() {
       if ((c = Next()) == '=') {
         token->SetType(TokenType::T_GREATER_EQUAL);
       } else if (c == '>') {
-        token->SetType(TokenType::T_RSHIFT); // #TODO: check whether correct
+        token->SetType(TokenType::T_RSHIFT);
       } else {
         token->SetType(TokenType::T_GREATER);
         Putback(c);

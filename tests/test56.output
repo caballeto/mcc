@@ -1,0 +1,3 @@
+/home/vladyslav/CLionProjects/mcc/tests/test56.c:12:13[36m warning [0m
+Casting to composite pointer from primitive type ('struct*' and 'long'), near '(', line 12
+

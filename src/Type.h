@@ -9,10 +9,16 @@
 
 namespace mcc {
 
+enum {
+  S_NONE,
+  S_STATIC,
+  S_EXTERN
+};
+
 class Type {
  public:
   Type()
-    : name(nullptr), type_(TokenType::T_NONE), ind(0), len(0)
+    : name(nullptr), type_(TokenType::T_NONE), ind(0), len(0), storage(S_NONE)
   { }
 
   bool IsArray() const;
@@ -28,6 +34,7 @@ class Type {
   TokenType type_; // type class (char, short, int, long, struct, union) or identifier for typedef
   int ind; // indirection level (number of pointers)
   int len; // length for arrays
+  int storage; // (extern, static)
 };
 
 std::ostream& operator<<(std::ostream& os, const Type& type);

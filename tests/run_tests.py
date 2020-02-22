@@ -37,6 +37,7 @@ def generate():
         else:
             with open(DIR_PATH + "/" + output, 'w') as f:
                 f.write(out)
+    clear()
 
 def main(args):
     files = [x for x in os.listdir(DIR_PATH) if x.endswith(".c")]
@@ -60,6 +61,7 @@ def main(args):
         compare(read_file(DIR_PATH + "/" + TEMP_FILE), read_file(DIR_PATH + "/" + output), input, output)
 
     clear()
+    os.remove(DIR_PATH + "/_temp.txt")
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:

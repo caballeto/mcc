@@ -68,6 +68,15 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
     case TokenType::T_UNION: return os << "union";
     case TokenType::T_NONE: return os << "NO TYPE";
     case TokenType::T_CHAR: return os << "char";
+    case TokenType::T_ENUM: return os << "enum";
+    case TokenType::T_TYPEDEF: return os << "typedef";
+    case TokenType::T_SWITCH: return os << "switch";;
+    case TokenType::T_CASE: return os << "case";
+    case TokenType::T_DEFAULT: return os << "default";
+    case TokenType::T_SIZEOF: return os << "sizeof";
+    case TokenType::T_EXTERN: return os << "extern";
+    case TokenType::T_STATIC: return os << "static";
+    case TokenType::T_TAG: return os << "#";
   }
 
   return os << static_cast<std::uint16_t>(type);
@@ -114,6 +123,7 @@ int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary) {
     case TokenType::T_NEG:
     case TokenType::T_DEC:
     case TokenType::T_INC:
+    case TokenType::T_SIZEOF:
       return 14;
     case TokenType::T_LPAREN:
     case TokenType::T_LBRACKET:

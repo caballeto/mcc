@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+int x;
+
 void printint(long x) {
   printf("%ld\n", x);
 }

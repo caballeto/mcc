@@ -287,4 +287,12 @@ void Typedef::Accept(Visitor<void> &visitor) {
   visitor.Visit(shared_from_base<Typedef>());
 }
 
+int TypeCast::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(shared_from_base<TypeCast>());
+}
+
+void TypeCast::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<TypeCast>());
+}
+
 } // namespace mcc

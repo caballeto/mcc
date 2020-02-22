@@ -368,6 +368,18 @@ class Expr : public std::enable_shared_from_this<Expr> {
   std::shared_ptr<Token> op_;
 };
 
+class TypeCast : public Expr {
+ public:
+  TypeCast(std::shared_ptr<Token> op, std::shared_ptr<Expr> expr)
+    : Expr(std::move(op)), expr_(std::move(expr))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
+
+  std::shared_ptr<Expr> expr_;
+};
+
 class Index : public Expr {
  public:
   Index(std::shared_ptr<Token> op, std::shared_ptr<Expr> name, std::shared_ptr<Expr> index)
