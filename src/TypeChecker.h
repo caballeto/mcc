@@ -52,6 +52,7 @@ class TypeChecker : public Visitor<void> {
   void Visit(const std::shared_ptr<Union> &decl) override;
   void Visit(const std::shared_ptr<Enum> &decl) override;
   void Visit(const std::shared_ptr<Switch> &switch_stmt) override;
+  void Visit(const std::shared_ptr<Typedef> &typedef_stmt) override;
 
   void NewLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
   void CheckLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
@@ -96,6 +97,7 @@ class TypeChecker : public Visitor<void> {
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;
   std::shared_ptr<FuncDecl> curr_func_;
+  void TypedefChange(Type &type);
 };
 
 } // namespace mcc

@@ -1,11 +1,6 @@
 void printint(long x);
 void printchar(long x);
-
-void printstr(char* str) {
-  for (; *str != 0; str++) {
-    printchar(*str);
-  }
-}
+void printstr(char* str);
 
 struct Book {
   char c;

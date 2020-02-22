@@ -64,6 +64,9 @@ std::shared_ptr<Stmt> Parser::GlobalVarDeclaration(Type type, std::shared_ptr<To
 
 // #FIXME: for strucrs/unions
 std::shared_ptr<Stmt> Parser::Declaration() {
+  if (Check(TokenType::T_TYPEDEF))
+    return TypedefDeclaration();
+
   Type type = ParsePrim();
 
   if (Check(TokenType::T_LBRACE)) { // struct declaration
@@ -71,8 +74,11 @@ std::shared_ptr<Stmt> Parser::Declaration() {
       return StructDeclaration(type);
     else if (type.type_ == TokenType::T_UNION)
       return UnionDeclaration(type);
-    else
+    else if (type.type_ == TokenType::T_ENUM) {
       return EnumDeclaration(type);
+    } else {
+      throw ParseException("Unexpected brace", Peek());
+    }
   }
 
   int indirection = 0;
@@ -93,6 +99,50 @@ std::shared_ptr<Stmt> Parser::Declaration() {
     return std::make_shared<FuncDecl>(std::move(type), name, signature, block);
   } else { // global var declaration
     return GlobalVarDeclaration(type, name);
+  }
+}
+
+// typedef int Int;
+// typedef int* iptr;
+// typedef struct S A;
+// typedef struct S*** B;
+// typedef char* C;
+// typedef struct { int x; } D;
+// typedef union { int x; int y; } E;
+// typedef enum { A, B, C } F; // ???
+// typedef struct X { int x; } D;
+std::shared_ptr<Typedef> Parser::TypedefDeclaration() {
+  std::shared_ptr<Token> typedef_token = Consume(TokenType::T_TYPEDEF);
+  Type type = ParsePrim();
+
+  if (Check(TokenType::T_LBRACE)) {
+    if (type.IsStruct()) {
+      std::shared_ptr<Struct> stmt = StructDeclaration(type);
+      std::shared_ptr<Token> name = stmt->var_name_;
+      if (name == nullptr)
+        throw ParseException("Typedef name expected after type in 'typedef'", typedef_token);
+      stmt->var_name_ = nullptr;
+      symbol_table_.PutType(name->String(), nullptr, nullptr);
+      return std::make_shared<Typedef>(typedef_token, type, name, stmt);
+    } else if (type.IsUnion()) {
+      std::shared_ptr<Union> stmt = UnionDeclaration(type);
+      std::shared_ptr<Token> name = stmt->var_name_;
+      if (name == nullptr)
+        throw ParseException("Typedef name expected after type in 'typedef'", typedef_token);
+      stmt->var_name_ = nullptr;
+      symbol_table_.PutType(name->String(), nullptr, nullptr);
+      return std::make_shared<Typedef>(typedef_token, type, name, stmt);
+    } else {
+      throw ParseException("Only struct/unions supported as typedef for now", typedef_token);
+    }
+  } else {
+    int ind = 0;
+    while (Match(TokenType::T_STAR)) ind++;
+    type.ind = ind;
+    std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER, "Typedef name expected after type in 'typedef'");
+    Consume(TokenType::T_SEMICOLON, "';' expected after 'typedef'");
+    symbol_table_.PutType(name->String(), nullptr, nullptr);
+    return std::make_shared<Typedef>(typedef_token, type, name, nullptr);
   }
 }
 
@@ -142,14 +192,6 @@ std::shared_ptr<Struct> Parser::StructDeclaration(const Type& type) {
 std::shared_ptr<Stmt> Parser::Statement() {
   switch (Peek()->GetType()) {
     case TokenType::T_PRINT:    return PrintStatement();
-    case TokenType::T_ENUM:
-    case TokenType::T_UNION:
-    case TokenType::T_STRUCT:
-    case TokenType::T_VOID:
-    case TokenType::T_CHAR:
-    case TokenType::T_INT:
-    case TokenType::T_SHORT:
-    case TokenType::T_LONG:     return DeclarationList();
     case TokenType::T_SWITCH:   return SwitchStatement();
     case TokenType::T_IF:       return IfStatement();
     case TokenType::T_WHILE:    return WhileStatement();
@@ -160,6 +202,24 @@ std::shared_ptr<Stmt> Parser::Statement() {
     case TokenType::T_CONTINUE: return ContinueStatement();
     case TokenType::T_RETURN:   return ReturnStatement();
     case TokenType::T_GOTO:     return GotoStatement();
+    case TokenType::T_TYPEDEF:  return TypedefDeclaration();
+    case TokenType::T_ENUM:
+    case TokenType::T_UNION:
+    case TokenType::T_STRUCT:
+    case TokenType::T_VOID:
+    case TokenType::T_CHAR:
+    case TokenType::T_INT:
+    case TokenType::T_SHORT:
+    case TokenType::T_LONG:
+    case TokenType::T_IDENTIFIER: {
+      if (Peek()->GetType() == TokenType::T_IDENTIFIER) {
+        if (symbol_table_.ContainsType(Peek()->String())) {
+          return DeclarationList();
+        }
+      } else {
+        return DeclarationList();
+      }
+    }
     default:
       if (Check(TokenType::T_IDENTIFIER) && PeekNext()->GetType() == TokenType::T_COLON) {
         std::shared_ptr<Token> name = Consume(TokenType::T_IDENTIFIER);
@@ -556,12 +616,19 @@ Type Parser::ParsePrim() {
       if (Check(TokenType::T_IDENTIFIER))
         type.name = Consume(TokenType::T_IDENTIFIER);
       break;
+    case TokenType::T_IDENTIFIER:
+      if (symbol_table_.ContainsType(Peek()->String())) {
+        type.type_ = TokenType::T_IDENTIFIER;
+        type.name = Peek(); // #TODO: check if needed
+        Next();
+        break;
+      }
     default: {
       throw ParseException("Could not parse type", Peek());
     }
   }
 
-  return std::move(type);
+  return type;
 }
 
 void Parser::Synchronize() {

@@ -17,6 +17,11 @@ def read_file(file):
     with open(file, 'r') as f:
         return f.readlines()
 
+def clear():
+    for f in os.listdir(DIR_PATH):
+        if f.endswith(".s") or f.endswith(".o"):
+            os.remove(DIR_PATH + "/" + f)
+
 def generate():
     files = [x for x in os.listdir(DIR_PATH) if x.endswith(".c")]
     for input in files:
@@ -53,6 +58,8 @@ def main(args):
             f.write(out)
 
         compare(read_file(DIR_PATH + "/" + TEMP_FILE), read_file(DIR_PATH + "/" + output), input, output)
+
+    clear()
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:

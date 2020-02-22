@@ -13,8 +13,8 @@ namespace mcc {
 
 class Parser {
  public:
-  explicit Parser(Scanner& scanner, ErrorReporter& reporter)
-    : scanner_(scanner), reporter_(reporter), token_(nullptr), look_ahead_(nullptr)
+  explicit Parser(Scanner& scanner, ErrorReporter& reporter, SymbolTable& symbol_table)
+    : scanner_(scanner), reporter_(reporter), token_(nullptr), look_ahead_(nullptr), symbol_table_(symbol_table)
   { Next(); }
 
   std::vector<std::shared_ptr<Stmt>> Parse();
@@ -64,13 +64,17 @@ class Parser {
   std::shared_ptr<Enum> EnumDeclaration(const Type& type);
   std::shared_ptr<Return> ReturnStatement();
 
-  std::shared_ptr<DeclList> ParameterList(TokenType delim, TokenType stop, bool is_param);
-  Scanner& scanner_;
-  ErrorReporter& reporter_;
-  std::shared_ptr<Token> token_;
-  std::shared_ptr<Token> look_ahead_;
   Type ParsePrim();
   bool CheckType();
+
+  std::shared_ptr<DeclList> ParameterList(TokenType delim, TokenType stop, bool is_param);
+
+  Scanner& scanner_;
+  ErrorReporter& reporter_;
+  SymbolTable& symbol_table_;
+  std::shared_ptr<Token> token_;
+  std::shared_ptr<Token> look_ahead_;
+  std::shared_ptr<Typedef> TypedefDeclaration();
 };
 
 } // namespace mcc

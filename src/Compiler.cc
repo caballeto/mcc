@@ -19,7 +19,7 @@ int Compiler::Compile(const std::string& input_file, const std::string& assembly
 
   mcc::SymbolTable symbol_table;
   mcc::Scanner scanner(input_file, reporter);
-  mcc::Parser parser(scanner, reporter);
+  mcc::Parser parser(scanner, reporter, symbol_table);
   mcc::CodeGenX86 code_gen(out, symbol_table, reporter);
   mcc::TypeChecker type_checker(code_gen, reporter, symbol_table);
 

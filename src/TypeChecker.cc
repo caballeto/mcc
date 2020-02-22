@@ -253,6 +253,7 @@ void TypeChecker::Visit(const std::shared_ptr<Assign>& assign) {
 }
 
 void TypeChecker::TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts) {
+  symbol_table_.ClearTypes();
   for (const auto& stmt : stmts) {
     stmt->Accept(*this);
   }
@@ -474,8 +475,35 @@ void TypeChecker::Visit(const std::shared_ptr<Enum>& decl) {
   }
 }
 
+void TypeChecker::Visit(const std::shared_ptr<Typedef>& typedef_stmt) {
+  const std::string& name = typedef_stmt->name_->String();
+
+  if (symbol_table_.ContainsType(name) || symbol_table_.Contains(name)) {
+    reporter_.Report("Symbol '" + name + "' has already been defined", typedef_stmt->name_);
+    return;
+  }
+
+  if (typedef_stmt->stmt_ != nullptr) {
+    if (typedef_stmt->stmt_->IsStruct()) {
+      const auto& stmt = std::static_pointer_cast<Struct>(typedef_stmt->stmt_);
+      stmt->is_typedef_ = true;
+      stmt->Accept(*this);
+      Entry *fields = symbol_table_.GetType(stmt->type_.name->String())->next;
+      symbol_table_.PutType(name, &stmt->type_, fields);
+    } else if (typedef_stmt->stmt_->IsUnion()) {
+      const auto& stmt = std::static_pointer_cast<Union>(typedef_stmt->stmt_);
+      stmt->is_typedef_ = true;
+      stmt->Accept(*this);
+      symbol_table_.PutType(name, &stmt->type_, stmt->fields_);
+    }
+  } else {
+    symbol_table_.PutType(name, &typedef_stmt->type_, nullptr);
+  }
+}
+
+// #TODO: functional decomposition
 void TypeChecker::Visit(const std::shared_ptr<Union>& decl) {
-  if (decl->type_.name == nullptr && decl->var_name_ == nullptr) {
+  if (!decl->is_typedef_ && decl->type_.name == nullptr && decl->var_name_ == nullptr) {
     reporter_.Warning("Unnamed union declarations are not supported", decl->token_);
     return;
   }
@@ -485,6 +513,9 @@ void TypeChecker::Visit(const std::shared_ptr<Union>& decl) {
   Entry *fields = new Entry, *head = fields;
   int offset = 0;
   for (const auto& var_decl : decl->body_->var_decl_list_) {
+    if (var_decl->var_type_.type_ == TokenType::T_IDENTIFIER) // typedef in unions
+      TypedefChange(var_decl->var_type_);
+
     auto *field = new Entry;
     const std::string& name = var_decl->name_->String();
     int len = var_decl->var_type_.len; // #FIXME: arrays in unions (array indexing is broken)
@@ -530,6 +561,11 @@ void TypeChecker::Visit(const std::shared_ptr<Union>& decl) {
     return;
   }
 
+  if (decl->var_name_ != nullptr && symbol_table_.ContainsType(decl->var_name_->String())) {
+    reporter_.Report("Symbol '" + decl->var_name_->String() + "' has already been defined", decl->var_name_);
+    return;
+  }
+
   if (decl->var_name_ != nullptr) {
     symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr);
   }
@@ -539,7 +575,7 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
   // 1. unnamed struct `struct { int x; };`
   // 2. named struct `struct Book { int length; char* title; };`
   // 3. named struct with var decl `struct Book { int length; char* title; } book;
-  if (decl->type_.name == nullptr && decl->var_name_ == nullptr) {
+  if (!decl->is_typedef_ && decl->type_.name == nullptr && decl->var_name_ == nullptr) {
     reporter_.Warning("Unnamed struct declarations are not supported", decl->token_);
     return;
   }
@@ -549,6 +585,9 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
   Entry *fields = new Entry, *head = fields;
   int offset = 0;
   for (const auto& var_decl : decl->body_->var_decl_list_) {
+    if (var_decl->var_type_.type_ == TokenType::T_IDENTIFIER) // typedef in structs
+      TypedefChange(var_decl->var_type_);
+
     auto *field = new Entry;
     const std::string& name = var_decl->name_->String();
     int len = var_decl->var_type_.len; // #FIXME: arrays in structs
@@ -596,13 +635,35 @@ void TypeChecker::Visit(const std::shared_ptr<Struct>& decl) {
     return;
   }
 
+  if (decl->var_name_ != nullptr && symbol_table_.ContainsType(decl->var_name_->String())) {
+    reporter_.Report("Symbol '" + decl->var_name_->String() + "' has already been defined", decl->var_name_);
+    return;
+  }
+
   if (decl->var_name_ != nullptr) {
     symbol_table_.PutGlobal(decl->var_name_->String(), &decl->type_, nullptr);
   }
 }
 
+void TypeChecker::TypedefChange(Type& type) {
+  if (type.type_ == TokenType::T_IDENTIFIER && type.name != nullptr) {
+    TypeEntry *entry = symbol_table_.GetType(type.name->String());
+    type.type_ = entry->type->type_;
+    type.ind += entry->type->ind;
+    type.name = entry->type->name;
+    type.len = entry->type->len;
+  }
+}
+
 void TypeChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   ResetLocals();
+
+  if (func_decl->return_type_.type_ == TokenType::T_IDENTIFIER) // typedef return type
+    TypedefChange(func_decl->return_type_);
+
+  for (const auto& param : func_decl->signature_->var_decl_list_) // typedef param types
+    if (param->var_type_.type_ == TokenType::T_IDENTIFIER)
+      TypedefChange(param->var_type_);
 
   Entry* func = symbol_table_.Get(func_decl->name_->String());
 
@@ -624,24 +685,45 @@ void TypeChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   }
 }
 
-// int array[25];
 void TypeChecker::Visit(const std::shared_ptr<VarDecl>& decl) {
   Entry* var = symbol_table_.GetLocal(decl->name_->String());
 
+  // void variable check
   if (decl->var_type_.IsVoid() && !decl->var_type_.IsPointer()) {
     reporter_.Report("Variable '" + decl->name_->String() + "' has unallowable type 'void'", decl->name_);
     return;
   }
 
+  // redefinition check
   if (var != nullptr) {
     reporter_.Report("Variable '" + decl->name_->String() + "' has already been declared", decl->name_);
     return;
   }
 
+  // typedef
+  if (decl->var_type_.type_ == TokenType::T_IDENTIFIER) {
+    TypedefChange(decl->var_type_);
+  }
+
+  // enum
   if (decl->var_type_.type_ == TokenType::T_ENUM) {
     decl->var_type_.type_ = TokenType::T_INT;
   }
 
+  if (decl->var_type_.IsStruct() || decl->var_type_.IsUnion()) {
+    if (!symbol_table_.ContainsType(decl->var_type_.name->String())) {
+      reporter_.Report("Undefined type", decl->var_type_.name);
+      return;;
+    } else {
+      TypeEntry *entry = symbol_table_.GetType(decl->var_type_.name->String());
+      if (entry->type != nullptr) { // struct Type, where `Type` is typedef type
+        reporter_.Report("struct usage with typedef type", decl->var_type_.name);
+        return;
+      }
+    }
+  }
+
+  // space allocation
   if (decl->is_local_) {
     int len = decl->var_type_.len == 0 ? 1 : decl->var_type_.len;
     int offset = GetLocalOffset(decl->var_type_, len);
@@ -802,11 +884,13 @@ int TypeChecker::GetOffset(const Type& type, int len) {
   if (type.IsPointer()) return - len * 8;
   return - len * GetTypeSize(type);
 }
+
 int TypeChecker::GetLocalOffset(const Type& type, int len) {
   if (type.IsPointer()) return - (local_offset_ += 8 * len);
   local_offset_ += len * (GetTypeSize(type) > 4 ? GetTypeSize(type) : 4);
   return - local_offset_;
 }
+
 int TypeChecker::GetTypeSize(const Type& type) {
   if (type.IsStruct() || type.IsUnion()) return symbol_table_.GetType(type.name->String())->size;
   switch (type.type_) {
@@ -820,6 +904,7 @@ int TypeChecker::GetTypeSize(const Type& type) {
     }
   }
 }
+
 void TypeChecker::ResetLocals() {
   local_offset_ = 0;
 }

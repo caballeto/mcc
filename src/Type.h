@@ -25,7 +25,7 @@ class Type {
   Type& operator=(const Type& type);
 
   std::shared_ptr<Token> name; // name of type (typedef, union, struct)
-  TokenType type_; // type class (char, short, int, long, struct, union)
+  TokenType type_; // type class (char, short, int, long, struct, union) or identifier for typedef
   int ind; // indirection level (number of pointers)
   int len; // length for arrays
 };

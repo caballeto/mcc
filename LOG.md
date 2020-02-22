@@ -541,3 +541,35 @@ Implemented switches and runtime flags.
 - [ ] sizeof
 - [ ] static
 - [ ] conditions & const init & refactoring
+
+## Day 22
+
+**Typedef notes**
+
+typedef char* Str; 
+
+Str s1, s2, s3; // s1 -> char*, s2 -> char*, s3 -> char*
+
+struct Book { };
+
+typedef int INT;
+typedef struct Book B;
+
+typedef struct { 
+    int x;
+    int y; 
+    int z;
+} Point;  
+
+name -> &Type
+
+### **Results**
+
+- [x] typedef with primitives, union, struct
+  (no enums, arrays, recursive typedefs)
+- [ ] type casts
+- [ ] sizeof
+- [ ] preprocessor
+- [ ] extern
+- [ ] static
+

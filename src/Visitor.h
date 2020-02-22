@@ -12,6 +12,7 @@ namespace mcc {
 template <typename T>
 class Visitor {
  public:
+  virtual T Visit(const std::shared_ptr<Typedef>& typedef_stmt) = 0;
   virtual T Visit(const std::shared_ptr<Switch>& switch_stmt) = 0;
   virtual T Visit(const std::shared_ptr<Enum>& enum_decl) = 0;
   virtual T Visit(const std::shared_ptr<Union>& union_decl) = 0;

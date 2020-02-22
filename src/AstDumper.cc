@@ -492,4 +492,16 @@ int AstDumper::Visit(const std::shared_ptr<Switch> &switch_stmt) {
   return 0;
 }
 
+int AstDumper::Visit(const std::shared_ptr<Typedef>& typedef_stmt) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<typedef>\n";
+  out_ << std::string(spaces_, ' ') << "<type>"
+       << typedef_stmt->type_ << "</type>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<name>"
+       << typedef_stmt->name_->String() << "</name>\n";
+  out_ << std::string(spaces_, ' ') << "<typedef>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
 } // namespace mcc

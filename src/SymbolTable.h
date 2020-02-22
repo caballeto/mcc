@@ -24,6 +24,7 @@ struct Entry {
 };
 
 struct TypeEntry {
+  Type* type;
   int size;
   Entry *next;
 };
@@ -39,6 +40,8 @@ class SymbolTable {
 
   void PutType(const std::string& name, int size, Entry *next);
 
+  void ClearTypes();
+
   TypeEntry* GetType(const std::string& name);
 
   Entry* Get(const std::string& name);
@@ -48,6 +51,8 @@ class SymbolTable {
   void Put(const std::shared_ptr<FuncDecl>& func_decl);
 
   void Put(const std::string &name, Type* type, Entry *fields);
+
+  void PutType(const std::string &name, Type *type, Entry *next);
 
   void PutLocal(const std::string& name, Type* type, int offset);
 

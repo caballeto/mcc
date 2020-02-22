@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
   mcc::Compiler::fVerbose = false;
   mcc::Compiler::fLink = true;
 
-  std::string out_file, asm_file, obj_file;
+  std::string out_file = "a.out", asm_file, obj_file;
   std::vector<std::string> obj_files;
 
   int i;

@@ -239,6 +239,10 @@ void Struct::Accept(Visitor<void> &visitor) {
   visitor.Visit(shared_from_base<Struct>());
 }
 
+bool Struct::IsStruct() const {
+  return true;
+}
+
 int Access::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Access>());
 }
@@ -255,6 +259,10 @@ void Union::Accept(Visitor<void> &visitor) {
   visitor.Visit(shared_from_base<Union>());
 }
 
+bool Union::IsUnion() const {
+  return true;
+}
+
 int Enum::Accept(Visitor<int> &visitor) {
   return visitor.Visit(shared_from_base<Enum>());;
 }
@@ -269,6 +277,14 @@ int Switch::Accept(Visitor<int> &visitor) {
 
 void Switch::Accept(Visitor<void> &visitor) {
   visitor.Visit(shared_from_base<Switch>());
+}
+
+int Typedef::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(shared_from_base<Typedef>());
+}
+
+void Typedef::Accept(Visitor<void> &visitor) {
+  visitor.Visit(shared_from_base<Typedef>());
 }
 
 } // namespace mcc

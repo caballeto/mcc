@@ -61,8 +61,12 @@ std::unordered_map<std::string, Entry>& SymbolTable::GetGlobalScope() {
   return scopes_[0];
 }
 
+void SymbolTable::PutType(const std::string& name, Type* type, Entry *next) {
+  types_[name] = {type, 0, next};
+}
+
 void SymbolTable::PutType(const std::string& name, int size, Entry *next) {
-  types_[name] = {size, next};
+  types_[name] = {nullptr, size, next};
 }
 
 TypeEntry* SymbolTable::GetType(const std::string& name) {
@@ -85,6 +89,10 @@ Entry* SymbolTable::GetField(const Type& type, const std::string& field) {
   }
 
   return nullptr;
+}
+
+void SymbolTable::ClearTypes() {
+  types_.clear();
 }
 
 } // namespace mcc

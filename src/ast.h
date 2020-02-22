@@ -31,6 +31,8 @@ class Stmt : public std::enable_shared_from_this<Stmt> {
   virtual int Accept(Visitor<int>& visitor) = 0;
   virtual void Accept(Visitor<void>& visitor) = 0;
   virtual bool IsDeclaration() const { return false; }
+  virtual bool IsUnion() const { return false; }
+  virtual bool IsStruct() const { return false; }
 
   template <typename T>
   std::shared_ptr<T> shared_from_base() {
@@ -38,6 +40,20 @@ class Stmt : public std::enable_shared_from_this<Stmt> {
   }
 
   std::shared_ptr<Token> token_;
+};
+
+class Typedef : public Stmt {
+ public:
+  Typedef(std::shared_ptr<Token> token, const Type& type, std::shared_ptr<Token> name, std::shared_ptr<Stmt> stmt)
+    : Stmt(std::move(token)), type_(type), name_(std::move(name)), stmt_(std::move(stmt))
+  { }
+
+  int Accept(Visitor<int>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
+
+  Type type_;
+  std::shared_ptr<Stmt> stmt_;
+  std::shared_ptr<Token> name_; // typedef name
 };
 
 class Switch : public Stmt {
@@ -172,6 +188,10 @@ class Struct : public Stmt {
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
+  bool IsStruct() const override;
+
+  bool is_typedef_ = false;
+  Entry *fields_;
   Type type_;
   std::shared_ptr<Token> var_name_;
   std::shared_ptr<DeclList> body_;
@@ -187,6 +207,10 @@ class Union : public Stmt {
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
+  bool IsUnion() const override;
+
+  bool is_typedef_ = false;
+  Entry *fields_;
   Type type_;
   std::shared_ptr<Token> var_name_;
   std::shared_ptr<DeclList> body_;

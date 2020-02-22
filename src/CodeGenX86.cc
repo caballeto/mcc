@@ -912,4 +912,8 @@ void CodeGenX86::Preamble() {
        << "\tjmp\t*%rax\n";
 }
 
+int CodeGenX86::Visit(const std::shared_ptr<Typedef> &typedef_stmt) {
+  return 0;
+}
+
 } // namespace mcc
