@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int func() {
   int y = 5;
@@ -11,6 +11,6 @@ int func() {
 
 int main() {
   int some_int = 25;
-  printint(some_int * 10);
+  printf("%d\n", some_int * 10);
   return some_int;
 }

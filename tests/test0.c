@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x;
@@ -7,13 +7,14 @@ int main() {
 	x = 5;
 	y = 6;
 
-	printint(x + y);
-	printint(x);
-	printint(y);
+	printf("%d\n", x + y);
+	printf("%d\n", x);
+	printf("%d\n", y);
 
 	x = y;
-	printint(x);
-	printint(y);
 
-	printint(1 + 2 * 5);
+    printf("%d\n", x);
+    printf("%d\n", y);
+
+	printf("%d\n", 1 + 2 * 5);
 }

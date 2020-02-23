@@ -1,7 +1,7 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x = 0, y = 1, z = 2;
 
-	printint(x + y + z + d);
+	printf("%d\n", x + y + z + d);
 }

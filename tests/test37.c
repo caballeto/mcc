@@ -1,6 +1,7 @@
+#include <stdio.h>
 void printint(long x);
 
-int fib(int x) {
+long fib(int x) {
   if (x == 0) {
     return x;
   } else if (x == 1) {

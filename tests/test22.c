@@ -1,10 +1,10 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
   int x = 0;
   ++x;
-  printint(x);
-  printint(++x);
-  printint(x);
+  printf("%d\n", x);
+  printf("%d\n", ++x);
+  printf("%d\n", x);
   return 0;
 }

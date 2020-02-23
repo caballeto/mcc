@@ -17,7 +17,7 @@
 
 namespace mcc {
 
-std::ostream& operator<<(std::ostream& os, const std::shared_ptr<Expr>& expr);
+std::ostream& operator<<(std::ostream& os, Expr* expr);
 
 class ErrorReporter {
  public:
@@ -36,23 +36,23 @@ class ErrorReporter {
   void ReportParseError(const ParseException& exception);
 
   void Error(const std::string& message,
-             const std::shared_ptr<Expr>& e1,
-             const std::shared_ptr<Expr>& e2,
+             Expr* e1,
+             Expr* e2,
              const std::shared_ptr<Token>& token);
 
   void Error(const std::string& message,
              const Type& type,
-             const std::shared_ptr<Expr>& expr,
+             Expr* expr,
              const std::shared_ptr<Token>& token);
 
   void Warning(const std::string& message,
-               const std::shared_ptr<Expr>& e1,
-               const std::shared_ptr<Expr>& e2,
+               Expr* e1,
+               Expr* e2,
                const std::shared_ptr<Token>& token);
 
   void Warning(const std::string& message,
                const Type& type,
-               const std::shared_ptr<Expr>& expr,
+               Expr* expr,
                const std::shared_ptr<Token>& token);
 
   void Report(const std::string& message);
@@ -67,8 +67,8 @@ class ErrorReporter {
   void PrintToken(const std::shared_ptr<Token> &token);
 
   void PrintMessage(const std::string &message,
-                    const std::shared_ptr<Expr> &e1,
-                    const std::shared_ptr<Expr> &e2,
+                    Expr* e1,
+                    Expr* e2,
                     const std::shared_ptr<Token> &token);
 
 

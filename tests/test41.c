@@ -1,6 +1,4 @@
-void printint(long x);
-void printchar(long x);
-void printstr(char* str);
+#include <stdio.h>
 
 struct Book {
   char c;
@@ -15,17 +13,17 @@ int main() {
   s1.length = 276;
   s1.author = "George Orwell 1984\n";
 
-  printint(s1.c);
-  printint(s1.length);
-  printstr(s1.author);
+  printf("%d\n", s1.c);
+  printf("%d\n", s1.length);
+  printf("%s", s1.author);
 
   s2.c = 'b';
   s2.length = 1000;
   s2.author = "John Ronald Ruel Tolkien The Lord of the Rings\n";
 
-  printint(s2.c);
-  printint(s2.length);
-  printstr(s2.author);
+  printf("%d\n", s2.c);
+  printf("%d\n", s2.length);
+  printf("%s", s2.author);
 
   return 0;
 }

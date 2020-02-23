@@ -29,6 +29,7 @@ class Stmt : public std::enable_shared_from_this<Stmt> {
   { }
 
   virtual int Accept(Visitor<int>& visitor) = 0;
+  virtual long Accept(Visitor<long>& visitor) = 0;
   virtual void Accept(Visitor<void>& visitor) = 0;
   virtual bool IsDeclaration() const { return false; }
   virtual bool IsUnion() const { return false; }
@@ -48,6 +49,7 @@ class Typedef : public Stmt {
     : Stmt(std::move(token)), type_(type), name_(std::move(name)), stmt_(std::move(stmt))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -62,6 +64,7 @@ class Switch : public Stmt {
     : Stmt(std::move(token)), expr_(std::move(expr)), cases_(std::move(cases))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -75,6 +78,7 @@ class Block : public Stmt {
     : Stmt(std::move(token)), stmts_(std::move(stmts))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -87,6 +91,7 @@ class Print : public Stmt {
     : Stmt(std::move(token)), expr_(std::move(expr))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -105,6 +110,7 @@ class Conditional : public Stmt {
         else_block_(std::move(else_block))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -119,6 +125,7 @@ class While : public Stmt {
     : Stmt(std::move(token)), condition_(std::move(condition)), loop_block_(std::move(loop_block)), do_while_(do_while)
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -134,6 +141,8 @@ class DeclList : public Stmt {
   { }
 
   bool IsDeclaration() const override;
+
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -147,6 +156,7 @@ class ExprList : public Stmt {
     : Stmt(std::move(token)), expr_list_(std::move(expr_list))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -159,6 +169,7 @@ class Return : public Stmt {
     : Stmt(std::move(token)), expr_(std::move(expr))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -172,6 +183,7 @@ class ControlFlow : public Stmt {
     : Stmt(std::move(token)), is_break_(is_break)
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -185,6 +197,7 @@ class Struct : public Stmt {
     : Stmt(std::move(token)), type_(type), body_(std::move(body)), var_name_(std::move(var_name))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -204,6 +217,7 @@ class Union : public Stmt {
   : Stmt(std::move(token)), type_(type), body_(std::move(body)), var_name_(std::move(var_name))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -223,6 +237,7 @@ class Enum : public Stmt {
     : Stmt(std::move(token)), type_(type), var_name_(std::move(var_name)), values_(std::move(values))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -245,6 +260,7 @@ class FuncDecl : public Stmt {
     body_(std::move(body))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
   bool IsDeclaration() const override;
@@ -270,7 +286,8 @@ class VarDecl : public Stmt {
     init_(std::move(init)),
     var_type_(std::move(var_type)),
     is_const_init_(is_const_init),
-    is_local_(is_local)
+    is_local_(is_local),
+    init_val_(0)
   { }
 
   VarDecl(
@@ -282,20 +299,22 @@ class VarDecl : public Stmt {
         init_(nullptr),
         var_type_(std::move(var_type)),
         is_const_init_(false),
-        is_local_(is_local)
+        is_local_(is_local),
+        init_val_(0)
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
   bool IsDeclaration() const override;
-  bool IsArray() const;
 
   std::shared_ptr<Token> name_;
   std::shared_ptr<Expr> init_;
 
   Type var_type_;
 
+  long init_val_;
   int offset_;
   bool is_const_init_;
   bool is_local_;
@@ -309,6 +328,7 @@ class For : public Stmt {
       update_(std::move(update)), loop_block_(std::move(loop_block))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -324,6 +344,7 @@ class ExpressionStmt : public Stmt {
     : Stmt(std::move(token)), expr_(std::move(expr))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -339,6 +360,7 @@ class Expr : public std::enable_shared_from_this<Expr> {
   inline TokenType type() { return type_.type_; }
   inline int ind() { return type_.ind; }
 
+  virtual long Accept(Visitor<long>& visitor) = 0;
   virtual int Accept(Visitor<int>& visitor) = 0;
   virtual void Accept(Visitor<void>& visitor) = 0;
 
@@ -374,6 +396,7 @@ class TypeCast : public Expr {
     : Expr(std::move(op)), expr_(std::move(expr))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -386,6 +409,7 @@ class Index : public Expr {
     : Expr(std::move(op)), name_(std::move(name)), index_(std::move(index))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -399,6 +423,7 @@ class Access : public Expr {
     : Expr(std::move(op)), name_(std::move(name)), field_(std::move(field))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -412,6 +437,7 @@ class Label : public Stmt {
     : Stmt(std::move(name)), label_(-1)
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -424,6 +450,7 @@ class GoTo : public Stmt {
     : Stmt(std::move(name)), label_(-1)
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -436,6 +463,7 @@ class Call : public Expr {
     : Expr(std::move(op)), name_(std::move(name)), args_(std::move(args))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -449,6 +477,7 @@ class Assign : public Expr {
     : Expr(std::move(op)), left_(std::move(left)), right_(std::move(right))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -469,6 +498,7 @@ class Ternary : public Expr {
     else_(std::move(else_branch))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -483,6 +513,7 @@ class Postfix : public Expr {
     : Expr(std::move(op)), expr_(std::move(expr))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -495,6 +526,7 @@ class Grouping : public Expr {
     : Expr(std::move(op)), expr_(std::move(expr))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -507,6 +539,7 @@ class Binary : public Expr {
     : Expr(std::move(op)), left_(std::move(left)), right_(std::move(right))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -521,6 +554,7 @@ class Unary : public Expr {
     : Expr(std::move(op)), expr_(std::move(expr))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 
@@ -533,6 +567,7 @@ class Literal : public Expr {
     : Expr(std::move(op))
   { }
 
+  long Accept(Visitor<long>& visitor) override;
   int Accept(Visitor<int>& visitor) override;
   void Accept(Visitor<void>& visitor) override;
 

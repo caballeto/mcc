@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
   int *x;
@@ -7,10 +7,10 @@ int main() {
   x = &z;
   *x = 5;
 
-  printint((*x)--);
-  printint(*x);
-  printint(--(*x));
-  printint(*x);
+  printf("%d\n", (*x)--);
+  printf("%d\n", *x);
+  printf("%d\n", --(*x));
+  printf("%d\n", *x);
 
   return 0;
 }

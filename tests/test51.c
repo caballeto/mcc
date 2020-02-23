@@ -1,5 +1,4 @@
-void printint(long x);
-void printstr(char* str);
+#include <stdio.h>
 
 struct Book {
   int length;
@@ -25,17 +24,17 @@ int main() {
   book.title = "The autumn leaves\n";
   book.author = "Frank Sinatra\n";
 
-  printstr(book.title);
-  printstr(book.author);
-  printint(book.length);
+  printf("%s", book.title);
+  printf("%s", book.author);
+  printf("%d\n", book.length);
 
   tBox box;
 
   box.name = "Box's name\n";
-  printstr(box.name);
+  printf("%s", box.name);
 
   box.value = 1000;
-  printint(box.value);
+  printf("%d\n", box.value);
 
   return 0;
 }

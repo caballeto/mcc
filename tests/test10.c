@@ -1,10 +1,10 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x = 10, y = 20;
 
 	if (x == 10)
-	  printint(x);
+	  printf("%d\n", x);
 	else
-	  printint(y);
+	  printf("%d\n", y);
 }

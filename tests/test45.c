@@ -1,6 +1,4 @@
-void printint(long x);
-void printchar(long x);
-void printstr(char* str);
+#include <stdio.h>
 
 union Book {
   char c;
@@ -10,18 +8,18 @@ union Book {
 
 int main() {
   book.author = "This is it - Union!\n";
-  printstr(book.author);
+  printf("%s", book.author);
 
   union Book u;
   u.author = "And this is a local union.\n";
-  printstr(u.author);
+  printf("%s", u.author);
 
   union Book* ptr = &u;
   ptr->author = "And this is a pointer assigned union member.\n";
-  printstr(ptr->author);
+  printf("%s", ptr->author);
 
   book.length = 100;
-  printint(book.length);
+  printf("%d\n", book.length);
 
   return 0;
 }

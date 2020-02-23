@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
   char z; int y; int x;
@@ -6,14 +6,14 @@ int main() {
 
   if (x == 10) {
     int x = 100, y = 200, z = 300;
-    printint(x);
-    printint(y);
-    printint(z);
+    printf("%d\n", x);
+    printf("%d\n", y);
+    printf("%d\n", z);
   }
 
-  printint(x);
-  printint(y);
-  printint(z);
+  printf("%d\n", x);
+  printf("%d\n", y);
+  printf("%d\n", z);
 
   int main = 25;
 

@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 struct Book {
   int length;
@@ -18,20 +18,20 @@ int main() {
   int x3;
   long x4;
 
-  printint(sizeof(x1));
-  printint(sizeof(x2));
-  printint(sizeof(x3));
-  printint(sizeof(x4));
+  printf("%d\n", sizeof(x1));
+  printf("%d\n", sizeof(x2));
+  printf("%d\n", sizeof(x3));
+  printf("%d\n", sizeof(x4));
 
   char* p1;
   short* p2;
   int* p3;
   long* p4;
 
-  printint(sizeof(p1));
-  printint(sizeof(p2));
-  printint(sizeof(p3));
-  printint(sizeof(p4));
+  printf("%d\n", sizeof(p1));
+  printf("%d\n", sizeof(p2));
+  printf("%d\n", sizeof(p3));
+  printf("%d\n", sizeof(p4));
 
   char a1[10];
   short a2[10];
@@ -39,39 +39,39 @@ int main() {
   long a4[10];
   char* a5[10];
 
-  printint(sizeof(a1));
-  printint(sizeof(a2));
-  printint(sizeof(a3));
-  printint(sizeof(a4));
-  printint(sizeof(a5));
+  printf("%d\n", sizeof(a1));
+  printf("%d\n", sizeof(a2));
+  printf("%d\n", sizeof(a3));
+  printf("%d\n", sizeof(a4));
+  printf("%d\n", sizeof(a5));
 
   struct Book b1;
   struct Book* b2;
 
-  printint(sizeof(b1));
-  printint(sizeof(b2));
+  printf("%d\n", sizeof(b1));
+  printf("%d\n", sizeof(b2));
 
   union Box c1;
   union Box* c2;
 
-  printint(sizeof(c1));
-  printint(sizeof(c2));
+  printf("%d\n", sizeof(c1));
+  printf("%d\n", sizeof(c2));
 
   struct Book books[10];
   union Box boxes[10];
 
-  printint(sizeof(books));
-  printint(sizeof(boxes));
+  printf("%d\n", sizeof(books));
+  printf("%d\n", sizeof(boxes));
 
-  printint(100000);
+  printf("%d\n", 100000);
 
-  printint(sizeof(char));
-  printint(sizeof(short));
-  printint(sizeof(int));
-  printint(sizeof(long));
-  printint(sizeof(char*));
-  printint(sizeof(struct Book));
-  printint(sizeof(struct Book*));
-  printint(sizeof(union Box));
-  printint(sizeof(union Box*));
+  printf("%d\n", sizeof(char));
+  printf("%d\n", sizeof(short));
+  printf("%d\n", sizeof(int));
+  printf("%d\n", sizeof(long));
+  printf("%d\n", sizeof(char*));
+  printf("%d\n", sizeof(struct Book));
+  printf("%d\n", sizeof(struct Book*));
+  printf("%d\n", sizeof(union Box));
+  printf("%d\n", sizeof(union Box*));
 }

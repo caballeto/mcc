@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 typedef int Int;
 typedef Int* IntPtr;
@@ -9,7 +9,7 @@ int main() {
   IntPtr y = &x;
   IntPtr2 z = &y;
 
-  printint(**z);
+  printf("%d\n", **z);
 
   return 0;
 }

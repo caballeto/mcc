@@ -573,7 +573,7 @@ name -> &Type
 - [x] static
 - [ ] preprocessor
 
-**Fix**
+**Bug**
 
 - [x] fix sizeof incorrect behaviour with array
 
@@ -585,3 +585,16 @@ name -> &Type
 - more assign operators (+=, -=, %+, etc.)
 - refactoring
 - test on some bigger programs
+
+## Day 23
+
+- [x] preprocessor & header files
+- [x] fold optimization
+- [x] global var init
+- [ ] conditionals
+- [ ] assign operators
+- [x] refactoring & test
+
+**Bug**
+
+- call inside arguments reassigns `%rdi` (param) registers

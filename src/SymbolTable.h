@@ -21,6 +21,7 @@ struct Entry {
   FuncDecl* func;
   Entry* next;
   std::string name;
+  long init;
 };
 
 struct TypeEntry {
@@ -48,7 +49,7 @@ class SymbolTable {
 
   Entry* GetLocal(const std::string& name);
 
-  void Put(const std::shared_ptr<FuncDecl>& func_decl);
+  void Put(FuncDecl& func_decl);
 
   void Put(const std::string &name, Type* type, Entry *fields);
 
@@ -56,7 +57,7 @@ class SymbolTable {
 
   void PutLocal(const std::string& name, Type* type, int offset);
 
-  void PutGlobal(const std::string& name, Type* type, FuncDecl* func);
+  void PutGlobal(const std::string& name, Type* type, FuncDecl* func, long init);
 
   void NewScope();
 

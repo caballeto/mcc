@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 enum fred { apple, banana, carrot = 10, pear = 10, peach, mango, papaya };
 enum jane { aple, bnana, crrot, par, pech, mago, paaya };
@@ -9,6 +9,6 @@ enum fred var3;
 
 int main() {
   var1 = carrot + pear + mango;
-  printint(var1);
+  printf("%d\n", var1);
   return 0;
 }

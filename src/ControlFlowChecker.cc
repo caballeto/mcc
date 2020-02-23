@@ -6,126 +6,126 @@
 
 namespace mcc {
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Binary>& binary) {
+int ControlFlowChecker::Visit(Binary& binary) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Literal>& literal) {
+int ControlFlowChecker::Visit(Literal& literal) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Assign>& assign) {
+int ControlFlowChecker::Visit(Assign& assign) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<VarDecl>& var_decl) {
+int ControlFlowChecker::Visit(VarDecl& var_decl) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Print>& print) {
+int ControlFlowChecker::Visit(Print& print) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
+int ControlFlowChecker::Visit(ExpressionStmt& expr_stmt) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
-  return cond_stmt->then_block_->Accept(*this) || cond_stmt->else_block_->Accept(*this);
+int ControlFlowChecker::Visit(Conditional& cond_stmt) {
+  return cond_stmt.then_block_->Accept(*this) || cond_stmt.else_block_->Accept(*this);
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Block>& block_stmt) {
-  for (const auto& stmt : block_stmt->stmts_)
+int ControlFlowChecker::Visit(Block& block_stmt) {
+  for (const auto& stmt : block_stmt.stmts_)
     if (stmt->Accept(*this))
       return 1;
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<While>& while_stmt) {
+int ControlFlowChecker::Visit(While& while_stmt) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<For>& for_stmt) {
+int ControlFlowChecker::Visit(For& for_stmt) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<DeclList>& decl_list) {
+int ControlFlowChecker::Visit(DeclList& decl_list) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<ExprList>& expr_list) {
+int ControlFlowChecker::Visit(ExprList& expr_list) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
+int ControlFlowChecker::Visit(ControlFlow& flow_stmt) {
   return 1;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Unary>& unary) {
+int ControlFlowChecker::Visit(Unary& unary) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
+int ControlFlowChecker::Visit(FuncDecl& func_decl) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Return>& return_stmt) {
+int ControlFlowChecker::Visit(Return& return_stmt) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Call>& call) {
+int ControlFlowChecker::Visit(Call& call) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Grouping> &grouping) {
+int ControlFlowChecker::Visit(Grouping &grouping) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Ternary> &ternary) {
+int ControlFlowChecker::Visit(Ternary &ternary) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Postfix> &postfix) {
+int ControlFlowChecker::Visit(Postfix &postfix) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Index> &index) {
+int ControlFlowChecker::Visit(Index &index) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Label> &label) {
+int ControlFlowChecker::Visit(Label &label) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<GoTo> &go_to) {
+int ControlFlowChecker::Visit(GoTo &go_to) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Struct> &struct_decl) {
+int ControlFlowChecker::Visit(Struct &struct_decl) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Access> &access) {
+int ControlFlowChecker::Visit(Access &access) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Union> &union_decl) {
+int ControlFlowChecker::Visit(Union &union_decl) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Enum> &enum_decl) {
+int ControlFlowChecker::Visit(Enum &enum_decl) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Switch> &switch_stmt) {
+int ControlFlowChecker::Visit(Switch &switch_stmt) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<Typedef> &typedef_stmt) {
+int ControlFlowChecker::Visit(Typedef &typedef_stmt) {
   return 0;
 }
 
-int ControlFlowChecker::Visit(const std::shared_ptr<TypeCast> &type_cast) {
+int ControlFlowChecker::Visit(TypeCast &type_cast) {
   return 0;
 }
 

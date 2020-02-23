@@ -1,20 +1,20 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
     int i;
 	for (i = 0; i < 5; i = i + 1) {
 	  if (i == 2)
 		continue;
-	  printint(i);
+	  printf("%d\n", i);
 	}
 
-	printint(100000);
+	printf("%d\n", 100000);
 
 	for (i = 0; i < 10; i = i + 1) {
 	  if (i == 5)
 		break;
-	  printint(i);
+	  printf("%d\n", i);
 	}
 
-	printint(i);
+	printf("%d\n", i);
 }

@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x;
@@ -7,10 +7,10 @@ int main() {
 	x = 5;
 	y = 6;
 
-	printint(x >= y);
-	printint(x == y);
-	printint(x != y);
-	printint(x < y);
-	printint(x > y);
-	printint(x <= y);
+	printf("%d\n", x >= y);
+	printf("%d\n", x == y);
+	printf("%d\n", x != y);
+	printf("%d\n", x < y);
+	printf("%d\n", x > y);
+	printf("%d\n", x <= y);
 }

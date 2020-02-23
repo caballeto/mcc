@@ -26,6 +26,8 @@ class Compiler {
  public:
   static int Compile(const std::string& input_file, const std::string& assembly_file);
 
+  static FILE* Preprocess(const std::string& input_file);
+
   static bool fDumpAst;
   static bool fKeepAsm;
   static bool fAssemble;

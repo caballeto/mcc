@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 static int square(int x) {
   return x * x;
@@ -11,7 +11,7 @@ int k;
 int main() {
   k = 0;
   z = square(10);
-  printint(z);
-  printint(k);
+  printf("%d\n", z);
+  printf("%d\n", k);
   return 0;
 }

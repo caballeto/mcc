@@ -1,5 +1,4 @@
-void printint(long x);
-void printstr(char* str);
+#include <stdio.h>
 
 typedef struct X {
   int length;
@@ -17,8 +16,8 @@ Book* set_lotr(Book* book) {
 int main() {
   struct X book;
   Book* ptr = set_lotr(&book);
-  printstr(ptr->title);
-  printstr(ptr->author);
-  printint(ptr->length);
+  printf("%s", ptr->title);
+  printf("%s", ptr->author);
+  printf("%d\n", ptr->length);
   return 0;
 }

@@ -1,6 +1,4 @@
-void printint(long x);
-void printchar(long x);
-void printstr(char* str);
+#include <stdio.h>
 
 struct Book {
   int length;
@@ -16,9 +14,9 @@ int main() {
   book.length = 100;
   book.title = "Super great book\n";
 
-  printstr(book.title);
+  printf("%s", book.title);
   for (int i = 0; i < 3; i++) {
-    printstr(book.authors[i]);
+    printf("%s", book.authors[i]);
   }
 
   return 0;

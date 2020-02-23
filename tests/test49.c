@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 typedef int* intptr;
 typedef int Int;
@@ -9,6 +9,6 @@ Int main() {
   x1 = &x;
   x2 = &x1;
   x3 = &x2;
-  printint(***x3);
+  printf("%d\n", ***x3);
   return 0;
 }

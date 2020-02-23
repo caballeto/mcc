@@ -10,77 +10,67 @@
 #include "SymbolTable.h"
 #include "Type.h"
 #include "CodeGenX86.h"
+#include "Evaluator.h"
 
 namespace mcc {
 
-using ExprRef = const std::shared_ptr<Expr>&;
 using TokenRef = const std::shared_ptr<Token>&;
 
 class TypeChecker : public Visitor<void> {
  public:
-  TypeChecker(CodeGenX86& code_gen, ErrorReporter& reporter, SymbolTable& symbol_table)
-    : code_gen_(code_gen), reporter_(reporter), symbol_table_(symbol_table), curr_func_(nullptr)
+  TypeChecker(CodeGenX86& code_gen, ErrorReporter& reporter, SymbolTable& symbol_table, Evaluator& evaluator)
+    : code_gen_(code_gen), reporter_(reporter), symbol_table_(symbol_table), curr_func_(nullptr), evaluator_(evaluator)
   { }
 
   void TypeCheck(const std::vector<std::shared_ptr<Stmt>>& stmts);
 
-  void Visit(const std::shared_ptr<Unary>& unary) override;
-  void Visit(const std::shared_ptr<Binary>& binary) override;
-  void Visit(const std::shared_ptr<Literal>& literal) override;
-  void Visit(const std::shared_ptr<Assign>& assign) override;
-  void Visit(const std::shared_ptr<VarDecl>& decl) override;
-  void Visit(const std::shared_ptr<Print>& print) override;
-  void Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) override;
-  void Visit(const std::shared_ptr<Conditional>& cond_stmt) override;
-  void Visit(const std::shared_ptr<Block>& block_stmt) override;
-  void Visit(const std::shared_ptr<While>& while_stmt) override;
-  void Visit(const std::shared_ptr<For>& for_stmt) override;
-  void Visit(const std::shared_ptr<DeclList>& decl_list) override;
-  void Visit(const std::shared_ptr<ExprList>& expr_list) override;
-  void Visit(const std::shared_ptr<ControlFlow>& flow_stmt) override;
-  void Visit(const std::shared_ptr<Call>& call) override;
-  void Visit(const std::shared_ptr<Grouping>& grouping) override;
-  void Visit(const std::shared_ptr<Ternary>& ternary) override;
-  void Visit(const std::shared_ptr<Postfix>& postfix) override;
-  void Visit(const std::shared_ptr<Index> &index) override;
-  void Visit(const std::shared_ptr<Label> &label) override;
-  void Visit(const std::shared_ptr<GoTo> &go_to) override;
-  void Visit(const std::shared_ptr<FuncDecl>& func_decl) override;
-  void Visit(const std::shared_ptr<Return>& return_stmt) override;
-  void Visit(const std::shared_ptr<Struct> &decl) override;
-  void Visit(const std::shared_ptr<Access> &access) override;
-  void Visit(const std::shared_ptr<Union> &decl) override;
-  void Visit(const std::shared_ptr<Enum> &decl) override;
-  void Visit(const std::shared_ptr<Switch> &switch_stmt) override;
-  void Visit(const std::shared_ptr<Typedef> &typedef_stmt) override;
-  void Visit(const std::shared_ptr<TypeCast> &type_cast) override;
+  void Visit(Binary& binary) override;
+  void Visit(Unary& unary) override;
+  void Visit(Literal& literal) override;
+  void Visit(Assign& assign) override;
+  void Visit(VarDecl& var_decl) override;
+  void Visit(Print& print) override;
+  void Visit(ExpressionStmt& expr_stmt) override;
+  void Visit(Conditional& cond_stmt) override;
+  void Visit(Block& block_stmt) override;
+  void Visit(While& while_stmt) override;
+  void Visit(For& for_stmt) override;
+  void Visit(DeclList& decl_list) override;
+  void Visit(ExprList& expr_list) override;
+  void Visit(ControlFlow& flow_stmt) override;
+  void Visit(FuncDecl& func_decl) override;
+  void Visit(Return& return_stmt) override;
+  void Visit(Call& call) override;
+  void Visit(Index &index) override;
+  void Visit(Grouping &grouping) override;
+  void Visit(Ternary &ternary) override;
+  void Visit(Postfix &postfix) override;
+  void Visit(Label &label) override;
+  void Visit(GoTo &go_to) override;
+  void Visit(Struct &struct_decl) override;
+  void Visit(Access &access) override;
+  void Visit(Union &union_decl) override;
+  void Visit(Enum &enum_decl) override;
+  void Visit(Switch &switch_stmt) override;
+  void Visit(Typedef &typedef_stmt) override;
+  void Visit(TypeCast &type_cast) override;
 
-  void NewLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
-  void CheckLabelScope(const std::shared_ptr<FuncDecl> &func_decl);
+  void NewLabelScope(FuncDecl &func_decl);
+  void CheckLabelScope(FuncDecl &func_decl);
 
-  static bool IsIntegerType(ExprRef expr);
-  static bool IsPointer(ExprRef expr);
+  static bool IsIntegerType(Expr* expr);
+  static bool IsPointer(Expr* expr);
   static bool IsComparison(TokenType type);
 
-  Type& PromotePrim(ExprRef e1, ExprRef e2);
-  Type& PromoteToLeft(ExprRef e1, ExprRef e2);
+  Type& PromotePrim(Expr* e1, Expr* e2);
+  Type& PromoteToLeft(Expr* e1, Expr* e2);
 
-  bool MatchTypes(ExprRef e1, ExprRef e2, bool to_left, ExprRef expr);
+  bool MatchTypes(Expr* e1, Expr* e2, bool to_left, Expr* expr);
 
-  bool MatchPointers(const std::shared_ptr<Expr>& e1,
-                          const std::shared_ptr<Expr>& e2,
-                          bool to_left,
-                          const std::shared_ptr<Expr>& binary);
-  bool MatchPrimitives(const std::shared_ptr<Expr>& e1,
-                            const std::shared_ptr<Expr>& e2,
-                            bool to_left,
-                            const std::shared_ptr<Expr> &binary);
-  bool MatchMixed(const std::shared_ptr<Expr>& e1,
-                       const std::shared_ptr<Expr>& e2,
-                       bool to_left,
-                       const std::shared_ptr<Expr>& binary);
-
-  bool MatchTypeInit(const Type& type, const std::shared_ptr<Expr>& init);
+  bool MatchPointers(Expr* e1, Expr* e2, bool to_left, Expr* binary);
+  bool MatchPrimitives(Expr* e1, Expr* e2, bool to_left, Expr* binary);
+  bool MatchMixed(Expr* e1, Expr* e2, bool to_left, Expr* binary);
+  bool MatchTypeInit(const Type& type, Expr* init);
 
   int GetLocalOffset(const Type& type, int len);
   void ResetLocals();
@@ -97,7 +87,8 @@ class TypeChecker : public Visitor<void> {
   CodeGenX86& code_gen_; // #FIXME: rewrite for higher abstraction using `CodeGen : Visitor<int>` as interface
   ErrorReporter& reporter_;
   SymbolTable& symbol_table_;
-  std::shared_ptr<FuncDecl> curr_func_;
+  Evaluator& evaluator_;
+  FuncDecl* curr_func_;
   void TypedefChange(Type &type);
   int GetSizeOf(const Type &type);
 };

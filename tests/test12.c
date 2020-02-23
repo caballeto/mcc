@@ -1,8 +1,8 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x = 5 + 17, y = x * 2;
 
-	printint(x);
-	printint(y);
+	printf("%d\n", x);
+	printf("%d\n", y);
 }

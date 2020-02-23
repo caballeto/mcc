@@ -31,18 +31,18 @@ void SymbolTable::Put(const std::string& name, Type* type, Entry *fields) {
   scopes_.front()[name] = {type, false, 0, nullptr, fields};
 }
 
-void SymbolTable::Put(const std::shared_ptr<FuncDecl>& func_decl) {
-  PutGlobal(func_decl->name_->String(),
-      &func_decl->return_type_,
-      func_decl.get());
+void SymbolTable::Put(FuncDecl& func_decl) {
+  PutGlobal(func_decl.name_->String(),
+      &func_decl.return_type_,
+      &func_decl, 0);
 }
 
 void SymbolTable::PutLocal(const std::string& name, Type* type, int offset) {
   scopes_.back()[name] = {type, true,  offset, nullptr, nullptr};
 }
 
-void SymbolTable::PutGlobal(const std::string& name, Type* type, FuncDecl* func) {
-  scopes_.front()[name] = {type, false,  0, func, nullptr};
+void SymbolTable::PutGlobal(const std::string& name, Type* type, FuncDecl* func, long init) {
+  scopes_.front()[name] = {type, false,  0, func, nullptr, "", init};
 }
 
 void SymbolTable::NewScope() {

@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int array[20];
 
@@ -9,17 +9,17 @@ int main() {
   ptr[2] = 30;
   *(array + 3) = 40;
 
-  printint(array[0]);
-  printint(array[1]);
-  printint(array[2]);
-  printint(array[3]);
+  printf("%d\n", array[0]);
+  printf("%d\n", array[1]);
+  printf("%d\n", array[2]);
+  printf("%d\n", array[3]);
 
-  printint(ptr[0]);
-  printint(*ptr);
-  printint(ptr[1]);
-  printint(*(ptr + 1));
-  printint(ptr[2]);
-  printint(*(ptr + 2));
-  printint(ptr[3]);
-  printint(*(ptr + 3));
+  printf("%d\n", ptr[0]);
+  printf("%d\n", *ptr);
+  printf("%d\n", ptr[1]);
+  printf("%d\n", *(ptr + 1));
+  printf("%d\n", ptr[2]);
+  printf("%d\n", *(ptr + 2));
+  printf("%d\n", ptr[3]);
+  printf("%d\n", *(ptr + 3));
 }

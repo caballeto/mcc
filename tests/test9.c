@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int i = 0;
@@ -8,5 +8,5 @@ int main() {
 	  ++i;
 	}
 
-	printint(i);
+	printf("%d\n", i);
 }

@@ -1,9 +1,9 @@
-void printchar(long x);
+#include <stdio.h>
 
 int main() {
   int x = 25;
   char* c = (char*) &x;
   *c = 'a';
-  printchar(*c);
+  printf("%c\n", *c);
   return 0;
 }

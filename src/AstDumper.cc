@@ -8,58 +8,58 @@ namespace mcc {
 
 // #TODO: rewrite 'spaces += TAB_SIZE' thing
 
-int AstDumper::Visit(const std::shared_ptr<Binary>& binary) {
+int AstDumper::Visit(Binary& binary) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<binary op=" << binary->op_->GetType() << ">" << "\n";
-  binary->left_->Accept(*this);
-  binary->right_->Accept(*this);
+  out_ << std::string(spaces_, ' ') << "<binary op=" << binary.op_->GetType() << ">" << "\n";
+  binary.left_->Accept(*this);
+  binary.right_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</binary>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Print>& print) {
+int AstDumper::Visit(Print& print) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<stmt type='print'>\n";
-  print->expr_->Accept(*this);
+  print.expr_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</stmt>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Literal>& literal) {
+int AstDumper::Visit(Literal& literal) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ')
      << "<literal val='";
-  if (literal->IsVariable())
-    out_ << literal->op_->String();
+  if (literal.IsVariable())
+    out_ << literal.op_->String();
   else
-    out_ << literal->op_->Int();
+    out_ << literal.op_->Int();
   out_ << "'></literal>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Assign>& assign) {
+int AstDumper::Visit(Assign& assign) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<assign>\n";
-  assign->left_->Accept(*this);
-  assign->right_->Accept(*this);
+  assign.left_->Accept(*this);
+  assign.right_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</assign>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<VarDecl>& var_decl) {
+int AstDumper::Visit(VarDecl& var_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<var-decl>\n";
-  out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl->name_->String() << "</name>\n";
-  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << var_decl->var_type_.ind << "</ind>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<name>" << var_decl.name_->String() << "</name>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << var_decl.var_type_.ind << "</ind>\n";
 
-  if (var_decl->init_ != nullptr) {
+  if (var_decl.init_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<init>\n";
     spaces_ += TAB_SIZE;
-    var_decl->init_->Accept(*this);
+    var_decl.init_->Accept(*this);
     spaces_ -= TAB_SIZE;
     out_ << std::string(spaces_ + 2, ' ') << "</init>\n";
   }
@@ -69,43 +69,43 @@ int AstDumper::Visit(const std::shared_ptr<VarDecl>& var_decl) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Grouping>& grouping) {
+int AstDumper::Visit(Grouping& grouping) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<grouping>\n";
-  grouping->expr_->Accept(*this);
+  grouping.expr_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</grouping>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<ExpressionStmt>& expr_stmt) {
+int AstDumper::Visit(ExpressionStmt& expr_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<expr-stmt>\n";
-  expr_stmt->expr_->Accept(*this);
+  expr_stmt.expr_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</expr-stmt>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Ternary> &ternary) {
+int AstDumper::Visit(Ternary &ternary) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<ternary>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
   spaces_ += TAB_SIZE;
-  ternary->condition_->Accept(*this);
+  ternary.condition_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<then>\n";
   spaces_ += TAB_SIZE;
-  ternary->then_->Accept(*this);
+  ternary.then_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</then>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<else>\n";
   spaces_ += TAB_SIZE;
-  ternary->else_->Accept(*this);
+  ternary.else_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</else>\n";
 
@@ -114,26 +114,26 @@ int AstDumper::Visit(const std::shared_ptr<Ternary> &ternary) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
+int AstDumper::Visit(Conditional& cond_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<if-stmt>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
   spaces_ += TAB_SIZE;
-  cond_stmt->condition_->Accept(*this);
+  cond_stmt.condition_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<if>\n";
   spaces_ += TAB_SIZE;
-  cond_stmt->then_block_->Accept(*this);
+  cond_stmt.then_block_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</if>\n";
 
-  if (cond_stmt->else_block_ != nullptr) {
+  if (cond_stmt.else_block_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<else>\n";
     spaces_ += TAB_SIZE;
-    cond_stmt->else_block_->Accept(*this);
+    cond_stmt.else_block_->Accept(*this);
     spaces_ -= TAB_SIZE;
     out_ << std::string(spaces_ + 2, ' ') << "</else>\n";
   }
@@ -143,16 +143,16 @@ int AstDumper::Visit(const std::shared_ptr<Conditional>& cond_stmt) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Call>& call) {
+int AstDumper::Visit(Call& call) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<call>" << std::endl;
   out_ << std::string(spaces_ + 2, ' ') << "<name>\n";
-  call->name_->Accept(*this);
+  call.name_->Accept(*this);
   out_ << std::string(spaces_ + 2, ' ') << "</name>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<args>\n";
   spaces_ += TAB_SIZE;
-  call->args_->Accept(*this);
+  call.args_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</args>\n";
 
@@ -161,10 +161,10 @@ int AstDumper::Visit(const std::shared_ptr<Call>& call) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Block>& block_stmt) {
+int AstDumper::Visit(Block& block_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<block>" << std::endl;
-  Dump(block_stmt->stmts_);
+  Dump(block_stmt.stmts_);
   out_ << std::string(spaces_, ' ') << "</block>" << std::endl;
   spaces_ -= TAB_SIZE;
   return 0;
@@ -180,20 +180,20 @@ void AstDumper::Flush() {
   out_ << std::flush;
 }
 
-int AstDumper::Visit(const std::shared_ptr<While>& while_stmt) {
+int AstDumper::Visit(While& while_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<while-stmt type='";
-  out_ << (while_stmt->do_while_ ? "do-while" : "while") << "'>\n";
+  out_ << (while_stmt.do_while_ ? "do-while" : "while") << "'>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
   spaces_ += TAB_SIZE;
-  while_stmt->condition_->Accept(*this);
+  while_stmt.condition_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<loop>\n";
   spaces_ += TAB_SIZE;
-  while_stmt->loop_block_->Accept(*this);
+  while_stmt.loop_block_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</loop>\n";
 
@@ -202,33 +202,33 @@ int AstDumper::Visit(const std::shared_ptr<While>& while_stmt) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<For>& for_stmt) {
+int AstDumper::Visit(For& for_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<for-stmt>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<init>\n";
   spaces_ += TAB_SIZE;
-  for_stmt->init_->Accept(*this);
+  for_stmt.init_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</init>\n";
 
-  if (for_stmt->condition_ != nullptr) {
+  if (for_stmt.condition_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<condition>\n";
     spaces_ += TAB_SIZE;
-    for_stmt->condition_->Accept(*this);
+    for_stmt.condition_->Accept(*this);
     spaces_ -= TAB_SIZE;
     out_ << std::string(spaces_ + 2, ' ') << "</condition>\n";
   }
 
   out_ << std::string(spaces_ + 2, ' ') << "<loop>\n";
   spaces_ += TAB_SIZE;
-  for_stmt->loop_block_->Accept(*this);
+  for_stmt.loop_block_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</loop>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<update>\n";
   spaces_ += TAB_SIZE;
-  for_stmt->update_->Accept(*this);
+  for_stmt.update_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</update>\n";
 
@@ -237,11 +237,11 @@ int AstDumper::Visit(const std::shared_ptr<For>& for_stmt) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<DeclList>& decl_list) {
+int AstDumper::Visit(DeclList& decl_list) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<decl-list>\n";
 
-  for (const auto& decl : decl_list->var_decl_list_) {
+  for (const auto& decl : decl_list.var_decl_list_) {
     decl->Accept(*this);
   }
 
@@ -250,11 +250,11 @@ int AstDumper::Visit(const std::shared_ptr<DeclList>& decl_list) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<ExprList>& expr_list) {
+int AstDumper::Visit(ExprList& expr_list) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<expr-list>\n";
 
-  for (const auto& expr : expr_list->expr_list_) {
+  for (const auto& expr : expr_list.expr_list_) {
     expr->Accept(*this);
   }
 
@@ -263,9 +263,9 @@ int AstDumper::Visit(const std::shared_ptr<ExprList>& expr_list) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
+int AstDumper::Visit(ControlFlow& flow_stmt) {
   spaces_ += TAB_SIZE;
-  if (flow_stmt->is_break_) {
+  if (flow_stmt.is_break_) {
     out_ << std::string(spaces_, ' ') << "<break/>\n";
   } else {
     out_ << std::string(spaces_, ' ') << "<continue/>\n";
@@ -274,22 +274,22 @@ int AstDumper::Visit(const std::shared_ptr<ControlFlow>& flow_stmt) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Postfix>& postfix) {
+int AstDumper::Visit(Postfix& postfix) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<postfix op='" << postfix->op_->GetType() << "'>" << "\n";
-  postfix->expr_->Accept(*this);
+  out_ << std::string(spaces_, ' ') << "<postfix op='" << postfix.op_->GetType() << "'>" << "\n";
+  postfix.expr_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</postfix>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Unary>& unary) {
+int AstDumper::Visit(Unary& unary) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<unary op='" << unary->op_->GetType() << "'>" << "\n";
-  if (unary->expr_ != nullptr) {
-    unary->expr_->Accept(*this);
+  out_ << std::string(spaces_, ' ') << "<unary op='" << unary.op_->GetType() << "'>" << "\n";
+  if (unary.expr_ != nullptr) {
+    unary.expr_->Accept(*this);
   } else {
-    out_ << std::string(spaces_ + 2, ' ') << "<type>" << unary->type_ << "</type>" << "\n";
+    out_ << std::string(spaces_ + 2, ' ') << "<type>" << unary.type_ << "</type>" << "\n";
   }
   out_ << std::string(spaces_, ' ') << "</unary>" << "\n";
   spaces_ -= TAB_SIZE;
@@ -297,18 +297,18 @@ int AstDumper::Visit(const std::shared_ptr<Unary>& unary) {
 }
 
 // #TODO: add params
-int AstDumper::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
+int AstDumper::Visit(FuncDecl& func_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<func-decl>\n";
 
-  out_ << std::string(spaces_ + 2, ' ') << "<name>" << func_decl->name_->String() << "</name>\n";
-  out_ << std::string(spaces_ + 2, ' ') << "<type>" << func_decl->return_type_ << "</type>\n";
-  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << func_decl->return_type_.ind << "</ind>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<name>" << func_decl.name_->String() << "</name>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<type>" << func_decl.return_type_ << "</type>\n";
+  out_ << std::string(spaces_ + 2, ' ') << "<ind>" << func_decl.return_type_.ind << "</ind>\n";
 
-  if (func_decl->body_ != nullptr) {
+  if (func_decl.body_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<body>\n";
     spaces_ += TAB_SIZE;
-    func_decl->body_->Accept(*this);
+    func_decl.body_->Accept(*this);
     spaces_ -= TAB_SIZE;
     out_ << std::string(spaces_ + 2, ' ') << "</body>\n";
   }
@@ -317,25 +317,25 @@ int AstDumper::Visit(const std::shared_ptr<FuncDecl>& func_decl) {
   spaces_ -= TAB_SIZE;
   return 0;
 }
-int AstDumper::Visit(const std::shared_ptr<Return>& return_stmt) {
+int AstDumper::Visit(Return& return_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<return>\n";
-  return_stmt->expr_->Accept(*this);
+  return_stmt.expr_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</return>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Index>& index) {
+int AstDumper::Visit(Index& index) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<index>" << std::endl;
   out_ << std::string(spaces_ + 2, ' ') << "<name>\n";
-  index->name_->Accept(*this);
+  index.name_->Accept(*this);
   out_ << std::string(spaces_ + 2, ' ') << "</name>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<index-expr>\n";
   spaces_ += TAB_SIZE;
-  index->index_->Accept(*this);
+  index.index_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</index-expr>\n";
 
@@ -344,39 +344,39 @@ int AstDumper::Visit(const std::shared_ptr<Index>& index) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Label> &label) {
+int AstDumper::Visit(Label &label) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<label>"
-       << label->token_->String() << "</label>\n";
+       << label.token_->String() << "</label>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<GoTo> &go_to) {
+int AstDumper::Visit(GoTo &go_to) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<goto>"
-       << go_to->token_->String() << "</goto>\n";
+       << go_to.token_->String() << "</goto>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Struct> &struct_decl) {
+int AstDumper::Visit(Struct &struct_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<struct>\n";
 
-  if (struct_decl->type_.name != nullptr) {
+  if (struct_decl.type_.name != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<name>"
-         << struct_decl->type_.name->String() << "</name>\n";
+         << struct_decl.type_.name->String() << "</name>\n";
   }
 
-  if (struct_decl->var_name_ != nullptr) {
+  if (struct_decl.var_name_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<var-name>"
-         << struct_decl->var_name_->String() << "</var-name>\n";
+         << struct_decl.var_name_->String() << "</var-name>\n";
   }
 
   out_ << std::string(spaces_ + 2, ' ') << "<fields>\n";
   spaces_ += TAB_SIZE;
-  struct_decl->body_->Accept(*this);
+  struct_decl.body_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</fields>\n";
 
@@ -385,19 +385,19 @@ int AstDumper::Visit(const std::shared_ptr<Struct> &struct_decl) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Access> &access) {
+int AstDumper::Visit(Access &access) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<access op=" << access->op_->String() << ">" << "\n";
+  out_ << std::string(spaces_, ' ') << "<access op=" << access.op_->String() << ">" << "\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<name>\n";
   spaces_ += TAB_SIZE;
-  access->name_->Accept(*this);
+  access.name_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</name>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<field>\n";
   spaces_ += TAB_SIZE;
-  access->field_->Accept(*this);
+  access.field_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</field>\n";
 
@@ -406,23 +406,23 @@ int AstDumper::Visit(const std::shared_ptr<Access> &access) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Union> &union_decl) {
+int AstDumper::Visit(Union &union_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<union>\n";
 
-  if (union_decl->type_.name != nullptr) {
+  if (union_decl.type_.name != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<name>"
-         << union_decl->type_.name->String() << "</name>\n";
+         << union_decl.type_.name->String() << "</name>\n";
   }
 
-  if (union_decl->var_name_ != nullptr) {
+  if (union_decl.var_name_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<var-name>"
-         << union_decl->var_name_->String() << "</var-name>\n";
+         << union_decl.var_name_->String() << "</var-name>\n";
   }
 
   out_ << std::string(spaces_ + 2, ' ') << "<fields>\n";
   spaces_ += TAB_SIZE;
-  union_decl->body_->Accept(*this);
+  union_decl.body_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</fields>\n";
 
@@ -431,23 +431,23 @@ int AstDumper::Visit(const std::shared_ptr<Union> &union_decl) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Enum> &enum_decl) {
+int AstDumper::Visit(Enum &enum_decl) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<union>\n";
 
-  if (enum_decl->type_.name != nullptr) {
+  if (enum_decl.type_.name != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<name>"
-         << enum_decl->type_.name->String() << "</name>\n";
+         << enum_decl.type_.name->String() << "</name>\n";
   }
 
-  if (enum_decl->var_name_ != nullptr) {
+  if (enum_decl.var_name_ != nullptr) {
     out_ << std::string(spaces_ + 2, ' ') << "<var-name>"
-         << enum_decl->var_name_->String() << "</var-name>\n";
+         << enum_decl.var_name_->String() << "</var-name>\n";
   }
 
   out_ << std::string(spaces_ + 2, ' ') << "<fields>\n";
   spaces_ += TAB_SIZE;
-  for (const auto& val : enum_decl->values_) {
+  for (const auto& val : enum_decl.values_) {
     out_ << std::string(spaces_ + 2, ' ') << "<enum-val='"
          << val->op_->Int() << "'>"
          << val->op_->String() << "</enum-val>\n";
@@ -461,20 +461,20 @@ int AstDumper::Visit(const std::shared_ptr<Enum> &enum_decl) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Switch> &switch_stmt) {
+int AstDumper::Visit(Switch &switch_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<switch>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<expr>\n";
   spaces_ += TAB_SIZE;
-  switch_stmt->expr_->Accept(*this);
+  switch_stmt.expr_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</expr>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<cases>\n";
   spaces_ += TAB_SIZE;
 
-  for (const auto& pair : switch_stmt->cases_) { // default case ?
+  for (const auto& pair : switch_stmt.cases_) { // default case ?
     out_ << std::string(spaces_ + 2, ' ');
     if (pair.first != nullptr)
       out_ << "<case-val='" << pair.first->op_->Int() << "'/>\n";
@@ -496,26 +496,26 @@ int AstDumper::Visit(const std::shared_ptr<Switch> &switch_stmt) {
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<Typedef>& typedef_stmt) {
+int AstDumper::Visit(Typedef& typedef_stmt) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<typedef>\n";
   out_ << std::string(spaces_, ' ') << "<type>"
-       << typedef_stmt->type_ << "</type>\n";
+       << typedef_stmt.type_ << "</type>\n";
   out_ << std::string(spaces_ + 2, ' ') << "<name>"
-       << typedef_stmt->name_->String() << "</name>\n";
+       << typedef_stmt.name_->String() << "</name>\n";
   out_ << std::string(spaces_, ' ') << "<typedef>\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }
 
-int AstDumper::Visit(const std::shared_ptr<TypeCast> &type_cast) {
+int AstDumper::Visit(TypeCast &type_cast) {
   spaces_ += TAB_SIZE;
   out_ << std::string(spaces_, ' ') << "<typecast>\n";
-  out_ << std::string(spaces_, ' ') << "<type>" << type_cast->type_ << "</type>\n";
+  out_ << std::string(spaces_, ' ') << "<type>" << type_cast.type_ << "</type>\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<expr>";
   spaces_ += TAB_SIZE;
-  type_cast->expr_->Accept(*this);
+  type_cast.expr_->Accept(*this);
   spaces_ -= TAB_SIZE;
   out_ << std::string(spaces_ + 2, ' ') << "</expr>";
 

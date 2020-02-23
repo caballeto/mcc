@@ -53,11 +53,11 @@ std::string Compile(const std::string& name) {
 }
 
 void Link(const std::string& out_file, const std::vector<std::string>& files) {
-  std::string command = "cc -o " + out_file;
+  std::string command = "cc -o " + out_file + " ./examples/printint.c";
 
   for (const auto& file : files)
     command += " " + file;
-  command += " ./examples/printint.c"; // external function hack
+  //command += " ./examples/printint.c"; // external function hack
 
   if (mcc::Compiler::fVerbose)
     std::cout << command << std::endl;

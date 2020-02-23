@@ -6,10 +6,9 @@
 
 namespace mcc {
 
-Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
+Scanner::Scanner(FILE* f, ErrorReporter& reporter)
   : reporter_(reporter) {
-  source_stream_.open(input_file, std::ios::in);
-  source_stream_ >> std::noskipws;
+  source_stream_ = f;
   line_ = 1;
   c_ = 0;
   putback_ = '\0';
@@ -44,7 +43,7 @@ Scanner::Scanner(const std::string& input_file, ErrorReporter& reporter)
 }
 
 Scanner::~Scanner() {
-  source_stream_.close();
+  fclose(source_stream_);
 }
 
 std::shared_ptr<Token> Scanner::GetToken() {
@@ -250,8 +249,29 @@ char Scanner::Next() {
     putback_ = '\0';
     c_--;
   } else {
-    if (!(source_stream_ >> c)) {
+    c = (char) fgetc(source_stream_);
+    if (c == EOF) { // eof
       return EOF;
+    }
+
+    while (c == '#') { // preprocessor lines
+      std::shared_ptr<Token> token = GetToken();
+      if (token->GetType() != TokenType::T_INT_LIT)
+        reporter_.Report("Invalid preprocessor output", c, line_, c_);
+
+      int line = token->Int();
+
+      token = GetToken();
+      if (token->GetType() != TokenType::T_STR_LIT)
+        reporter_.Report("Invalid preprocessor output", c, line_, c_);
+
+      if (token->String()[0] != '<') {
+        reporter_.SetFile(token->String());
+        line_ = line;
+      }
+
+      while ((c = (char) fgetc(source_stream_)) != '\n');
+      c = (char) fgetc(source_stream_);
     }
   }
 

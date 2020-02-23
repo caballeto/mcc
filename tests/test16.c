@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x = 25, y = x * 4;
@@ -7,6 +7,6 @@ int main() {
 
 	x = bigger;
 
-	printint(x);
-	printint(bigger);
+	printf("%d\n", x);
+	printf("%ld\n", bigger);
 }

@@ -1,5 +1,4 @@
-void printint(long x);
-void printstr(char* str);
+#include <stdio.h>
 
 typedef struct X {
   int length;
@@ -21,9 +20,9 @@ int main() {
   book.title = "The autumn leaves\n";
   book.author = "Frank Sinatra\n";
 
-  printstr(book.title);
-  printstr(book.author);
-  printint(book.length);
+  printf("%s", book.title);
+  printf("%s", book.author);
+  printf("%d\n", book.length);
 
   struct X x;
 
@@ -31,25 +30,25 @@ int main() {
   x.title = "The autumn leaves\n";
   x.author = "Frank Sinatra\n";
 
-  printstr(x.title);
-  printstr(x.author);
-  printint(x.length);
+  printf("%s", x.title);
+  printf("%s", x.author);
+  printf("%d\n", x.length);
 
   Box box;
 
   box.name = "Box's name\n";
-  printstr(box.name);
+  printf("%s", box.name);
 
   box.value = 1000;
-  printint(box.value);
+  printf("%d\n", box.value);
 
   union Y y;
 
   y.name = "Box's name\n";
-  printstr(y.name);
+  printf("%s", y.name);
 
   y.value = 1000;
-  printint(y.value);
+  printf("%d\n", y.value);
 
   return 0;
 }

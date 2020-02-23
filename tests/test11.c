@@ -1,9 +1,9 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x = 1;
 	short y = 2;
 	long z = 5;
 
-	printint(x + y + z);
+	printf("%ld\n", x + y + z);
 }

@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x;
@@ -8,8 +8,8 @@ int main() {
 	y = 1000;
 
 	if (x == y - 1) {
-		printint(x);
+		printf("%d\n", x);
 	} else {
-		printint(y);
+		printf("%d\n", y);
 	}
 }

@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x = 1, y = 2, x = 25;
@@ -7,5 +7,5 @@ int main() {
 
 	long m, m = m + m;
 
-	printint(z);
+	printf("%d\n", z);
 }

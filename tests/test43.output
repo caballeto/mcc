@@ -1,25 +1,19 @@
-/home/vladyslav/CLionProjects/mcc/tests/test43.c:14:6[0;31m error [0m
-Struct variable expected, but got pointer, near '.', line 14
+/home/vladyslav/CLionProjects/mcc/tests/test43.c:12:6[0;31m error [0m
+Struct variable expected, but got pointer, near '.', line 12
 
-/home/vladyslav/CLionProjects/mcc/tests/test43.c:22:18[0;31m error [0m
-Pointer to struct expected, near '->', line 22
+/home/vladyslav/CLionProjects/mcc/tests/test43.c:20:24[0;31m error [0m
+Pointer to struct expected, near '->', line 20
 
-/home/vladyslav/CLionProjects/mcc/tests/test43.c:27:12[0;31m error [0m
-Variable 'what' has not been declared, near 'what', line 27
+/home/vladyslav/CLionProjects/mcc/tests/test43.c:25:18[0;31m error [0m
+Variable 'what' has not been declared, near 'what', line 25
 
-/home/vladyslav/CLionProjects/mcc/tests/test43.c:27:16[0;31m error [0m
-Only struct/union fields can be accessed via '.' or '->' operator, near '.', line 27
+/home/vladyslav/CLionProjects/mcc/tests/test43.c:25:22[0;31m error [0m
+Only struct/union fields can be accessed via '.' or '->' operator, near '.', line 25
 
-/home/vladyslav/CLionProjects/mcc/tests/test43.c:27:17[0;31m error [0m
-Undefined field, near 'length', line 27
+/home/vladyslav/CLionProjects/mcc/tests/test43.c:25:23[0;31m error [0m
+Undefined field, near 'length', line 25
 
-/home/vladyslav/CLionProjects/mcc/tests/test43.c:27:16[0;31m error [0m
-Declared type of parameter does not correspond to inferred argument type ('long' and 'NO TYPE'), near '.', line 27
+/home/vladyslav/CLionProjects/mcc/tests/test43.c:26:21[0;31m error [0m
+Undefined field, near 'jack', line 26
 
-/home/vladyslav/CLionProjects/mcc/tests/test43.c:28:17[0;31m error [0m
-Undefined field, near 'jack', line 28
-
-/home/vladyslav/CLionProjects/mcc/tests/test43.c:28:16[0;31m error [0m
-Declared type of parameter does not correspond to inferred argument type ('char*' and 'NO TYPE'), near '.', line 28
-
-Encountered 8 semantic errors. Stopping compilation.
+Encountered 6 semantic errors. Stopping compilation.

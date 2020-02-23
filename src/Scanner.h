@@ -13,7 +13,8 @@ namespace mcc {
 
 class Scanner {
  public:
-  Scanner(const std::string& input_file, ErrorReporter& reporter);
+  Scanner(FILE* f, ErrorReporter& reporter);
+
   ~Scanner();
 
   std::shared_ptr<Token> GetToken();
@@ -21,20 +22,22 @@ class Scanner {
  private:
   char Next();
   char NextCharSkipSpaces();
-  int ScanInt(int int_value);
   void Putback(char c);
+
+  int ScanInt(int int_value);
+  int ScanChar();
+  std::string ScanStr();
   std::string ScanIdent(char c);
+
   bool IsKeyword(const std::string& identifier);
   TokenType GetKeywordToken(const std::string& keyword);
 
   ErrorReporter& reporter_;
   std::map<std::string, TokenType> keywords_;
-  std::ifstream source_stream_;
+  FILE* source_stream_;
   int line_;
   int c_ = 0;
   char putback_ = '\0';
-  int ScanChar();
-  std::string ScanStr();
 };
 
 } // namespace mcc

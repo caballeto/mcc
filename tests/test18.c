@@ -1,19 +1,19 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
 	int x = 28, y = x +;
 
 	for (int i = 0, j = 0; i < 10; i = i + 1) {
-	  printint(i * j);
-	  printint(k++)
+	  printf("%d\n", i * j);
+	  printf("%d\n", k++)
 	}
 
 	int z = 100.;
 
 	while (z < 100) {
 	  z = z 1;
-	  printint(z);
+	  printf("%d\n", z);
 	}
 
-	printint(k);
+	printf("%d\n", k);
 }

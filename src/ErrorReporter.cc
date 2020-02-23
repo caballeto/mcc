@@ -48,14 +48,14 @@ void ErrorReporter::Report(const std::string& message) {
   errors_++;
 }
 
-std::ostream& operator<<(std::ostream& os, const std::shared_ptr<Expr>& expr) {
+std::ostream& operator<<(std::ostream& os, Expr* expr) {
   return os << expr->type_;
 }
 
 void ErrorReporter::Error(
     const std::string& message,
     const Type& type,
-    const std::shared_ptr<Expr>& expr,
+    Expr* expr,
     const std::shared_ptr<Token>& token) {
   PrintErrorLine(input_file_, token->GetLine(), token->GetCount());
   os_ << message << "(" << type;
@@ -66,8 +66,8 @@ void ErrorReporter::Error(
 
 void ErrorReporter::Error(
     const std::string& message,
-    const std::shared_ptr<Expr>& e1,
-    const std::shared_ptr<Expr>& e2,
+    Expr* e1,
+    Expr* e2,
     const std::shared_ptr<Token>& token) {
   PrintErrorLine(input_file_, token->GetLine(), token->GetCount());
   PrintMessage(message, e1, e2, token);
@@ -75,8 +75,8 @@ void ErrorReporter::Error(
 }
 
 void ErrorReporter::Warning(const std::string &message,
-                            const std::shared_ptr<Expr>& e1,
-                            const std::shared_ptr<Expr>& e2,
+                            Expr* e1,
+                            Expr* e2,
                             const std::shared_ptr<Token>& token) {
   PrintWarningLine(input_file_, token->GetLine(), token->GetCount());
   PrintMessage(message, e1, e2, token);
@@ -107,8 +107,8 @@ void ErrorReporter::PrintErrorLine(const std::string& file, int line, int c) {
 }
 
 void ErrorReporter::PrintMessage(const std::string& message,
-                                 const std::shared_ptr<Expr>& e1,
-                                 const std::shared_ptr<Expr>& e2,
+                                 Expr* e1,
+                                 Expr* e2,
                                  const std::shared_ptr<Token>& token) {
   os_ << message << "(" << e1 << " and " << e2 << ")" << ", near ";
   PrintToken(token);
@@ -116,7 +116,7 @@ void ErrorReporter::PrintMessage(const std::string& message,
 
 void ErrorReporter::Warning(const std::string& message,
                             const Type& type,
-                            const std::shared_ptr<Expr>& expr,
+                            Expr* expr,
                             const std::shared_ptr<Token>& token) {
   PrintWarningLine(input_file_, token->GetLine(), token->GetCount());
   os_ << message << "(" << type;

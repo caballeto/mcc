@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 enum {
   peter = 1,
@@ -9,6 +9,6 @@ enum {
 
 int main() {
   var = peter + donald + ronald + john;
-  printint(var);
+  printf("%d\n", var);
   return 0;
 }

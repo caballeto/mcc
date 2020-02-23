@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
   int *x, y;
@@ -6,19 +6,19 @@ int main() {
 
   long z = x;
 
-  printint(x == z);
-  printint(x + 2 == z + 8);
-  printint(x - 2 == z - 8);
+  printf("%d\n", x == z);
+  printf("%d\n", x + 2 == z + 8);
+  printf("%d\n", x - 2 == z - 8);
 
   x++;
   z = z + 4;
 
-  printint(x == z);
+  printf("%d\n", x == z);
 
   x--;
   z = z - 4;
 
-  printint(x == z);
+  printf("%d\n", x == z);
 
   return 0;
 }

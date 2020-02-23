@@ -1,4 +1,4 @@
-void printint(long x);
+#include <stdio.h>
 
 int main() {
   int y = 0;
@@ -10,7 +10,7 @@ int main() {
       case 3:  { y = 9; }
       default: { y = 100; }
     }
-    printint(y);
+    printf("%d\n", y);
   }
 
   return 0;
