@@ -72,6 +72,7 @@ class CodeGenX86: public Visitor<int> {
   int Visit(Switch &switch_stmt) override;
   int Visit(Typedef &typedef_stmt) override;
   int Visit(TypeCast &type_cast) override;
+  int Visit(Logical &logical) override;
 
   int GetLabel();
 
@@ -141,6 +142,7 @@ class CodeGenX86: public Visitor<int> {
   bool regs_status[REGISTER_NUM] = {true, true, true, true, true, true};
 
   Segment segment_ = Segment::NONE;
+  void GenCondJump(int r, TokenType type, int label);
 };
 
 } // namespace mcc

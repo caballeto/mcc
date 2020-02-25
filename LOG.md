@@ -595,6 +595,7 @@ name -> &Type
 - [ ] assign operators
 - [x] refactoring & test
 
-**Bug**
+## Day 25
 
-- call inside arguments reassigns `%rdi` (param) registers
+- [x] conditionals
+- [x] assign operators

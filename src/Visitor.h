@@ -12,6 +12,7 @@ namespace mcc {
 template <typename T>
 class Visitor {
  public:
+  virtual T Visit(Logical& logical) = 0;
   virtual T Visit(TypeCast& type_cast) = 0;
   virtual T Visit(Typedef& typedef_stmt) = 0;
   virtual T Visit(Switch& switch_stmt) = 0;

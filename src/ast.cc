@@ -390,5 +390,16 @@ long Typedef::Accept(Visitor<long> &visitor) {
   return visitor.Visit(*this);
 }
 
+int Logical::Accept(Visitor<int> &visitor) {
+  return visitor.Visit(*this);
+}
+
+long Logical::Accept(Visitor<long> &visitor) {
+  return visitor.Visit(*this);
+}
+
+void Logical::Accept(Visitor<void> &visitor) {
+  visitor.Visit(*this);
+}
 
 } // namespace mcc

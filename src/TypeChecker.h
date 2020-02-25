@@ -54,6 +54,7 @@ class TypeChecker : public Visitor<void> {
   void Visit(Switch &switch_stmt) override;
   void Visit(Typedef &typedef_stmt) override;
   void Visit(TypeCast &type_cast) override;
+  void Visit(Logical &logical) override;
 
   void NewLabelScope(FuncDecl &func_decl);
   void CheckLabelScope(FuncDecl &func_decl);

@@ -256,6 +256,20 @@ void TypeChecker::Visit(Access& access) {
   field->offset_ = field_->offset; // annotate node with offset value
 }
 
+void TypeChecker::Visit(Logical &logical) {
+  logical.left_->is_const_ = logical.is_const_;
+  logical.right_->is_const_ = logical.is_const_;
+  logical.left_->Accept(*this);
+  logical.right_->Accept(*this);
+  const Type& left = logical.left_->type_, right = logical.right_->type_;
+  if ((!left.IsPrimitive() && !left.IsPointer()) || (!right.IsPrimitive() && !right.IsPointer())) {
+    reporter_.Report("non-scalar expression where scalar is required", logical.op_);
+    return;
+  }
+
+  logical.type_.type_ = TokenType::T_INT;
+}
+
 void TypeChecker::Visit(Binary& binary) {
   binary.left_->is_const_ = binary.is_const_;
   binary.right_->is_const_ = binary.is_const_;
@@ -829,7 +843,7 @@ void TypeChecker::Visit(Call& call) {
   for (int i = 0; i < call.args_->expr_list_.size(); i++) {
     const auto& arg   = call.args_->expr_list_[i];
     arg->Accept(*this);
-    if (i >= func->signature_->var_decl_list_.size()) break;
+    if (i >= func->signature_->var_decl_list_.size()) continue;
     const auto& param = func->signature_->var_decl_list_[i];
     if (!MatchTypeInit(param->var_type_, arg.get())) {
       reporter_.Error("Declared type of parameter does not correspond to inferred argument type ",
@@ -977,7 +991,6 @@ int TypeChecker::GetTypeSize(const Type& type) {
     }
   }
 }
-
 void TypeChecker::ResetLocals() {
   local_offset_ = 0;
 }

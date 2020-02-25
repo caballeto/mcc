@@ -185,4 +185,23 @@ long Evaluator::Visit(Return &return_stmt) {
   return 0;
 }
 
+long Evaluator::Visit(Logical &logical) {
+  long left = logical.left_->Accept(*this);
+
+  switch (logical.op_->GetType()) {
+    case TokenType::T_AND:
+      if (!left) return 0;
+      return logical.right_->Accept(*this);
+    case TokenType::T_OR:
+      if (left) return 1;
+      return logical.right_->Accept(*this);
+    default: {
+      std::cerr << "Invalid operator in logical expression in Evaluator." << std::endl;
+      exit(1);
+    }
+  }
+
+  return 0;
+}
+
 } // namespace mcc

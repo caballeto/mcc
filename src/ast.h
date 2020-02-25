@@ -390,6 +390,20 @@ class Expr : public std::enable_shared_from_this<Expr> {
   std::shared_ptr<Token> op_;
 };
 
+class Logical : public Expr {
+ public:
+  Logical(std::shared_ptr<Token> op, std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)
+    : Expr(std::move(op)), left_(std::move(left)), right_(std::move(right))
+  { }
+
+  long Accept(Visitor<long>& visitor) override;
+  int Accept(Visitor<int>& visitor) override;
+  void Accept(Visitor<void>& visitor) override;
+
+  std::shared_ptr<Expr> left_;
+  std::shared_ptr<Expr> right_;
+};
+
 class TypeCast : public Expr {
  public:
   TypeCast(std::shared_ptr<Token> op, std::shared_ptr<Expr> expr)

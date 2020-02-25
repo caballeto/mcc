@@ -1,9 +1,9 @@
 # mcc
 
-This repository is my attempt in implementing
+This repository contains my attempt of implementing
 a compiler for a subset of C language. The primary goal is to get
 more practice with hands-on implementation of a real language. 
-The compiler is written in C++, accept C files and generates X86-64 assembly output.
+The compiler is written in C++, it accepts C files and generates X86-64 assembly output.
 
 ## Layout
 
@@ -12,8 +12,29 @@ The compiler is written in C++, accept C files and generates X86-64 assembly out
 - `tests/` contains tests in form of a program and expected program output
 - `LOG.md` contains the working log on the project, describing some design decisions and general dev process
 
+## Work in progress
+
+The compiler functionality is mainly finished, at least the part I was aiming at.
+It supports operators, function calls, register spilling, struct, union, enum, typedef,
+pointers, pointer arithmetic, arrays. I have written a few tests along the way,
+but there are a lot of bugs in the implementation for sure.
+
+It took me a total of 25 days (includes days where I have actually worked on the compiler),
+to write the implementation.
+
+## Bugs
+
+These are some bugs and inefficiencies I intend to fix, once I will have
+some time for that.
+
+- call inside arguments reassigns `%rdi` (param) registers
+- implement better conditional expression generation
+- rewrite register allocation algorithm
+
 ## Resources
 
 - `github.com/DoctorWkt/acwj` - a C compiler in C
 - `https://www.cs.virginia.edu/~evans/cs216/guides/x86.html` - x86 tutorial
 - `Retargetable C compiler` - implementation of a small production C compiler (`lcc`)
+
+Some parts of the code have been taken from Tommy Warren's `github.com/DoctorWkt/acwj`, including the header files. 

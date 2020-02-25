@@ -77,6 +77,16 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
     case TokenType::T_EXTERN: return os << "extern";
     case TokenType::T_STATIC: return os << "static";
     case TokenType::T_TAG: return os << "#";
+    case TokenType::T_ASSIGN_PLUS: return os << "+=";
+    case TokenType::T_ASSIGN_MINUS: return os << "-=";
+    case TokenType::T_ASSIGN_MUL: return os << "*=";
+    case TokenType::T_ASSIGN_DIV: return os << "/=";
+    case TokenType::T_ASSIGN_MOD: return os << "%=";
+    case TokenType::T_ASSIGN_LSHIFT: return os << "<<=";
+    case TokenType::T_ASSIGN_RSHIFT: return os << ">>=";
+    case TokenType::T_ASSIGN_AND: return os << "&=";
+    case TokenType::T_ASSIGN_OR: return os << "|=";
+    case TokenType::T_ASSIGN_XOR: return os << "^=";
   }
 
   return os << static_cast<std::uint16_t>(type);
@@ -86,6 +96,16 @@ std::ostream& operator<<(std::ostream& os, TokenType type) {
 // #FIXME: see https://en.cppreference.com/w/c/language/operator_precedence
 int GetPrecedence(const std::shared_ptr<Token>& op, bool is_unary) {
   switch (op->GetType()) {
+    case TokenType::T_ASSIGN_PLUS:
+    case TokenType::T_ASSIGN_MINUS:
+    case TokenType::T_ASSIGN_MUL:
+    case TokenType::T_ASSIGN_DIV:
+    case TokenType::T_ASSIGN_MOD:
+    case TokenType::T_ASSIGN_LSHIFT:
+    case TokenType::T_ASSIGN_RSHIFT:
+    case TokenType::T_ASSIGN_AND:
+    case TokenType::T_ASSIGN_XOR:
+    case TokenType::T_ASSIGN_OR:
     case TokenType::T_ASSIGN:
       return 2;
     case TokenType::T_QUESTION:

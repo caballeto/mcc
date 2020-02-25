@@ -29,6 +29,45 @@ int CodeGenX86::Visit(Conditional& cond_stmt) {
   return NO_RETURN_REGISTER;
 }
 
+void CodeGenX86::GenCondJump(int r, TokenType type, int label) {
+  out_ << "\ttest\t" << kRegisters[r] << ", " << kRegisters[r] << "\n";
+  if (type == TokenType::T_AND) {
+    out_ << "\tje\tL" << label << "\n";
+  } else if (type == TokenType::T_OR) {
+    out_ << "\tjne\tL" << label << "\n";
+  } else {
+    std::cerr << "Internal error: unexpected operator type in logical expr" << type << std::endl;
+    exit(1);
+  }
+}
+
+int CodeGenX86::Visit(Logical& logical) {
+  TokenType op = logical.op_->GetType();
+  int l_false = GetLabel(), l_end = GetLabel();
+
+  int r = logical.left_->Accept(*this);
+  GenCondJump(r, op, l_false);
+  FreeRegister(r);
+
+  r = logical.right_->Accept(*this);
+  GenCondJump(r, op, l_false);
+
+  if (op == TokenType::T_AND) {
+    out_ << "\tmovq\t$1, " << kRegisters[r] << "\n";
+    GenJump(l_end);
+    GenLabel(l_false);
+    out_ << "\tmovq\t$0, " << kRegisters[r] << "\n";
+  } else {
+    out_ << "\tmovq\t$0, " << kRegisters[r] << "\n";
+    GenJump(l_end);
+    GenLabel(l_false);
+    out_ << "\tmovq\t$1, " << kRegisters[r] << "\n";
+  }
+
+  GenLabel(l_end);
+  return r;
+}
+
 int CodeGenX86::Visit(While& while_stmt) {
   // check if we have break/continue statements
   bool has_control_flow_stmts = while_stmt.loop_block_->Accept(flow_checker_);
@@ -110,7 +149,6 @@ int CodeGenX86::Visit(For& for_stmt) {
 // 4. jump to jump selector code
 // 5. labels and cases
 // 6. end label
-
 int CodeGenX86::Visit(Switch& switch_stmt) {
   int l_reg_load = GetLabel(), l_jump_table = GetLabel(), l_end = GetLabel(), label, l_default = -1;
   std::vector<std::pair<int, int>> case_labels;
@@ -133,6 +171,7 @@ int CodeGenX86::Visit(Switch& switch_stmt) {
   GenJumpTable(l_jump_table, case_labels, l_default == -1 ? l_end : l_default);
   GenJumpToTable(r, l_jump_table, l_reg_load);
   GenLabel(l_end);
+  FreeRegister(r);
   return 0;
 }
 
@@ -286,10 +325,13 @@ int CodeGenX86::Visit(Binary& binary) {
            << "\tmovq\t%rax, " << kRegisters[r1] << "\n";
       FreeRegister(r2);
       return r1;
-    case TokenType::T_OR:
-    case TokenType::T_AND:
-      std::cerr << "Not implemented error '&&', '||' operators" << std::endl;
-      exit(1);
+    case TokenType::T_MOD:
+      out_ << "\tmovq\t" << kRegisters[r1] << ", %rax\n"
+           << "\tcqo\n"
+           << "\tidivq\t" << kRegisters[r2] << "\n"
+           << "\tmovq\t%rdx, " << kRegisters[r1] << "\n";
+      FreeRegister(r2);
+      return r1;
     case TokenType::T_BIT_AND:
       out_ << "\tandq\t" << kRegisters[r2] << ", " << kRegisters[r1] << "\n";
       FreeRegister(r2);
@@ -400,21 +442,136 @@ int CodeGenX86::Visit(Print& print) {
   return NO_RETURN_REGISTER;
 }
 
+#define ASSIGN_OP(op)       \
+      if (assign.left_->IsVariable()) { \
+        const std::shared_ptr<Literal>& lit = std::static_pointer_cast<Literal>(assign.left_); \
+        out_ << "\t" op << GetSavePostfix(assign.left_->type_, assign.left_->type_.ind) << "\t" \
+             << GetRegister(r1, assign.left_->type_, assign.left_->type_.ind) \
+             << ", " << GenLoad(*lit) << "\n"; \
+      } else { \
+        int r2 = assign.left_->Accept(*this); \
+        out_ << "\t" op << GetSavePostfix(assign.left_->type_, assign.left_->type_.ind) << "\t" \
+             << GetRegister(r1, assign.left_->type_, assign.left_->type_.ind) \
+             << ", (" << kRegisters[r2] << ")\n"; \
+             FreeRegister(r2); \
+      }
+
+#define RAX -1
+#define RDX -2
+
 // #FIXME: pass <Literal> as type, or cast <Expr> to here?
 int CodeGenX86::Visit(Assign& assign) {
   int r1 = assign.right_->Accept(*this);
 
-  if (assign.left_->IsVariable()) {
-    const std::shared_ptr<Literal>& lit = std::static_pointer_cast<Literal>(assign.left_);
-    out_ << "\tmov" << GetSavePostfix(assign.left_->type_, assign.left_->type_.ind) << "\t"
-         << GetRegister(r1, assign.left_->type_, assign.left_->type_.ind)
-         << ", " << GenLoad(*lit) << "\n";
-  } else {
-    int r2 = assign.left_->Accept(*this);
-    out_ << "\tmov" << GetSavePostfix(assign.left_->type_, assign.left_->type_.ind) << "\t"
-         << GetRegister(r1, assign.left_->type_, assign.left_->type_.ind)
-         << ", (" << kRegisters[r2] << ")\n";
-    FreeRegister(r2);
+  switch (assign.op_->GetType()) {
+    case TokenType::T_ASSIGN:
+      ASSIGN_OP("mov")
+      break;
+    case TokenType::T_ASSIGN_PLUS:
+      ASSIGN_OP("add")
+      break;
+    case TokenType::T_ASSIGN_MINUS:
+      ASSIGN_OP("sub")
+      break;
+    case TokenType::T_ASSIGN_MUL: {
+      const std::string& postfix = GetSavePostfix(assign.left_->type_, assign.left_->type_.ind);
+      const std::string& reg = GetRegister(r1, assign.left_->type_, assign.left_->type_.ind);
+      if (assign.left_->IsVariable()) {
+        const std::shared_ptr<Literal> &lit = std::static_pointer_cast<Literal>(assign.left_);
+        out_ << "\timul" << postfix << "\t" << GenLoad(*lit) << ", " << reg << "\n";
+        out_ << "\tmov" << postfix << "\t" << reg << ", "
+             << GenLoad(*lit) << "\n";
+      } else {
+        int r2 = assign.left_->Accept(*this);
+        out_ << "\timul" << postfix << "\t(" << kRegisters[r2] << "), " << reg << "\n";
+        out_ << "\tmov" << postfix << "\t" << reg << ", (" << kRegisters[r2] << ")\n";
+        FreeRegister(r2);
+      }
+      break;
+    }
+    case TokenType::T_ASSIGN_DIV: {
+      const std::string& postfix = GetSavePostfix(assign.left_->type_, assign.left_->type_.ind);
+      const std::string& rax = GetRegister(RAX, assign.left_->type_, assign.left_->type_.ind);
+      if (assign.left_->IsVariable()) {
+        const std::shared_ptr<Literal> &lit = std::static_pointer_cast<Literal>(assign.left_);
+        out_ << "\tmov" << GetLoadPostfix(assign.left_->type_, assign.left_->type_.ind) << "\t" << GenLoad(*lit)
+             << ", %rax\n" << "\tcqo\n";
+        out_ << "\tidivq\t" << kRegisters[r1] << "\n";
+        out_ << "\tmov" << postfix << "\t" << rax << ", " << GenLoad(*lit) << "\n";
+        out_ << "\tmovq\t%rax, " << kRegisters[r1] << "\n";
+      } else {
+        int r2 = assign.left_->Accept(*this);
+        out_ << "\tmov" << GetLoadPostfix(assign.left_->type_, assign.left_->type_.ind) << "\t(" << kRegisters[r2] << ")"
+             << ", %rax\n" << "\tcqo\n";
+        out_ << "\tidivq\t" << kRegisters[r1] << "\n";
+        out_ << "\tmov" << postfix << "\t" << rax << ", (" << kRegisters[r2] << ")\n";
+        out_ << "\tmovq\t%rax, " << kRegisters[r1] << "\n";
+        FreeRegister(r2);
+      }
+      break;
+    }
+    case TokenType::T_ASSIGN_MOD: {
+      const std::string& postfix = GetSavePostfix(assign.left_->type_, assign.left_->type_.ind);
+      const std::string& rdx = GetRegister(RDX, assign.left_->type_, assign.left_->type_.ind);
+      if (assign.left_->IsVariable()) {
+        const std::shared_ptr<Literal> &lit = std::static_pointer_cast<Literal>(assign.left_);
+        out_ << "\tmov" << GetLoadPostfix(assign.left_->type_, assign.left_->type_.ind) << "\t" << GenLoad(*lit)
+             << ", %rax\n" << "\tcqo\n";
+        out_ << "\tidivq\t" << kRegisters[r1] << "\n";
+        out_ << "\tmov" << postfix << "\t" << rdx << ", " << GenLoad(*lit) << "\n";
+        out_ << "\tmovq\t%rdx, " << kRegisters[r1] << "\n";
+      } else {
+        int r2 = assign.left_->Accept(*this);
+        out_ << "\tmov" << GetLoadPostfix(assign.left_->type_, assign.left_->type_.ind) << "\t(" << kRegisters[r2] << ")"
+             << ", %rax\n" << "\tcqo\n";
+        out_ << "\tidivq\t" << kRegisters[r1] << "\n";
+        out_ << "\tmov" << postfix << "\t" << rdx << ", (" << kRegisters[r2] << ")\n";
+        out_ << "\tmovq\t%rdx, " << kRegisters[r1] << "\n";
+        FreeRegister(r2);
+      }
+      break;
+    }
+    case TokenType::T_ASSIGN_LSHIFT: {
+      const std::string& postfix = GetSavePostfix(assign.left_->type_, assign.left_->type_.ind);
+      const std::string& reg = GetRegister(r1, assign.left_->type_, assign.left_->type_.ind);
+      out_ << "\tmovb\t" << kBregisters[r1] << ", %cl\n";
+      if (assign.left_->IsVariable()) {
+        const std::shared_ptr<Literal> &lit = std::static_pointer_cast<Literal>(assign.left_);
+        out_ << "\tshlq\t%cl, " << GenLoad(*lit) << "\n";
+      } else {
+        int r2 = assign.left_->Accept(*this);
+        out_ << "\tshlq\t%cl, (" << kRegisters[r2] << ")\n";
+        FreeRegister(r2);
+      }
+      break;
+    }
+    case TokenType::T_ASSIGN_RSHIFT:{
+      const std::string& postfix = GetSavePostfix(assign.left_->type_, assign.left_->type_.ind);
+      const std::string& reg = GetRegister(r1, assign.left_->type_, assign.left_->type_.ind);
+      out_ << "\tmovb\t" << kBregisters[r1] << ", %cl\n";
+      if (assign.left_->IsVariable()) {
+        const std::shared_ptr<Literal> &lit = std::static_pointer_cast<Literal>(assign.left_);
+        out_ << "\tshrq\t%cl, " << GenLoad(*lit) << "\n";
+      } else {
+        int r2 = assign.left_->Accept(*this);
+        out_ << "\tshrq\t%cl, (" << kRegisters[r2] << ")\n";
+        FreeRegister(r2);
+      }
+      break;
+    }
+    case TokenType::T_ASSIGN_AND:
+      ASSIGN_OP("and")
+      break;
+    case TokenType::T_ASSIGN_XOR:
+      ASSIGN_OP("xor")
+      break;
+    case TokenType::T_ASSIGN_OR:
+      ASSIGN_OP("or")
+      break;
+    default: {
+      std::cerr << "Invalid assign operation " << assign.op_->GetType() << std::endl;
+      exit(1);
+    }
   }
 
   return r1;
@@ -465,16 +622,43 @@ std::string CodeGenX86::GetSavePostfix(const Type& type, int ind) {
   }
 }
 
+// #TODO: BS. Rewrite more compact with array indexes
 std::string CodeGenX86::GetRegister(int r, const Type& type, int ind) {
-  if (ind > 0) return kRegisters[r];
-  switch (type.type_) {
-    case TokenType::T_CHAR: return kBregisters[r];
-    case TokenType::T_SHORT: return kWregisters[r];
-    case TokenType::T_INT: return kDregisters[r];
-    case TokenType::T_LONG: return kRegisters[r];
-    default: {
-      reporter_.Report("Invalid variable type.");
-      exit(1);
+  if (r == RAX) {
+    if (ind > 0) return "%rax";
+    switch (type.type_) {
+      case TokenType::T_CHAR: return "%al";
+      case TokenType::T_SHORT: return "%ax";
+      case TokenType::T_INT: return "%eax";
+      case TokenType::T_LONG: return "%rax";
+      default: {
+        reporter_.Report("Invalid variable type.");
+        exit(1);
+      }
+    }
+  } else if (r == RDX) {
+    if (ind > 0) return "%rdx";
+    switch (type.type_) {
+      case TokenType::T_CHAR: return "%dl";
+      case TokenType::T_SHORT: return "%dx";
+      case TokenType::T_INT: return "%edx";
+      case TokenType::T_LONG: return "%rdx";
+      default: {
+        reporter_.Report("Invalid variable type.");
+        exit(1);
+      }
+    }
+  } else {
+    if (ind > 0) return kRegisters[r];
+    switch (type.type_) {
+      case TokenType::T_CHAR: return kBregisters[r];
+      case TokenType::T_SHORT: return kWregisters[r];
+      case TokenType::T_INT: return kDregisters[r];
+      case TokenType::T_LONG: return kRegisters[r];
+      default: {
+        reporter_.Report("Invalid variable type.");
+        exit(1);
+      }
     }
   }
 }
@@ -636,11 +820,11 @@ int CodeGenX86::Visit(Typedef &typedef_stmt) {
   return NO_RETURN_REGISTER;
 }
 
+
 int CodeGenX86::Visit(TypeCast &type_cast) {
   int r = type_cast.expr_->Accept(*this);
   return r;
 }
-
 
 int CodeGenX86::Visit(Label& label) {
   GenLabel(label.label_);
@@ -903,11 +1087,11 @@ std::string CodeGenX86::GetAllocType(const Type& type, int ind) {
     }
   }
 }
-
 void CodeGenX86::SpillRegs() {
   for (int i = 0; i < REGISTER_NUM; i++)
     Spill(i);
 }
+
 void CodeGenX86::UnspillRegs() {
   for (int i = REGISTER_NUM - 1; i >= 0; i--)
     Unspill(i);
@@ -920,7 +1104,6 @@ void CodeGenX86::Spill(int r) {
 void CodeGenX86::Unspill(int r) {
   out_ << "\tpopq\t" << kRegisters[r] << "\n";
 }
-
 void CodeGenX86::Preamble() {
   GenText();
   out_ << "switch:\n"

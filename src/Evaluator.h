@@ -46,6 +46,7 @@ class Evaluator : public Visitor<long> {
   long Visit(Switch &switch_stmt) override;
   long Visit(Typedef &typedef_stmt) override;
   long Visit(TypeCast &type_cast) override;
+  long Visit(Logical &logical) override;
 
   ErrorReporter& reporter_;
 };

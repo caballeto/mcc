@@ -55,6 +55,8 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '+':
       if ((c = Next()) == '+') {
         token->SetType(TokenType::T_INC);
+      } else if (c == '=') {
+        token->SetType(TokenType::T_ASSIGN_PLUS);
       } else {
         token->SetType(TokenType::T_PLUS);
         Putback(c);
@@ -65,20 +67,36 @@ std::shared_ptr<Token> Scanner::GetToken() {
         token->SetType(TokenType::T_DEC);
       } else if (c == '>') {
         token->SetType(TokenType::T_ARROW);
+      } else if (c == '=') {
+        token->SetType(TokenType::T_ASSIGN_MINUS);
       } else {
         token->SetType(TokenType::T_MINUS);
         Putback(c);
       }
       break;
-    case '#':break; // #TODO: preproc
     case '*':
-      token->SetType(TokenType::T_STAR);
+      if ((c = Next()) == '=') {
+        token->SetType(TokenType::T_ASSIGN_MUL);
+      } else {
+        token->SetType(TokenType::T_STAR);
+        Putback(c);
+      }
       break;
     case '/':
-      token->SetType(TokenType::T_SLASH);
+      if ((c = Next()) == '=') {
+        token->SetType(TokenType::T_ASSIGN_DIV);
+      } else {
+        token->SetType(TokenType::T_SLASH);
+        Putback(c);
+      }
       break;
     case '%':
-      token->SetType(TokenType::T_MOD);
+      if ((c = Next()) == '=') {
+        token->SetType(TokenType::T_ASSIGN_MOD);
+      } else {
+        token->SetType(TokenType::T_MOD);
+        Putback(c);
+      }
       break;
     case ',':
       token->SetType(TokenType::T_COMMA);
@@ -113,7 +131,8 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '}':
       token->SetType(TokenType::T_RBRACE);
       break;
-    case '\'':token->SetInt(ScanChar());
+    case '\'':
+      token->SetInt(ScanChar());
       token->SetType(TokenType::T_INT_LIT);
       if ((c = Next()) != '\'') {
         reporter_.Report("Char literal should end in quote", c, line_, c_);
@@ -126,6 +145,8 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '&':
       if ((c = Next()) == '&') {
         token->SetType(TokenType::T_AND);
+      } else if (c == '=') {
+        token->SetType(TokenType::T_ASSIGN_AND);
       } else {
         token->SetType(TokenType::T_BIT_AND);
         Putback(c);
@@ -134,8 +155,18 @@ std::shared_ptr<Token> Scanner::GetToken() {
     case '|':
       if ((c = Next()) == '|') {
         token->SetType(TokenType::T_OR);
+      } else if (c == '=') {
+        token->SetType(TokenType::T_ASSIGN_OR);
       } else {
         token->SetType(TokenType::T_BIT_OR);
+        Putback(c);
+      }
+      break;
+    case '^':
+      if ((c = Next()) == '=') {
+        token->SetType(TokenType::T_ASSIGN_XOR);
+      } else {
+        token->SetType(TokenType::T_BIT_XOR);
         Putback(c);
       }
       break;
@@ -143,7 +174,12 @@ std::shared_ptr<Token> Scanner::GetToken() {
       if ((c = Next()) == '=') {
         token->SetType(TokenType::T_GREATER_EQUAL);
       } else if (c == '>') {
-        token->SetType(TokenType::T_RSHIFT);
+        if ((c = Next()) == '=') {
+          token->SetType(TokenType::T_ASSIGN_RSHIFT);
+        } else {
+          token->SetType(TokenType::T_RSHIFT);
+          Putback(c);
+        }
       } else {
         token->SetType(TokenType::T_GREATER);
         Putback(c);
@@ -153,7 +189,12 @@ std::shared_ptr<Token> Scanner::GetToken() {
       if ((c = Next()) == '=') {
         token->SetType(TokenType::T_LESS_EQUAL);
       } else if (c == '<') {
-        token->SetType(TokenType::T_LSHIFT);
+        if ((c = Next()) == '=') {
+          token->SetType(TokenType::T_ASSIGN_LSHIFT);
+        } else {
+          token->SetType(TokenType::T_LSHIFT);
+          Putback(c);
+        }
       } else {
         token->SetType(TokenType::T_LESS);
         Putback(c);

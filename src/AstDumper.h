@@ -49,6 +49,7 @@ class AstDumper : public Visitor<int> {
   int Visit(TypeCast &type_cast) override;
   int Visit(Call &call) override;
   int Visit(Access &access) override;
+  int Visit(Logical &logical) override;
 
   void Flush();
 

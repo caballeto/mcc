@@ -10,7 +10,7 @@ namespace mcc {
 
 int AstDumper::Visit(Binary& binary) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<binary op=" << binary.op_->GetType() << ">" << "\n";
+  out_ << std::string(spaces_, ' ') << "<binary op='" << binary.op_->GetType() << "'>" << "\n";
   binary.left_->Accept(*this);
   binary.right_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</binary>" << "\n";
@@ -42,7 +42,7 @@ int AstDumper::Visit(Literal& literal) {
 
 int AstDumper::Visit(Assign& assign) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<assign>\n";
+  out_ << std::string(spaces_, ' ') << "<assign op='" << assign.op_->String() << "'>\n";
   assign.left_->Accept(*this);
   assign.right_->Accept(*this);
   out_ << std::string(spaces_, ' ') << "</assign>\n";
@@ -387,7 +387,7 @@ int AstDumper::Visit(Struct &struct_decl) {
 
 int AstDumper::Visit(Access &access) {
   spaces_ += TAB_SIZE;
-  out_ << std::string(spaces_, ' ') << "<access op=" << access.op_->String() << ">" << "\n";
+  out_ << std::string(spaces_, ' ') << "<access op='" << access.op_->String() << "'>" << "\n";
 
   out_ << std::string(spaces_ + 2, ' ') << "<name>\n";
   spaces_ += TAB_SIZE;
@@ -520,6 +520,16 @@ int AstDumper::Visit(TypeCast &type_cast) {
   out_ << std::string(spaces_ + 2, ' ') << "</expr>";
 
   out_ << std::string(spaces_, ' ') << "<typecast>\n";
+  spaces_ -= TAB_SIZE;
+  return 0;
+}
+
+int AstDumper::Visit(Logical &logical) {
+  spaces_ += TAB_SIZE;
+  out_ << std::string(spaces_, ' ') << "<logical op='" << logical.op_->GetType() << "'>" << "\n";
+  logical.left_->Accept(*this);
+  logical.right_->Accept(*this);
+  out_ << std::string(spaces_, ' ') << "</logical>" << "\n";
   spaces_ -= TAB_SIZE;
   return 0;
 }

@@ -474,6 +474,16 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
         left = std::make_shared<Ternary>(curr_op, left, then_branch, else_branch);
         break;
       }
+      case TokenType::T_ASSIGN_PLUS:
+      case TokenType::T_ASSIGN_MINUS:
+      case TokenType::T_ASSIGN_MUL:
+      case TokenType::T_ASSIGN_DIV:
+      case TokenType::T_ASSIGN_MOD:
+      case TokenType::T_ASSIGN_LSHIFT:
+      case TokenType::T_ASSIGN_RSHIFT:
+      case TokenType::T_ASSIGN_AND:
+      case TokenType::T_ASSIGN_XOR:
+      case TokenType::T_ASSIGN_OR:
       case TokenType::T_ASSIGN: {
         Next();
         right = Expression(GetPrecedence(curr_op, false) - 1);
@@ -485,6 +495,13 @@ std::shared_ptr<Expr> Parser::Expression(int precedence) {
         Next();
         right = Expression(GetPrecedence(curr_op, false));
         left = std::make_shared<Access>(std::move(curr_op), left, right);
+        break;
+      }
+      case TokenType::T_AND:
+      case TokenType::T_OR: {
+        Next();
+        right = Expression(GetPrecedence(curr_op, false));
+        left = std::make_shared<Logical>(curr_op, left, right);
         break;
       }
       default: {

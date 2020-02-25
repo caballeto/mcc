@@ -41,6 +41,7 @@ class ControlFlowChecker: public Visitor<int> {
   int Visit(Switch &switch_stmt) override;
   int Visit(Typedef &typedef_stmt) override;
   int Visit(TypeCast &type_cast) override;
+  int Visit(Logical &logical) override;
 };
 
 } // namespace mcc

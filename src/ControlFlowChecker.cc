@@ -129,4 +129,8 @@ int ControlFlowChecker::Visit(TypeCast &type_cast) {
   return 0;
 }
 
+int ControlFlowChecker::Visit(Logical &logical) {
+  return 0;
+}
+
 } // namespace mcc
