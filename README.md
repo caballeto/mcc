@@ -22,7 +22,7 @@ but there are a lot of bugs in the implementation for sure.
 It took me a total of 25 days (includes days where I have actually worked on the compiler),
 to write the implementation.
 
-## Bugs
+## Bugs & More
 
 These are some bugs and inefficiencies I intend to fix, once I will have
 some time for that.
@@ -30,6 +30,8 @@ some time for that.
 - call inside arguments reassigns `%rdi` (param) registers
 - implement better conditional expression generation
 - rewrite register allocation algorithm
+- would be good to extend fully integer types (signed/unsigned/long long int, etc.) and be
+  able to use gcc headers
 
 ## Resources
 
